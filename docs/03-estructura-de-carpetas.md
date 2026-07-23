@@ -39,6 +39,7 @@ nexus/
 │   │   └── index.ts               # API pública del motor
 │   │
 │   ├── features/                  # Un módulo por dominio (autónomo)
+│   │   ├── auth/                  # Pantallas de login, registro y recuperación
 │   │   ├── dashboard/
 │   │   ├── planning/
 │   │   ├── workout/

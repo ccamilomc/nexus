@@ -3,6 +3,12 @@
  * URLs en español, sin acentos ni `ñ`, para evitar problemas de codificación.
  */
 export const ROUTES = {
+  // Públicas (sin sesión)
+  login: '/entrar',
+  register: '/crear-cuenta',
+  forgotPassword: '/recuperar',
+  resetPassword: '/restablecer',
+  // Protegidas (requieren sesión)
   dashboard: '/',
   planning: '/plan',
   workout: '/entrenamiento',
