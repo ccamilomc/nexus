@@ -1,0 +1,42 @@
+# Dependencias
+node_modules/
+
+# Build
+dist/
+dist-ssr/
+*.local
+
+# Test / cobertura
+coverage/
+
+# Entorno (nunca versionar secretos)
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor / SO
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# TypeScript
+*.tsbuildinfo
+
+# Deploy
+.vercel/
+
+# Config local del entorno de trabajo
+.claude/
+
+# Supabase (temporales locales)
+supabase/.branches/
+supabase/.temp/
