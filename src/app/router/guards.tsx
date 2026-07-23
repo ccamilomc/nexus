@@ -31,8 +31,13 @@ export function RequireAuth() {
 /** Evita que un usuario con sesión vea las pantallas de auth. */
 export function RedirectIfAuth() {
   const { status } = useAuth()
+  const location = useLocation()
 
   if (status === 'loading') return <FullScreenLoader />
-  if (status === 'authenticated') return <Navigate to={ROUTES.dashboard} replace />
+  if (status === 'authenticated') {
+    // Si llegó redirigido desde una ruta protegida, vuelve a ella tras entrar.
+    const from: unknown = location.state?.from
+    return <Navigate to={typeof from === 'string' ? from : ROUTES.dashboard} replace />
+  }
   return <Outlet />
 }
