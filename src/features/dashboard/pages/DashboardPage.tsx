@@ -1,17 +1,22 @@
-import { LayoutDashboard } from 'lucide-react'
-
-import { EmptyState } from '@/shared/components/feedback'
-import { PageHeader } from '@/shared/components/layout'
+import { DomainSummary } from '../components/DomainSummary'
+import { QuickActions } from '../components/QuickActions'
+import { useDashboard } from '../hooks/use-dashboard'
 
 export function DashboardPage() {
+  const { name, greeting, todayLabel } = useDashboard()
+
   return (
-    <>
-      <PageHeader title="Hoy" description="Tu resumen del día y las acciones rápidas." />
-      <EmptyState
-        icon={LayoutDashboard}
-        title="Todavía no hay nada que mostrar"
-        description="El resumen del día, los widgets y las acciones rápidas llegan en el Sprint 5."
-      />
-    </>
+    <div className="space-y-8">
+      <header>
+        <p className="text-sm text-muted-foreground">{todayLabel}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
+          {greeting}
+          {name ? `, ${name}` : ''}
+        </h1>
+      </header>
+
+      <QuickActions />
+      <DomainSummary />
+    </div>
   )
 }
