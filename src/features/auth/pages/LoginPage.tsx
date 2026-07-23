@@ -8,6 +8,7 @@ import { useAuth } from '@/core/auth'
 import { createAppError, isAppError } from '@/core/error'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { PasswordInput } from '@/shared/components/ui/password-input'
 
 import { AuthShell } from '../components/AuthShell'
 import { FormAlert } from '../components/FormAlert'
@@ -63,9 +64,8 @@ export function LoginPage() {
         </FormField>
 
         <FormField id="password" label="Contraseña" error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="current-password"
             aria-invalid={Boolean(errors.password)}
             {...register('password')}
