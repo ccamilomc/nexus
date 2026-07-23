@@ -30,35 +30,36 @@ detalla también en [12 · Seguridad](./12-seguridad.md).
 ### `updated_at` automático
 
 ```sql
-create or replace function set_updated_at()
-returns trigger language plpgsql as $$
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+set search_path = ''   -- seguridad: evita secuestro de search_path
+as $$
 begin
   new.updated_at = now();
   return new;
 end;
 $$;
 
--- Se aplica a cada tabla:
-create trigger trg_set_updated_at
-before update on <tabla>
-for each row execute function set_updated_at();
+-- Se aplica a cada tabla con updated_at:
+create trigger trg_<tabla>_updated_at
+before update on public.<tabla>
+for each row execute function public.set_updated_at();
 ```
 
 ### Plantilla de RLS por propiedad de usuario
 
-Toda tabla con `user_id` activa RLS y expone las cuatro políticas del dueño:
+Toda tabla con `user_id` activa RLS. Se usa una única política `for all` acotada a
+`authenticated`, y `auth.uid()` se envuelve en un `select` para que Postgres lo
+evalúe una sola vez por consulta (recomendación de rendimiento de Supabase):
 
 ```sql
-alter table <tabla> enable row level security;
+alter table public.<tabla> enable row level security;
 
-create policy "own_select" on <tabla>
-  for select using (auth.uid() = user_id);
-create policy "own_insert" on <tabla>
-  for insert with check (auth.uid() = user_id);
-create policy "own_update" on <tabla>
-  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
-create policy "own_delete" on <tabla>
-  for delete using (auth.uid() = user_id);
+create policy "<tabla>_own" on public.<tabla>
+  for all to authenticated
+  using ((select auth.uid()) = user_id)
+  with check ((select auth.uid()) = user_id);
 ```
 
 ### Catálogos con filas globales + personales
@@ -67,9 +68,11 @@ create policy "own_delete" on <tabla>
 sistema) y gestionar lo propio:
 
 ```sql
-create policy "catalog_select" on <catalogo>
-  for select using (user_id is null or auth.uid() = user_id);
--- insert/update/delete: sólo filas propias (auth.uid() = user_id).
+create policy "<catalogo>_select" on public.<catalogo>
+  for select to authenticated
+  using (user_id is null or (select auth.uid()) = user_id);
+-- insert/update/delete: políticas separadas, sólo filas propias
+-- (with check / using: (select auth.uid()) = user_id).
 ```
 
 ## Diccionario de datos
@@ -218,10 +221,15 @@ Además del índice implícito de cada PK y de cada UNIQUE:
   través del agregado raíz mediante `exists (...)`. Ejemplo:
 
 ```sql
-create policy "sets_own" on workout_sets
-  for all using (exists (
-    select 1 from workout_sessions s
-    where s.id = workout_sets.session_id and s.user_id = auth.uid()
+create policy "workout_sets_own" on public.workout_sets
+  for all to authenticated
+  using (exists (
+    select 1 from public.workout_sessions s
+    where s.id = workout_sets.session_id and s.user_id = (select auth.uid())
+  ))
+  with check (exists (
+    select 1 from public.workout_sessions s
+    where s.id = workout_sets.session_id and s.user_id = (select auth.uid())
   ));
 ```
 
@@ -252,10 +260,26 @@ Analytics **no** define tablas de datos primarios (ver
 
 - Toda modificación de esquema es una **migración** en `supabase/migrations/`.
   Nunca se toca la BD a mano.
-- Migraciones **pequeñas, atómicas y reversibles** (con su `down` cuando aplique).
-- Nombre: `NNNN_descripcion.sql` (ordinal + descripción en `snake_case`).
-- Orden inicial sugerido: extensiones → enums → función `set_updated_at` →
-  tablas núcleo → tablas por dominio → RLS y políticas → índices → seeds de
-  catálogos globales.
-- Los **seeds** de catálogos (ejercicios/alimentos globales) van en migraciones o
-  en `supabase/seed.sql`, marcados como globales (`user_id null`).
+- Nombre: `<timestamp>_descripcion.sql` (formato de la CLI de Supabase). El
+  esquema inicial se divide en 8 migraciones por dominio para facilitar su
+  revisión.
+- Orden inicial: enums + funciones → núcleo y planning → workout → nutrition →
+  habits/study/sleep/health → inteligencia y notificaciones → storage → seeds.
+- Los **seeds** de catálogos globales (`user_id null`) son una migración
+  idempotente (`on conflict do nothing`), para que se desplieguen con el resto.
+
+### Despliegue del esquema (flujo con la CLI de Supabase)
+
+El SQL vive en el repositorio; se aplica al proyecto remoto con la CLI (no se
+edita la BD a mano). Scripts disponibles en `package.json`:
+
+| Paso | Comando              | Qué hace                                                              |
+| ---- | -------------------- | --------------------------------------------------------------------- |
+| 1    | `npx supabase login` | Autentica la CLI (abre el navegador).                                 |
+| 2    | `npm run db:link`    | Enlaza el repo con el proyecto remoto (pide su _ref_).                |
+| 3    | `npm run db:push`    | Aplica todas las migraciones pendientes al remoto.                    |
+| 4    | `npm run db:types`   | Regenera `src/core/supabase/database.types.ts` desde el esquema real. |
+
+Los tipos TypeScript se **generan** desde la BD; nunca se escriben a mano (evita
+divergencias). El archivo versionado es un punto de partida hasta el primer
+`db:types`.

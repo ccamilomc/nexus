@@ -4,3 +4,6 @@ dist-ssr
 coverage
 package-lock.json
 .husky/_
+
+# Generado por Supabase (npm run db:types) — no formatear a mano.
+src/core/supabase/database.types.ts

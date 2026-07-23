@@ -76,6 +76,14 @@ de errores robusto **sin** escribir clases, con `FallbackComponent`, `onError` y
 funcionaría sin dependencias, pero incumpliría explícitamente la regla de "sólo
 componentes funcionales".
 
+### `supabase` CLI (dev, Sprint 3)
+
+Dependencia de **desarrollo** (no llega al bundle). Es la herramienta oficial para
+aplicar migraciones al proyecto remoto (`db push`) y **generar los tipos
+TypeScript** desde el esquema (`db:types`). Evita tocar la base de datos a mano y
+mantener tipos manualmente. Scripts en `package.json` (`db:link`, `db:push`,
+`db:types`, `db:pull`, `db:diff`).
+
 ## Política de dependencias
 
 Antes de instalar **cualquier** dependencia nueva hay que responder:
