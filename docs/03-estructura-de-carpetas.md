@@ -17,10 +17,11 @@ nexus/
 ├── src/
 │   ├── main.tsx                   # Punto de entrada
 │   │
-│   ├── app/                       # Cascarón de la aplicación
-│   │   ├── App.tsx
-│   │   ├── providers/             # QueryClient, Theme, Auth, Router providers
-│   │   └── router/                # Definición de rutas + guards
+│   ├── app/                       # Cascarón de la aplicación (conoce la navegación)
+│   │   ├── layout/                # AppShell, Sidebar, BottomNav
+│   │   ├── pages/                 # Páginas del cascarón (Más, 404)
+│   │   ├── providers/             # QueryClient, Theme, ErrorBoundary, Auth, Router
+│   │   └── router/                # Rutas (ROUTES), navegación (NAV_ITEMS) y guards
 │   │
 │   ├── core/                      # SÓLO infraestructura (sin negocio)
 │   │   ├── auth/                  # Sesión, guardas de ruta, contexto de usuario
@@ -53,7 +54,8 @@ nexus/
 │   ├── shared/                    # Reutilizable SIN lógica de negocio
 │   │   ├── components/
 │   │   │   ├── ui/                # Primitivos shadcn/ui (Button, Input, Card…)
-│   │   │   └── layout/            # AppShell, Sidebar, BottomNav, PageHeader
+│   │   │   ├── layout/            # Primitivos de maquetación (PageHeader…)
+│   │   │   └── feedback/          # EmptyState y estados de UI reutilizables
 │   │   ├── hooks/                 # Hooks genéricos (useDebounce, useMediaQuery…)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas
@@ -92,6 +94,44 @@ features/workout/
 > No todas las features necesitan todas las subcarpetas. Se crean **cuando hacen
 > falta** (YAGNI). Una feature de sólo lectura como `analytics` puede no tener
 > `repositories` propios y componer datos de otras features vía sus barrels.
+
+## Por qué el shell vive en `app/` y no en `shared/`
+
+`AppShell`, `Sidebar` y `BottomNav` **conocen la navegación** de Nexus (rutas y
+módulos). Si vivieran en `shared/`, se crearía una dependencia invertida
+(`shared → app`) y `shared/` dejaría de ser genérico y reutilizable. Por eso:
+
+- **`app/layout/`** → shell de la aplicación (sabe de rutas).
+- **`shared/components/layout/`** → primitivos de maquetación reutilizables y
+  agnósticos (`PageHeader`), sin conocimiento de rutas.
+
+## Rutas y navegación
+
+`app/router/routes.ts` es la **única fuente de verdad** de las rutas;
+`app/router/navigation.ts` deriva de ella los elementos de navegación (etiqueta,
+icono, si es primario). Las URLs están en español, sin acentos ni `ñ`, para
+evitar problemas de codificación.
+
+| Ruta             | Módulo                               | Primario (móvil) |
+| ---------------- | ------------------------------------ | ---------------- |
+| `/`              | Dashboard                            | ✅               |
+| `/plan`          | Planning                             | ✅               |
+| `/entrenamiento` | Workout                              | ✅               |
+| `/nutricion`     | Nutrition                            | ✅               |
+| `/habitos`       | Habits                               | —                |
+| `/estudio`       | Study                                | —                |
+| `/sueno`         | Sleep                                | —                |
+| `/salud`         | Health                               | —                |
+| `/analiticas`    | Analytics                            | —                |
+| `/asistente`     | Assistant                            | —                |
+| `/ajustes`       | Settings                             | —                |
+| `/mas`           | Índice de módulos (navegación móvil) | ✅               |
+| `*`              | 404                                  | —                |
+
+**Navegación responsive** (mobile-first, ver [11 · UX/UI](./11-ux-ui-y-diseno.md)):
+barra inferior en móvil con los destinos primarios + «Más»; barra lateral en
+escritorio con todos los módulos. Las páginas de cada módulo se cargan con
+**lazy loading** desde el barrel de su feature.
 
 ## Reglas de importación
 

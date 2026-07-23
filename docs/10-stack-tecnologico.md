@@ -52,6 +52,30 @@ de modelos (por defecto, la **API de Claude** de Anthropic con los modelos más
 recientes). La clave del proveedor **nunca** vive en el cliente. La IA sólo
 interpreta y explica; ver [Decision Engine e IA](./06-decision-engine-e-ia.md).
 
+## Decisiones y dependencias adicionales justificadas
+
+Toda desviación del stack base o dependencia extra se registra aquí con su motivo.
+
+### Tailwind CSS fijado en v3 (`^3`)
+
+Existe Tailwind v4, pero se fija **v3** porque es la versión sobre la que el
+ecosistema de **shadcn/ui** está más asentado (configuración por
+`tailwind.config.ts`, `tailwindcss-animate`, variables HSL). Prioriza estabilidad
+de la base sobre novedad. Migrar a v4 es posible más adelante y requerirá su
+propio ADR (cambia el modelo de configuración a CSS-first).
+
+### `react-error-boundary` (Sprint 2)
+
+**Motivo:** React no ofrece _error boundaries_ con hooks; la única API nativa es
+un **componente de clase**, y la constitución prohíbe los Class Components.
+Esta librería (mínima y estándar de facto) permite cumplir ambas reglas: manejo
+de errores robusto **sin** escribir clases, con `FallbackComponent`, `onError` y
+`onReset`.
+
+**Alternativa descartada:** escribir un `ErrorBoundary` de clase propio —
+funcionaría sin dependencias, pero incumpliría explícitamente la regla de "sólo
+componentes funcionales".
+
 ## Política de dependencias
 
 Antes de instalar **cualquier** dependencia nueva hay que responder:
