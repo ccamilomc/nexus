@@ -1,33 +1,11 @@
-import { type AppError, createAppError } from '@/core/error'
-
+import { mapAuthError } from './auth.errors'
 import { authRepository } from './auth.repository'
 import type { Credentials, RegisterInput } from './auth.types'
 
 /**
  * Reglas de negocio de autenticación: orquesta el repositorio y traduce los
- * errores técnicos de Supabase a mensajes humanos (docs/07). Nunca toca la UI.
+ * errores técnicos a mensajes humanos (ver auth.errors.ts). Nunca toca la UI.
  */
-function mapAuthError(message: string | undefined): AppError {
-  const text = (message ?? '').toLowerCase()
-
-  if (text.includes('invalid login credentials')) {
-    return createAppError('auth', 'Correo o contraseña incorrectos.')
-  }
-  if (text.includes('email not confirmed')) {
-    return createAppError('auth', 'Confirma tu correo antes de iniciar sesión.')
-  }
-  if (text.includes('already registered') || text.includes('already been registered')) {
-    return createAppError('validation', 'Ese correo ya tiene una cuenta.')
-  }
-  if (text.includes('password')) {
-    return createAppError('validation', 'La contraseña no cumple los requisitos mínimos.')
-  }
-  if (text.includes('rate limit') || text.includes('too many')) {
-    return createAppError('unknown', 'Demasiados intentos. Espera un momento e inténtalo de nuevo.')
-  }
-  return createAppError('unknown')
-}
-
 export const authService = {
   async signIn(credentials: Credentials): Promise<void> {
     const { error } = await authRepository.signInWithPassword(credentials)
