@@ -3,8 +3,8 @@ import '@/styles/globals.css'
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
-import { App } from '@/app/App'
 import { AppProviders } from '@/app/providers/AppProviders'
+import { AppRouter } from '@/app/router/AppRouter'
 
 const rootElement = document.getElementById('root')
 
@@ -15,7 +15,7 @@ if (!rootElement) {
 createRoot(rootElement).render(
   <StrictMode>
     <AppProviders>
-      <App />
+      <AppRouter />
     </AppProviders>
   </StrictMode>,
 )

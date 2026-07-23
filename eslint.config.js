@@ -57,5 +57,99 @@ export default tseslint.config(
       'react-refresh/only-export-components': 'off',
     },
   },
+
+  // ─── Fronteras entre módulos (docs/03-estructura-de-carpetas.md) ───
+  // Estas reglas hacen cumplir la arquitectura de forma automática.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*'],
+              message:
+                'Una feature sólo se importa desde su barrel público: @/features/<nombre>. Dentro de la propia feature usa rutas relativas.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/shared/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features', '@/features/*', '@/features/*/*'],
+              message: 'shared/ debe ser genérico: no puede depender de features/.',
+            },
+            {
+              group: ['@/app', '@/app/*', '@/app/*/*'],
+              message: 'shared/ debe ser genérico: no puede depender de app/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/core/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features', '@/features/*', '@/features/*/*'],
+              message: 'core/ es infraestructura: no puede depender de features/.',
+            },
+            {
+              group: ['@/app', '@/app/*', '@/app/*/*'],
+              message: 'core/ es infraestructura: no puede depender de app/.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // El Decision Engine debe permanecer puro (ADR-0002).
+    files: ['src/decision-engine/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: 'El Decision Engine debe ser puro: sin React.' },
+            { name: 'zustand', message: 'El Decision Engine debe ser puro: sin estado de UI.' },
+          ],
+          patterns: [
+            {
+              group: [
+                'react-*',
+                '@/app',
+                '@/app/*',
+                '@/core',
+                '@/core/*',
+                '@/shared',
+                '@/shared/*',
+                '@/features',
+                '@/features/*',
+                '@supabase/*',
+                '@tanstack/*',
+              ],
+              message:
+                'El Decision Engine debe ser puro: sin React, Supabase ni dependencias de la aplicación (ADR-0002).',
+            },
+          ],
+        },
+      ],
+    },
+  },
   prettier,
 )
