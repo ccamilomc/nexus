@@ -123,6 +123,21 @@ El sistema debe funcionar completo aunque la IA se desactive
 - El `AiService` invoca una **Edge Function** (`ai-assistant`) que guarda la API
   key del proveedor y llama al modelo. La clave nunca toca el cliente.
 
+## Autenticación y protección de rutas
+
+La identidad es **infraestructura** (`core/auth/`); las pantallas de auth son la
+feature `features/auth/`. Las **guardas de ruta** viven en `app/router/` porque
+conocen el mapa de rutas.
+
+- **Supabase Auth** gestiona sesión, persistencia y refresco.
+- `AuthProvider` mantiene la sesión y escucha sus cambios; `useAuth` la expone con
+  las acciones `signIn` / `signUp` / `signOut` / `requestPasswordReset` /
+  `updatePassword`.
+- El router se divide en **públicas** (`RedirectIfAuth`: si hay sesión, va al
+  dashboard) y **protegidas** (`RequireAuth` → `AppShell`: sin sesión, va a login).
+- La protección en el cliente es **UX**; los datos siguen protegidos por **RLS**
+  en la base de datos (defensa real, ver [12 · Seguridad](./12-seguridad.md)).
+
 ## Gestión de estado
 
 Cuatro tipos de estado, cada uno con su herramienta. **Nunca se duplica ni se

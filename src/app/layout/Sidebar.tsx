@@ -1,5 +1,6 @@
 import { NavLink } from 'react-router-dom'
 
+import { UserMenu } from '@/app/layout/UserMenu'
 import { NAV_ITEMS } from '@/app/router/navigation'
 import { ROUTES } from '@/app/router/routes'
 import { ThemeToggle } from '@/core/theme'
@@ -38,7 +39,8 @@ export function Sidebar() {
         </ul>
       </nav>
 
-      <div className="shrink-0 border-t border-border p-3">
+      <div className="shrink-0 space-y-3 border-t border-border p-3">
+        <UserMenu />
         <ThemeToggle />
       </div>
     </aside>

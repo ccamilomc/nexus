@@ -4,9 +4,11 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { AppShell } from '@/app/layout/AppShell'
 import { MorePage } from '@/app/pages/MorePage'
 import { NotFoundPage } from '@/app/pages/NotFoundPage'
+import { RedirectIfAuth, RequireAuth } from '@/app/router/guards'
 import { ROUTES } from '@/app/router/routes'
+import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from '@/features/auth'
 
-// Cada módulo se carga bajo demanda desde el barrel público de su feature.
+// Las pantallas de auth van eager (son la entrada). Los módulos, perezosos.
 const DashboardPage = lazy(async () => ({
   default: (await import('@/features/dashboard')).DashboardPage,
 }))
@@ -45,20 +47,33 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppShell />}>
-          <Route path={ROUTES.dashboard} element={<DashboardPage />} />
-          <Route path={ROUTES.planning} element={<PlanningPage />} />
-          <Route path={ROUTES.workout} element={<WorkoutPage />} />
-          <Route path={ROUTES.nutrition} element={<NutritionPage />} />
-          <Route path={ROUTES.habits} element={<HabitsPage />} />
-          <Route path={ROUTES.study} element={<StudyPage />} />
-          <Route path={ROUTES.sleep} element={<SleepPage />} />
-          <Route path={ROUTES.health} element={<HealthPage />} />
-          <Route path={ROUTES.analytics} element={<AnalyticsPage />} />
-          <Route path={ROUTES.assistant} element={<AssistantPage />} />
-          <Route path={ROUTES.settings} element={<SettingsPage />} />
-          <Route path={ROUTES.more} element={<MorePage />} />
-          <Route path="*" element={<NotFoundPage />} />
+        {/* Públicas: sólo accesibles sin sesión */}
+        <Route element={<RedirectIfAuth />}>
+          <Route path={ROUTES.login} element={<LoginPage />} />
+          <Route path={ROUTES.register} element={<RegisterPage />} />
+          <Route path={ROUTES.forgotPassword} element={<ForgotPasswordPage />} />
+        </Route>
+
+        {/* Recuperación: se abre desde el enlace del correo */}
+        <Route path={ROUTES.resetPassword} element={<ResetPasswordPage />} />
+
+        {/* Protegidas: requieren sesión */}
+        <Route element={<RequireAuth />}>
+          <Route element={<AppShell />}>
+            <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+            <Route path={ROUTES.planning} element={<PlanningPage />} />
+            <Route path={ROUTES.workout} element={<WorkoutPage />} />
+            <Route path={ROUTES.nutrition} element={<NutritionPage />} />
+            <Route path={ROUTES.habits} element={<HabitsPage />} />
+            <Route path={ROUTES.study} element={<StudyPage />} />
+            <Route path={ROUTES.sleep} element={<SleepPage />} />
+            <Route path={ROUTES.health} element={<HealthPage />} />
+            <Route path={ROUTES.analytics} element={<AnalyticsPage />} />
+            <Route path={ROUTES.assistant} element={<AssistantPage />} />
+            <Route path={ROUTES.settings} element={<SettingsPage />} />
+            <Route path={ROUTES.more} element={<MorePage />} />
+            <Route path="*" element={<NotFoundPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
