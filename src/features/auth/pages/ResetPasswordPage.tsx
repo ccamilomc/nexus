@@ -7,7 +7,7 @@ import { ROUTES } from '@/app/router/routes'
 import { useAuth } from '@/core/auth'
 import { createAppError, isAppError } from '@/core/error'
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { PasswordInput } from '@/shared/components/ui/password-input'
 
 import { AuthShell } from '../components/AuthShell'
 import { FormAlert } from '../components/FormAlert'
@@ -60,9 +60,8 @@ export function ResetPasswordPage() {
         {formError ? <FormAlert>{formError}</FormAlert> : null}
 
         <FormField id="password" label="Nueva contraseña" error={errors.password?.message}>
-          <Input
+          <PasswordInput
             id="password"
-            type="password"
             autoComplete="new-password"
             aria-invalid={Boolean(errors.password)}
             {...register('password')}
@@ -70,9 +69,8 @@ export function ResetPasswordPage() {
         </FormField>
 
         <FormField id="confirm" label="Repite la contraseña" error={errors.confirm?.message}>
-          <Input
+          <PasswordInput
             id="confirm"
-            type="password"
             autoComplete="new-password"
             aria-invalid={Boolean(errors.confirm)}
             {...register('confirm')}
