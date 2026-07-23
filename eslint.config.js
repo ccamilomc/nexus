@@ -19,6 +19,8 @@ export default tseslint.config(
       'prettier.config.cjs',
       'commitlint.config.cjs',
       'eslint.config.js',
+      // Generado por Supabase (npm run db:types).
+      'src/core/supabase/database.types.ts',
     ],
   },
   js.configs.recommended,
