@@ -1,6 +1,8 @@
 import { z } from 'zod'
 
-import { Constants } from '@/core/supabase'
+// Del módulo generado, no del barrel: evita arrastrar el cliente de Supabase
+// (y su lectura de env) a una validación pura. Ver workout.constants.ts.
+import { Constants } from '@/core/supabase/database.types'
 
 const MAX_REPS = 500
 const MAX_WEIGHT_KG = 1000

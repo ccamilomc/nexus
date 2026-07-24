@@ -1,4 +1,8 @@
-import { Constants, type Enums } from '@/core/supabase'
+import type { Enums } from '@/core/supabase'
+// `Constants` (valor en runtime) se importa del módulo generado, no del barrel:
+// el barrel arrastra el cliente de Supabase (y su lectura de env), y estos datos
+// son puros. Así los tests no necesitan variables de entorno (sin red ni BD).
+import { Constants } from '@/core/supabase/database.types'
 
 /** Entrenamientos que muestra el historial. Se ampliará con paginación. */
 export const SESSION_HISTORY_LIMIT = 20

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Constants } from '@/core/supabase'
+import { Constants } from '@/core/supabase/database.types'
 
 import { EQUIPMENT_OPTIONS, MUSCLE_GROUP_OPTIONS } from './workout.constants'
 
