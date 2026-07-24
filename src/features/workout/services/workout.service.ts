@@ -1,14 +1,21 @@
 import { toAppError } from '@/core/error'
 
 import { workoutRepository } from '../repositories/workout.repository'
-import type { CreateExerciseValues } from '../schemas/workout.schema'
+import type {
+  CreateExerciseValues,
+  CreateRoutineValues,
+  RoutineExerciseTargetsValues,
+} from '../schemas/workout.schema'
 import type {
   Exercise,
   LogSetInput,
+  Routine,
+  RoutineDetail,
   SessionDetail,
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
+import { buildRoutineDetail } from '../utils/routine-detail'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 
 /** Compone una sesión con sus series agrupadas y su resumen calculado. */
@@ -151,6 +158,94 @@ export const workoutService = {
       return sessions.map((session) =>
         toSessionDetail(session, setsBySession.get(session.id) ?? []),
       )
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  // ─── Rutinas ────────────────────────────────────────────────────────────
+  /** Rutinas del usuario, de la más reciente a la más antigua. */
+  async getRoutines(userId: string): Promise<Routine[]> {
+    try {
+      return await workoutRepository.listRoutines(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async createRoutine(userId: string, values: CreateRoutineValues): Promise<Routine> {
+    try {
+      return await workoutRepository.insertRoutine({
+        user_id: userId,
+        name: values.name,
+        ...(values.goal ? { goal: values.goal } : {}),
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Rutina con sus días y ejercicios prescritos, o `null` si no existe. */
+  async getRoutineDetail(routineId: string): Promise<RoutineDetail | null> {
+    try {
+      const routine = await workoutRepository.findRoutine(routineId)
+      if (!routine) return null
+
+      const days = await workoutRepository.listDays(routineId)
+      const exercises = await workoutRepository.listExercisesByDays(days.map(({ id }) => id))
+      return buildRoutineDetail(routine, days, exercises)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async addRoutineDay(routineId: string, name: string): Promise<void> {
+    try {
+      await workoutRepository.insertRoutineDay(routineId, name)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Prescribe un ejercicio en un día, con sus objetivos opcionales. */
+  async addRoutineExercise(
+    dayId: string,
+    exerciseId: string,
+    targets: RoutineExerciseTargetsValues,
+  ): Promise<void> {
+    try {
+      await workoutRepository.insertRoutineExercise({
+        routine_day_id: dayId,
+        exercise_id: exerciseId,
+        ...(targets.targetSets !== undefined ? { target_sets: targets.targetSets } : {}),
+        ...(targets.targetReps !== undefined ? { target_reps: targets.targetReps } : {}),
+        ...(targets.targetWeightKg !== undefined ? { target_weight: targets.targetWeightKg } : {}),
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async removeRoutineDay(dayId: string): Promise<void> {
+    try {
+      await workoutRepository.deleteRoutineDay(dayId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async removeRoutineExercise(routineExerciseId: string): Promise<void> {
+    try {
+      await workoutRepository.deleteRoutineExercise(routineExerciseId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Borra la rutina (borrado lógico: `deleted_at`, para sincronizarlo offline). */
+  async deleteRoutine(routineId: string): Promise<void> {
+    try {
+      await workoutRepository.updateRoutine(routineId, { deleted_at: new Date().toISOString() })
     } catch (error) {
       throw toAppError(error)
     }

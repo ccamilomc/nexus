@@ -12,6 +12,9 @@ import type { Tables } from '@/core/supabase'
 export type Exercise = Tables<'exercises'>
 export type WorkoutSession = Tables<'workout_sessions'>
 export type WorkoutSet = Tables<'workout_sets'>
+export type Routine = Tables<'routines'>
+export type RoutineDay = Tables<'routine_days'>
+export type RoutineExercise = Tables<'routine_exercises'>
 
 /** Datos del ejercicio que acompañan a una serie (llegan por join). */
 export type ExerciseRef = Pick<Exercise, 'id' | 'name' | 'muscle_group' | 'equipment'>
@@ -53,4 +56,24 @@ export interface LogSetInput {
   readonly exerciseId: string
   readonly reps: number
   readonly weightKg: number
+}
+
+// ─── Rutinas ────────────────────────────────────────────────────────────────
+// Una rutina es una plantilla: días lógicos (Push, Pull…) y, dentro de cada uno,
+// ejercicios prescritos con sus objetivos. No es lo que se entrena, es lo que se
+// planea entrenar (ver docs/04-modelo-de-datos.md).
+
+/** Ejercicio prescrito junto a los datos del ejercicio (llegan por join). */
+export type RoutineExerciseWithExercise = RoutineExercise & { readonly exercise: ExerciseRef }
+
+/** Un día de la rutina con sus ejercicios prescritos en orden. */
+export interface RoutineDayDetail {
+  readonly day: RoutineDay
+  readonly exercises: readonly RoutineExerciseWithExercise[]
+}
+
+/** Rutina con sus días y, dentro de cada día, sus ejercicios. */
+export interface RoutineDetail {
+  readonly routine: Routine
+  readonly days: readonly RoutineDayDetail[]
 }

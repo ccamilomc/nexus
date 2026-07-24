@@ -5,7 +5,7 @@ import { AppShell } from '@/app/layout/AppShell'
 import { MorePage } from '@/app/pages/MorePage'
 import { NotFoundPage } from '@/app/pages/NotFoundPage'
 import { RedirectIfAuth, RequireAuth } from '@/app/router/guards'
-import { ROUTES } from '@/app/router/routes'
+import { ROUTES, WORKOUT_ROUTINE_DETAIL_PATTERN } from '@/app/router/routes'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from '@/features/auth'
 
 // Las pantallas de auth van eager (son la entrada). Los módulos, perezosos.
@@ -26,6 +26,12 @@ const WorkoutHistoryPage = lazy(async () => ({
 }))
 const ExercisesPage = lazy(async () => ({
   default: (await import('@/features/workout')).ExercisesPage,
+}))
+const RoutinesPage = lazy(async () => ({
+  default: (await import('@/features/workout')).RoutinesPage,
+}))
+const RoutineDetailPage = lazy(async () => ({
+  default: (await import('@/features/workout')).RoutineDetailPage,
 }))
 const NutritionPage = lazy(async () => ({
   default: (await import('@/features/nutrition')).NutritionPage,
@@ -73,6 +79,8 @@ export function AppRouter() {
             <Route path={ROUTES.planning} element={<PlanningPage />} />
             <Route path={ROUTES.workout} element={<WorkoutLayout />}>
               <Route index element={<TrainPage />} />
+              <Route path={ROUTES.workoutRoutines} element={<RoutinesPage />} />
+              <Route path={WORKOUT_ROUTINE_DETAIL_PATTERN} element={<RoutineDetailPage />} />
               <Route path={ROUTES.workoutHistory} element={<WorkoutHistoryPage />} />
               <Route path={ROUTES.workoutExercises} element={<ExercisesPage />} />
             </Route>

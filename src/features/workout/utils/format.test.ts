@@ -4,6 +4,7 @@ import {
   formatElapsed,
   formatMinutes,
   formatSessionDate,
+  formatTargets,
   formatVolume,
   formatWeight,
 } from './format'
@@ -57,6 +58,27 @@ describe('formatVolume', () => {
   it('separa los miles como manda el español (a partir de cinco cifras)', () => {
     expect(formatVolume(2450)).toBe('2450 kg')
     expect(formatVolume(12450)).toBe('12.450 kg')
+  })
+})
+
+describe('formatTargets', () => {
+  it('combina series y repeticiones', () => {
+    expect(formatTargets(3, 10, null)).toBe('3×10')
+  })
+
+  it('añade el peso cuando lo hay', () => {
+    expect(formatTargets(3, 10, 60)).toBe('3×10 · 60 kg')
+    expect(formatTargets(4, 8, 0)).toBe('4×8 · peso corporal')
+  })
+
+  it('describe series o repeticiones sueltas', () => {
+    expect(formatTargets(3, null, null)).toBe('3 series')
+    expect(formatTargets(1, null, null)).toBe('1 serie')
+    expect(formatTargets(null, 12, null)).toBe('12 reps')
+  })
+
+  it('avisa cuando no hay ningún objetivo', () => {
+    expect(formatTargets(null, null, null)).toBe('Sin objetivos')
   })
 })
 
