@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js'
 import { type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react'
 
+import { env } from '@/core/config/env'
 import { logger } from '@/core/logger'
 
 import { AuthContext } from './auth.context'
@@ -23,6 +24,17 @@ export function AuthProvider({ children }: PropsWithChildren) {
       .getSession()
       .then(({ data }) => {
         if (!active) return
+        // Auto-login de desarrollo: sin sesión y con credenciales de prueba,
+        // inicia sesión solo. onAuthStateChange actualizará el estado.
+        if (!data.session && env.devUser) {
+          authService.signIn(env.devUser).catch((error: unknown) => {
+            logger.warn('Auto-login de desarrollo falló', {
+              detail: error instanceof Error ? error.message : String(error),
+            })
+            if (active) setStatus('unauthenticated')
+          })
+          return
+        }
         setSession(data.session)
         setStatus(data.session ? 'authenticated' : 'unauthenticated')
       })
