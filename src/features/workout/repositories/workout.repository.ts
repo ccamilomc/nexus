@@ -23,6 +23,13 @@ export const workoutRepository = {
     return data ?? []
   },
 
+  async insertExercise(input: TablesInsert<'exercises'>): Promise<Exercise> {
+    const { data, error } = await supabase.from('exercises').insert(input).select('*').single()
+
+    if (error) throw error
+    return data
+  },
+
   async findActiveSession(userId: string): Promise<WorkoutSession | null> {
     const { data, error } = await supabase
       .from('workout_sessions')
