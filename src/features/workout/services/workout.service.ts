@@ -1,6 +1,7 @@
 import { toAppError } from '@/core/error'
 
 import { workoutRepository } from '../repositories/workout.repository'
+import type { CreateExerciseValues } from '../schemas/workout.schema'
 import type {
   Exercise,
   LogSetInput,
@@ -24,6 +25,22 @@ export const workoutService = {
   async getExercises(): Promise<Exercise[]> {
     try {
       return await workoutRepository.listExercises()
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Crea un ejercicio propio del usuario (queda como `is_custom`). */
+  async createExercise(userId: string, values: CreateExerciseValues): Promise<Exercise> {
+    try {
+      return await workoutRepository.insertExercise({
+        user_id: userId,
+        name: values.name,
+        muscle_group: values.muscleGroup,
+        equipment: values.equipment,
+        // Sólo se envía si tiene contenido: una nota vacía es «sin nota», no «''».
+        ...(values.instructions ? { instructions: values.instructions } : {}),
+      })
     } catch (error) {
       throw toAppError(error)
     }

@@ -2,10 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
-import { type AppError, createAppError } from '@/core/error'
+import type { AppError } from '@/core/error'
 
 import { workoutService } from '../services/workout.service'
 import type { SessionDetail } from '../types/workout.types'
+import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
 /**
@@ -63,13 +64,4 @@ export function useDiscardSession() {
     mutationFn: (sessionId) => workoutService.discardSession(sessionId),
     onSuccess: refreshSessions,
   })
-}
-
-/**
- * Las escrituras necesitan un usuario. Las rutas ya están protegidas, así que
- * llegar aquí sin sesión sólo puede significar que caducó.
- */
-function requireUserId(userId: string | undefined): string {
-  if (!userId) throw createAppError('auth')
-  return userId
 }
