@@ -1,8 +1,8 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Fase 0 (Diseño). Pendiente de aprobación del usuario.
+> **Estado:** Sprint 6 (Workout) en curso. Sprints 0–5 terminados.
 > **Versión del diseño:** 1.0
-> **Fecha:** 2026-07-22
+> **Fecha:** 2026-07-24
 
 Esta carpeta es la **fuente de verdad** de la arquitectura de Nexus. La regla es
 absoluta: **la documentación existe antes que el código** y nunca puede quedar

@@ -1,5 +1,8 @@
 import type { Enums } from '@/core/supabase'
 
+/** Entrenamientos que muestra el historial. Se ampliará con paginación. */
+export const SESSION_HISTORY_LIMIT = 20
+
 export const MUSCLE_GROUP_LABELS: Record<Enums<'muscle_group'>, string> = {
   chest: 'Pecho',
   back: 'Espalda',

@@ -1,0 +1,14 @@
+/**
+ * Claves de TanStack Query del módulo de entrenamiento.
+ *
+ * Jerárquicas a propósito: invalidar `sessions()` alcanza a la sesión en curso
+ * y al historial sin tocar el catálogo de ejercicios, que rara vez cambia.
+ */
+export const workoutKeys = {
+  all: ['workout'] as const,
+  exercises: () => [...workoutKeys.all, 'exercises'] as const,
+  sessions: () => [...workoutKeys.all, 'sessions'] as const,
+  activeSession: (userId: string | undefined) =>
+    [...workoutKeys.sessions(), 'active', userId] as const,
+  history: (userId: string | undefined) => [...workoutKeys.sessions(), 'history', userId] as const,
+}

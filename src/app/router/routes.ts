@@ -12,6 +12,8 @@ export const ROUTES = {
   dashboard: '/',
   planning: '/plan',
   workout: '/entrenamiento',
+  workoutHistory: '/entrenamiento/historial',
+  workoutExercises: '/entrenamiento/ejercicios',
   nutrition: '/nutricion',
   habits: '/habitos',
   study: '/estudio',
