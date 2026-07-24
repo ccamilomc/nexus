@@ -12,13 +12,16 @@ interface WorkoutTab {
 
 const TABS: readonly WorkoutTab[] = [
   { to: ROUTES.workout, label: 'Entrenar', end: true },
+  { to: ROUTES.workoutRoutines, label: 'Rutinas', end: false },
   { to: ROUTES.workoutHistory, label: 'Historial', end: false },
   { to: ROUTES.workoutExercises, label: 'Ejercicios', end: false },
 ]
 
 function tabClassName({ isActive }: { isActive: boolean }): string {
   return cn(
-    'block rounded-md px-3 py-2 text-center text-sm font-medium transition-colors',
+    // Compacto en móvil para que las cuatro pestañas quepan sin desbordar;
+    // holgado a partir de sm. `truncate` es una red de seguridad.
+    'block truncate rounded-md px-2 py-2 text-center text-xs font-medium transition-colors sm:px-3 sm:text-sm',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     isActive
       ? 'bg-background text-foreground shadow-sm'
@@ -32,7 +35,7 @@ export function WorkoutNav() {
     <nav aria-label="Secciones de entrenamiento" className="mb-6">
       <ul className="flex gap-1 rounded-lg bg-muted p-1">
         {TABS.map(({ to, label, end }) => (
-          <li key={to} className="flex-1">
+          <li key={to} className="min-w-0 flex-1">
             <NavLink to={to} end={end} className={tabClassName}>
               {label}
             </NavLink>

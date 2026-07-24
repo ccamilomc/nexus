@@ -1,4 +1,6 @@
 export { ExercisesPage } from './pages/ExercisesPage'
+export { RoutineDetailPage } from './pages/RoutineDetailPage'
+export { RoutinesPage } from './pages/RoutinesPage'
 export { TrainPage } from './pages/TrainPage'
 export { WorkoutHistoryPage } from './pages/WorkoutHistoryPage'
 export { WorkoutLayout } from './pages/WorkoutLayout'

@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { createExerciseSchema, logSetSchema } from './workout.schema'
+import {
+  createExerciseSchema,
+  createRoutineSchema,
+  logSetSchema,
+  routineExerciseTargetsSchema,
+} from './workout.schema'
 
 describe('logSetSchema', () => {
   it('acepta una serie válida', () => {
@@ -42,5 +47,37 @@ describe('createExerciseSchema', () => {
   it('rechaza un grupo muscular o equipo fuera del catálogo de enums', () => {
     expect(createExerciseSchema.safeParse({ ...valid, muscleGroup: 'brazos' }).success).toBe(false)
     expect(createExerciseSchema.safeParse({ ...valid, equipment: 'trx' }).success).toBe(false)
+  })
+})
+
+describe('createRoutineSchema', () => {
+  it('acepta una rutina con nombre y sin objetivo', () => {
+    expect(createRoutineSchema.safeParse({ name: 'Full body' }).success).toBe(true)
+  })
+
+  it('recorta el nombre y rechaza el vacío', () => {
+    expect(createRoutineSchema.safeParse({ name: '  Push  ' }).data?.name).toBe('Push')
+    expect(createRoutineSchema.safeParse({ name: '  ' }).success).toBe(false)
+  })
+})
+
+describe('routineExerciseTargetsSchema', () => {
+  it('acepta objetivos vacíos (todos opcionales)', () => {
+    expect(routineExerciseTargetsSchema.safeParse({}).success).toBe(true)
+  })
+
+  it('acepta cifras válidas, incluido peso cero', () => {
+    const result = routineExerciseTargetsSchema.safeParse({
+      targetSets: 3,
+      targetReps: 10,
+      targetWeightKg: 0,
+    })
+
+    expect(result.success).toBe(true)
+  })
+
+  it('rechaza series con decimales o peso negativo', () => {
+    expect(routineExerciseTargetsSchema.safeParse({ targetSets: 3.5 }).success).toBe(false)
+    expect(routineExerciseTargetsSchema.safeParse({ targetWeightKg: -5 }).success).toBe(false)
   })
 })

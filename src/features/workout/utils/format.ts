@@ -43,6 +43,28 @@ export function formatVolume(volumeKg: number): string {
   return `${decimalFormatter.format(volumeKg)} kg`
 }
 
+/**
+ * Objetivos de un ejercicio prescrito: `3×10 · 60 kg`.
+ *
+ * Cada objetivo es opcional; se muestra sólo lo que hay. Sin ninguno, la rutina
+ * sólo indica «haz este ejercicio».
+ */
+export function formatTargets(
+  sets: number | null,
+  reps: number | null,
+  weightKg: number | null,
+): string {
+  const parts: string[] = []
+
+  if (sets !== null && reps !== null) parts.push(`${sets}×${reps}`)
+  else if (sets !== null) parts.push(`${sets} ${sets === 1 ? 'serie' : 'series'}`)
+  else if (reps !== null) parts.push(`${reps} reps`)
+
+  if (weightKg !== null) parts.push(formatWeight(weightKg))
+
+  return parts.length > 0 ? parts.join(' · ') : 'Sin objetivos'
+}
+
 function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&

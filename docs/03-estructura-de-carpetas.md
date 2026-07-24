@@ -115,6 +115,13 @@ módulos). Si vivieran en `shared/`, se crearía una dependencia invertida
 icono, si es primario). Las URLs están en español, sin acentos ni `ñ`, para
 evitar problemas de codificación.
 
+Las rutas con parámetro (p. ej. el detalle de una rutina,
+`/entrenamiento/rutinas/:routineId`) también viven en `routes.ts`: el **patrón**
+para el router (`WORKOUT_ROUTINE_DETAIL_PATTERN`) y una **función** que construye
+la URL concreta (`workoutRoutinePath(id)`). Así ningún componente arma rutas a
+mano. El módulo de entrenamiento se organiza en sub-pestañas
+(`Entrenar`, `Rutinas`, `Historial`, `Ejercicios`) bajo `/entrenamiento`.
+
 | Ruta             | Módulo                               | Primario (móvil) |
 | ---------------- | ------------------------------------ | ---------------- |
 | `/`              | Dashboard                            | ✅               |

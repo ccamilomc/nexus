@@ -50,3 +50,43 @@ export const createExerciseSchema = z.object({
 })
 
 export type CreateExerciseValues = z.infer<typeof createExerciseSchema>
+
+const MAX_GOAL_LENGTH = 200
+const MAX_DAY_NAME_LENGTH = 60
+const MAX_TARGET_SETS = 20
+const MAX_TARGET_REPS = 100
+
+/** Datos de una rutina nueva. El objetivo es texto libre y opcional. */
+export const createRoutineSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Escribe un nombre.')
+    .max(MAX_NAME_LENGTH, `Máximo ${MAX_NAME_LENGTH} caracteres.`),
+  goal: z.string().trim().max(MAX_GOAL_LENGTH, `Máximo ${MAX_GOAL_LENGTH} caracteres.`).optional(),
+})
+
+export type CreateRoutineValues = z.infer<typeof createRoutineSchema>
+
+/** Un día dentro de una rutina (p. ej. «Empuje»). */
+export const addRoutineDaySchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(1, 'Escribe un nombre.')
+    .max(MAX_DAY_NAME_LENGTH, `Máximo ${MAX_DAY_NAME_LENGTH} caracteres.`),
+})
+
+export type AddRoutineDayValues = z.infer<typeof addRoutineDaySchema>
+
+/**
+ * Objetivos de un ejercicio prescrito. Todos opcionales: una rutina puede sólo
+ * listar ejercicios sin fijar cifras. Un peso de cero es válido (peso corporal).
+ */
+export const routineExerciseTargetsSchema = z.object({
+  targetSets: z.number().int('Sin decimales.').min(1, 'Mínimo 1.').max(MAX_TARGET_SETS).optional(),
+  targetReps: z.number().int('Sin decimales.').min(1, 'Mínimo 1.').max(MAX_TARGET_REPS).optional(),
+  targetWeightKg: z.number().min(0, 'No puede ser negativo.').max(MAX_WEIGHT_KG).optional(),
+})
+
+export type RoutineExerciseTargetsValues = z.infer<typeof routineExerciseTargetsSchema>

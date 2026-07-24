@@ -14,6 +14,7 @@ export const ROUTES = {
   workout: '/entrenamiento',
   workoutHistory: '/entrenamiento/historial',
   workoutExercises: '/entrenamiento/ejercicios',
+  workoutRoutines: '/entrenamiento/rutinas',
   nutrition: '/nutricion',
   habits: '/habitos',
   study: '/estudio',
@@ -26,3 +27,11 @@ export const ROUTES = {
 } as const
 
 export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
+
+/** Patrón de ruta del detalle de una rutina (con parámetro), para el router. */
+export const WORKOUT_ROUTINE_DETAIL_PATTERN = `${ROUTES.workoutRoutines}/:routineId`
+
+/** Ruta al detalle de una rutina concreta. */
+export function workoutRoutinePath(routineId: string): string {
+  return `${ROUTES.workoutRoutines}/${routineId}`
+}
