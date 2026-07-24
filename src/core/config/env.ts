@@ -8,6 +8,9 @@ import { z } from 'zod'
 const envSchema = z.object({
   VITE_SUPABASE_URL: z.string().url(),
   VITE_SUPABASE_ANON_KEY: z.string().min(1),
+  // Interruptor SÓLO de desarrollo: puentea el login para revisar pantallas
+  // protegidas sin iniciar sesión. Debe estar apagado en producción.
+  VITE_AUTH_DISABLED: z.string().optional(),
 })
 
 const parsed = envSchema.safeParse(import.meta.env)
@@ -22,4 +25,6 @@ if (!parsed.success) {
 export const env = {
   supabaseUrl: parsed.data.VITE_SUPABASE_URL,
   supabaseAnonKey: parsed.data.VITE_SUPABASE_ANON_KEY,
+  /** Puenteo de autenticación para desarrollo. Nunca `true` en producción. */
+  authDisabled: parsed.data.VITE_AUTH_DISABLED === 'true',
 } as const

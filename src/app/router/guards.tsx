@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/core/auth'
+import { env } from '@/core/config/env'
 
 import { ROUTES } from './routes'
 
@@ -20,6 +21,9 @@ function FullScreenLoader() {
 export function RequireAuth() {
   const { status } = useAuth()
   const location = useLocation()
+
+  // Puenteo de desarrollo: permite ver las rutas protegidas sin sesión.
+  if (env.authDisabled) return <Outlet />
 
   if (status === 'loading') return <FullScreenLoader />
   if (status === 'unauthenticated') {
