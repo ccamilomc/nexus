@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js'
 import { type PropsWithChildren, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { env } from '@/core/config/env'
+import { createAppError, isAppError } from '@/core/error'
 import { logger } from '@/core/logger'
 
 import { AuthContext } from './auth.context'
@@ -25,14 +26,32 @@ export function AuthProvider({ children }: PropsWithChildren) {
       .then(({ data }) => {
         if (!active) return
         // Auto-login de desarrollo: sin sesión y con credenciales de prueba,
-        // inicia sesión solo. onAuthStateChange actualizará el estado.
+        // entra solo; si la cuenta de prueba no existe, la crea.
+        // onAuthStateChange actualizará el estado al haber sesión.
         if (!data.session && env.devUser) {
-          authService.signIn(env.devUser).catch((error: unknown) => {
-            logger.warn('Auto-login de desarrollo falló', {
-              detail: error instanceof Error ? error.message : String(error),
+          const credentials = env.devUser
+
+          authService
+            .signIn(credentials)
+            .catch(() =>
+              authService.signUp(credentials).then(({ needsConfirmation }) => {
+                if (needsConfirmation) {
+                  throw createAppError(
+                    'auth',
+                    'La cuenta de prueba necesita confirmar el correo. Desactiva "Confirm email" en Supabase.',
+                  )
+                }
+              }),
+            )
+            .catch((error: unknown) => {
+              const detail = isAppError(error)
+                ? `${error.code}: ${error.message}`
+                : error instanceof Error
+                  ? error.message
+                  : String(error)
+              logger.warn(`Auto-login de desarrollo falló — ${detail}`)
+              if (active) setStatus('unauthenticated')
             })
-            if (active) setStatus('unauthenticated')
-          })
           return
         }
         setSession(data.session)
