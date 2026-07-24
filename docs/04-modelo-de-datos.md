@@ -121,6 +121,24 @@ erDiagram
     exercises ||--o{ workout_sets : de
 ```
 
+### Los ejercicios de una sesión se derivan de sus series
+
+No existe una tabla intermedia entre `workout_sessions` y `exercises`: **un
+ejercicio forma parte del entrenamiento porque tiene series registradas**. La
+lista de ejercicios de una sesión se obtiene agrupando sus `workout_sets`.
+
+Ventajas: no hay dos sitios donde consultar lo mismo (ni un estado
+"ejercicio añadido pero vacío" que mantener sincronizado), y borrar la última
+serie de un ejercicio lo quita de la sesión sin dejar filas huérfanas.
+
+Consecuencia asumida: elegir un ejercicio y todavía no registrar ninguna serie
+es un estado **sólo de la interfaz**; si se recarga la página, se pierde. Es el
+comportamiento correcto: un ejercicio sin series no se hizo.
+
+`set_number` conserva el orden de registro y **nunca se reutiliza** (si se borra
+una serie, la siguiente sigue numerando hacia arriba). La numeración que ve el
+usuario —"Serie 1", "Serie 2"— es posicional y se calcula al mostrar.
+
 ## Nutrition (económica)
 
 - **foods**: catálogo (global o personal) con macros por porción **y

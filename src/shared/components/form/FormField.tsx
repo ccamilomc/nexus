@@ -1,15 +1,17 @@
 import { cloneElement, isValidElement, type PropsWithChildren, type ReactElement } from 'react'
 
 import { Label } from '@/shared/components/ui/label'
+import { cn } from '@/shared/lib/utils'
 
 interface FormFieldProps extends PropsWithChildren {
   readonly id: string
   readonly label: string
   readonly error?: string | undefined
+  readonly className?: string
 }
 
 /** Campo de formulario: etiqueta + control + mensaje de error accesible. */
-export function FormField({ id, label, error, children }: FormFieldProps) {
+export function FormField({ id, label, error, className, children }: FormFieldProps) {
   const errorId = `${id}-error`
 
   // Enlaza el control con su mensaje de error para lectores de pantalla.
@@ -21,7 +23,7 @@ export function FormField({ id, label, error, children }: FormFieldProps) {
       : children
 
   return (
-    <div className="space-y-1.5">
+    <div className={cn('space-y-1.5', className)}>
       <Label htmlFor={id}>{label}</Label>
       {control}
       {error ? (

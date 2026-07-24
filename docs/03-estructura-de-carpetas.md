@@ -56,7 +56,9 @@ nexus/
 │   │   ├── components/
 │   │   │   ├── ui/                # Primitivos shadcn/ui (Button, Input, Card…)
 │   │   │   ├── layout/            # Primitivos de maquetación (PageHeader…)
-│   │   │   └── feedback/          # EmptyState y estados de UI reutilizables
+│   │   │   ├── form/              # Campos de formulario (FormField)
+│   │   │   └── feedback/          # Estados de UI: EmptyState, Skeleton,
+│   │   │                          # LoadFailure, FormAlert
 │   │   ├── hooks/                 # Hooks genéricos (useDebounce, useMediaQuery…)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas
