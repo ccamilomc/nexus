@@ -42,6 +42,9 @@ export const createExerciseSchema = z.object({
     .max(MAX_NAME_LENGTH, `Máximo ${MAX_NAME_LENGTH} caracteres.`),
   muscleGroup: z.enum(Constants.public.Enums.muscle_group),
   equipment: z.enum(Constants.public.Enums.equipment),
+  // Otros grupos que el ejercicio también trabaja. El primario nunca se incluye
+  // (lo garantiza el service); aquí basta con validar que son grupos válidos.
+  secondaryMuscles: z.array(z.enum(Constants.public.Enums.muscle_group)).optional(),
   instructions: z
     .string()
     .trim()

@@ -19,6 +19,11 @@ import { isForeignKeyViolation } from '../utils/postgrest-error'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 
+/** Músculos secundarios sin el primario: un grupo no es secundario de sí mismo. */
+function secondaryMuscles(values: CreateExerciseValues) {
+  return (values.secondaryMuscles ?? []).filter((muscle) => muscle !== values.muscleGroup)
+}
+
 /** Compone una sesión con sus series agrupadas y su resumen calculado. */
 function toSessionDetail(
   session: WorkoutSession,
@@ -46,6 +51,7 @@ export const workoutService = {
         name: values.name,
         muscle_group: values.muscleGroup,
         equipment: values.equipment,
+        secondary_muscles: secondaryMuscles(values),
         // Sólo se envía si tiene contenido: una nota vacía es «sin nota», no «''».
         ...(values.instructions ? { instructions: values.instructions } : {}),
       })
@@ -65,6 +71,7 @@ export const workoutService = {
         name: values.name,
         muscle_group: values.muscleGroup,
         equipment: values.equipment,
+        secondary_muscles: secondaryMuscles(values),
         instructions: values.instructions ?? null,
       })
     } catch (error) {

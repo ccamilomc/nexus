@@ -29,6 +29,10 @@ export const EQUIPMENT_LABELS: Record<Enums<'equipment'>, string> = {
   kettlebell: 'Kettlebell',
   band: 'Banda',
   bodyweight: 'Peso corporal',
+  suspension: 'Suspensión (TRX)',
+  medicine_ball: 'Balón medicinal',
+  plate: 'Disco',
+  cardio_machine: 'Máquina de cardio',
 }
 
 export interface EnumOption<T extends string> {
