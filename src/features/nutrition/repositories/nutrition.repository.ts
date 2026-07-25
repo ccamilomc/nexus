@@ -12,7 +12,7 @@ import type {
 
 /** Alimento con lo que la interfaz necesita para calcular y mostrar macros. */
 const FOOD_FIELDS =
-  'id, name, brand, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g'
+  'id, name, brand, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, cost_per_serving'
 
 /** Acceso a datos de nutrición. Sólo habla con Supabase; sin reglas de negocio. */
 export const nutritionRepository = {

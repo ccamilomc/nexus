@@ -9,10 +9,13 @@ import type {
   Food,
   MealType,
   NutritionGoal,
+  WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { dayRange } from '../utils/day-range'
+import { calculateSpend } from '../utils/spend'
 import { sumWaterMl } from '../utils/water'
+import { weekRange } from '../utils/week-range'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'
@@ -163,7 +166,23 @@ export const nutritionService = {
         carbs_g_target: values.carbsGTarget,
         fat_g_target: values.fatGTarget,
         water_ml_target: values.waterMlTarget,
+        // Sin presupuesto se guarda `null`: no es lo mismo que un presupuesto
+        // de cero pesos.
+        weekly_food_budget: values.weeklyFoodBudget ?? null,
       })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Lo gastado en comida durante la semana (de lunes a domingo) de `date`. */
+  async getWeekSpend(userId: string, date: Date): Promise<WeeklySpend> {
+    try {
+      const { fromIso, toIso } = weekRange(date)
+      const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
+      const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
+
+      return calculateSpend(items)
     } catch (error) {
       throw toAppError(error)
     }

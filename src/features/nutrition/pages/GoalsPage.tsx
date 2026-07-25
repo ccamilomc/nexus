@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { GoalForm } from '../components/GoalForm'
 import { useActiveGoal } from '../hooks/use-nutrition'
-import { formatCalories, formatGrams, formatVolumeMl } from '../utils/format'
+import { formatCalories, formatCop, formatGrams, formatVolumeMl } from '../utils/format'
 
 /** Metas diarias: verlas y cambiarlas. */
 export function GoalsPage() {
@@ -44,6 +44,10 @@ export function GoalsPage() {
     { label: 'Carbos', value: formatGrams(data.carbs_g_target) },
     { label: 'Grasa', value: formatGrams(data.fat_g_target) },
     { label: 'Agua', value: formatVolumeMl(data.water_ml_target) },
+    {
+      label: 'Presupuesto semanal',
+      value: data.weekly_food_budget === null ? 'Sin fijar' : formatCop(data.weekly_food_budget),
+    },
   ]
 
   return (

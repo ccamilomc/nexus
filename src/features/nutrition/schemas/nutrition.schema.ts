@@ -65,6 +65,7 @@ export type CreateFoodValues = z.infer<typeof createFoodSchema>
 const MAX_CALORIES_TARGET = 20_000
 const MAX_MACRO_TARGET = 2000
 const MAX_WATER_TARGET_ML = 20_000
+const MAX_WEEKLY_BUDGET_COP = 50_000_000
 
 /** Un objetivo diario: entero y mayor que cero (una meta de cero no es meta). */
 const dailyTarget = (max: number) =>
@@ -81,6 +82,12 @@ export const nutritionGoalSchema = z.object({
   carbsGTarget: dailyTarget(MAX_MACRO_TARGET),
   fatGTarget: dailyTarget(MAX_MACRO_TARGET),
   waterMlTarget: dailyTarget(MAX_WATER_TARGET_ML),
+  /** Presupuesto semanal de comida, en pesos colombianos. Opcional. */
+  weeklyFoodBudget: z
+    .number()
+    .min(0, 'No puede ser negativo.')
+    .max(MAX_WEEKLY_BUDGET_COP, 'Revisa el presupuesto.')
+    .optional(),
 })
 
 export type NutritionGoalValues = z.infer<typeof nutritionGoalSchema>

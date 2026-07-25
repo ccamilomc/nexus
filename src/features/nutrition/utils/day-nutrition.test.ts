@@ -15,6 +15,7 @@ const EGG: FoodRef = {
   protein_g: 6.3,
   carbs_g: 0.4,
   fat_g: 5,
+  cost_per_serving: null,
 }
 
 function log(id: string, mealType: MealType): MealLog {
