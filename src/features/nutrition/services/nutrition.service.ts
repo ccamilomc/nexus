@@ -2,8 +2,14 @@ import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
-import type { CreateFoodValues } from '../schemas/nutrition.schema'
-import type { DayNutrition, DayWater, Food, MealType } from '../types/nutrition.types'
+import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
+import type {
+  DayNutrition,
+  DayWater,
+  Food,
+  MealType,
+  NutritionGoal,
+} from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { dayRange } from '../utils/day-range'
 import { sumWaterMl } from '../utils/water'
@@ -124,6 +130,39 @@ export const nutritionService = {
         meal_log_id: mealLog.id,
         food_id: foodId,
         servings,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Objetivos vigentes del usuario, o `null` si aún no los ha fijado. */
+  async getActiveGoal(userId: string): Promise<NutritionGoal | null> {
+    try {
+      return await nutritionRepository.findActiveGoal(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Guarda los objetivos.
+   *
+   * No se edita el vigente: se jubila y se crea otro. Así queda el historial
+   * de qué se perseguía en cada momento, que es lo que el esquema previó con
+   * `is_active` + `effective_from` (ver docs/04-modelo-de-datos.md).
+   */
+  async saveGoal(userId: string, values: NutritionGoalValues): Promise<NutritionGoal> {
+    try {
+      await nutritionRepository.deactivateGoals(userId)
+
+      return await nutritionRepository.insertGoal({
+        user_id: userId,
+        calories_target: values.caloriesTarget,
+        protein_g_target: values.proteinGTarget,
+        carbs_g_target: values.carbsGTarget,
+        fat_g_target: values.fatGTarget,
+        water_ml_target: values.waterMlTarget,
       })
     } catch (error) {
       throw toAppError(error)

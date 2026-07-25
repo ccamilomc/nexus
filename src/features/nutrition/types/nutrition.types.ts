@@ -13,6 +13,7 @@ export type MealLog = Tables<'meal_logs'>
 export type MealLogItem = Tables<'meal_log_items'>
 export type MealType = Enums<'meal_type'>
 export type WaterLog = Tables<'water_logs'>
+export type NutritionGoal = Tables<'nutrition_goals'>
 
 /** Datos del alimento que acompañan a un ítem registrado (llegan por join). */
 export type FoodRef = Pick<
@@ -64,4 +65,20 @@ export interface DayNutrition {
 export interface DayWater {
   readonly logs: readonly WaterLog[]
   readonly totalMl: number
+}
+
+/**
+ * Avance hacia un objetivo.
+ *
+ * `percent` se limita a 100 para la barra (una barra no puede pasarse), pero
+ * `consumed` y `remaining` son reales: pasarse de calorías es un dato, no un
+ * error que haya que ocultar.
+ */
+export interface GoalProgress {
+  readonly consumed: number
+  readonly target: number
+  readonly percent: number
+  /** Lo que falta; `0` si ya se alcanzó o se pasó. */
+  readonly remaining: number
+  readonly isExceeded: boolean
 }

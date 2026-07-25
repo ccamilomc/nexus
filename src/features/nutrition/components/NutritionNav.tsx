@@ -13,6 +13,7 @@ interface NutritionTab {
 const TABS: readonly NutritionTab[] = [
   { to: ROUTES.nutrition, label: 'Hoy', end: true },
   { to: ROUTES.nutritionFoods, label: 'Alimentos', end: false },
+  { to: ROUTES.nutritionGoals, label: 'Objetivos', end: false },
 ]
 
 function tabClassName({ isActive }: { isActive: boolean }): string {
