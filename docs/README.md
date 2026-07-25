@@ -1,6 +1,6 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprint 6 (Workout) en curso. Sprints 0–5 terminados.
+> **Estado:** Sprints 0–6 terminados (Workout completo). Siguiente: Sprint 7 (Nutrition).
 > **Versión del diseño:** 1.0
 > **Fecha:** 2026-07-24
 
