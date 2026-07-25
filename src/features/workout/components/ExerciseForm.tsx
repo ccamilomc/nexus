@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import { FormAlert } from '@/shared/components/feedback'
 import { FormField } from '@/shared/components/form'
@@ -13,6 +13,7 @@ import { EQUIPMENT_OPTIONS, MUSCLE_GROUP_OPTIONS } from '../constants/workout.co
 import { useCreateExercise, useUpdateExercise } from '../hooks/use-exercises'
 import { createExerciseSchema, type CreateExerciseValues } from '../schemas/workout.schema'
 import type { Exercise } from '../types/workout.types'
+import { MuscleGroupChips } from './MuscleGroupChips'
 
 interface ExerciseFormProps {
   /** Nombre inicial al crear desde una búsqueda sin resultados (modo creación). */
@@ -29,6 +30,7 @@ function toFormValues(exercise: Exercise): CreateExerciseValues {
     name: exercise.name,
     muscleGroup: exercise.muscle_group,
     equipment: exercise.equipment,
+    secondaryMuscles: exercise.secondary_muscles,
     ...(exercise.instructions ? { instructions: exercise.instructions } : {}),
   }
 }
@@ -42,14 +44,18 @@ export function ExerciseForm({ initialName = '', exercise, onSaved, onCancel }: 
 
   const {
     register,
+    control,
+    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateExerciseValues>({
     resolver: zodResolver(createExerciseSchema),
     defaultValues: exercise
       ? toFormValues(exercise)
-      : { name: initialName, muscleGroup: 'chest', equipment: 'none' },
+      : { name: initialName, muscleGroup: 'chest', equipment: 'none', secondaryMuscles: [] },
   })
+
+  const primaryMuscle = watch('muscleGroup')
 
   const onSubmit = handleSubmit((values) => {
     if (exercise) {
@@ -97,6 +103,25 @@ export function ExerciseForm({ initialName = '', exercise, onSaved, onCancel }: 
                 ))}
               </Select>
             </FormField>
+          </div>
+
+          {/* Grupo de chips: no es un único control, así que se etiqueta con
+              role="group" en vez de un <label htmlFor>. */}
+          <div role="group" aria-labelledby="exercise-secondary-label" className="space-y-1.5">
+            <p id="exercise-secondary-label" className="text-sm font-medium leading-none">
+              También trabaja (opcional)
+            </p>
+            <Controller
+              control={control}
+              name="secondaryMuscles"
+              render={({ field }) => (
+                <MuscleGroupChips
+                  value={field.value ?? []}
+                  onChange={field.onChange}
+                  exclude={primaryMuscle}
+                />
+              )}
+            />
           </div>
 
           <FormField

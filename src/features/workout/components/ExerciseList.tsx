@@ -24,6 +24,12 @@ function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
         {EQUIPMENT_LABELS[exercise.equipment]}
         {exercise.is_custom ? ' · Personal' : ''}
       </p>
+      {exercise.secondary_muscles.length > 0 ? (
+        <p className="truncate text-xs text-muted-foreground">
+          También:{' '}
+          {exercise.secondary_muscles.map((muscle) => MUSCLE_GROUP_LABELS[muscle]).join(' · ')}
+        </p>
+      ) : null}
     </>
   )
 }

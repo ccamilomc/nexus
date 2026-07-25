@@ -48,6 +48,23 @@ describe('createExerciseSchema', () => {
     expect(createExerciseSchema.safeParse({ ...valid, muscleGroup: 'brazos' }).success).toBe(false)
     expect(createExerciseSchema.safeParse({ ...valid, equipment: 'trx' }).success).toBe(false)
   })
+
+  it('acepta una modalidad de equipo nueva', () => {
+    expect(createExerciseSchema.safeParse({ ...valid, equipment: 'suspension' }).success).toBe(true)
+  })
+
+  it('acepta músculos secundarios válidos y permite omitirlos', () => {
+    expect(
+      createExerciseSchema.safeParse({ ...valid, secondaryMuscles: ['biceps', 'core'] }).success,
+    ).toBe(true)
+    expect(createExerciseSchema.safeParse(valid).success).toBe(true)
+  })
+
+  it('rechaza un músculo secundario fuera del catálogo', () => {
+    expect(
+      createExerciseSchema.safeParse({ ...valid, secondaryMuscles: ['antebrazo'] }).success,
+    ).toBe(false)
+  })
 })
 
 describe('createRoutineSchema', () => {

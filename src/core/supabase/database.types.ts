@@ -1303,6 +1303,10 @@ export type Database = {
         | "kettlebell"
         | "band"
         | "bodyweight"
+        | "suspension"
+        | "medicine_ball"
+        | "plate"
+        | "cardio_machine"
       habit_frequency: "daily" | "weekly" | "custom"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       muscle_group:
@@ -1493,6 +1497,10 @@ export const Constants = {
         "kettlebell",
         "band",
         "bodyweight",
+        "suspension",
+        "medicine_ball",
+        "plate",
+        "cardio_machine",
       ],
       habit_frequency: ["daily", "weekly", "custom"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
