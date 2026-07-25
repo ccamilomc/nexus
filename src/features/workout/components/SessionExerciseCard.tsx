@@ -18,6 +18,8 @@ interface SessionExerciseCardProps {
   readonly onSetLogged: () => void
   /** Presente sólo mientras el ejercicio no tenga ninguna serie registrada. */
   readonly onRemove?: (() => void) | undefined
+  /** Objetivo que prescribe la rutina (`4×8 · 80 kg`), si viene de un plan. */
+  readonly target?: string | undefined
 }
 
 /** Valores de la última serie, para proponerlos en la siguiente. */
@@ -35,6 +37,7 @@ export function SessionExerciseCard({
   sets,
   onSetLogged,
   onRemove,
+  target,
 }: SessionExerciseCardProps) {
   const removeSet = useRemoveSet()
 
@@ -46,6 +49,7 @@ export function SessionExerciseCard({
             <h3 className="truncate font-medium">{exercise.name}</h3>
             <p className="text-xs text-muted-foreground">
               {MUSCLE_GROUP_LABELS[exercise.muscle_group]}
+              {target ? ` · Objetivo: ${target}` : ''}
             </p>
           </div>
 

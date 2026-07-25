@@ -98,10 +98,10 @@ export const workoutRepository = {
     return data
   },
 
-  async insertSession(userId: string): Promise<WorkoutSession> {
+  async insertSession(userId: string, routineDayId?: string): Promise<WorkoutSession> {
     const { data, error } = await supabase
       .from('workout_sessions')
-      .insert({ user_id: userId })
+      .insert({ user_id: userId, ...(routineDayId ? { routine_day_id: routineDayId } : {}) })
       .select('*')
       .single()
 
@@ -224,6 +224,17 @@ export const workoutRepository = {
     const { error } = await supabase.from('routines').update(patch).eq('id', routineId)
 
     if (error) throw error
+  },
+
+  async findRoutineDay(dayId: string): Promise<RoutineDay | null> {
+    const { data, error } = await supabase
+      .from('routine_days')
+      .select('*')
+      .eq('id', dayId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
   },
 
   async listDays(routineId: string): Promise<RoutineDay[]> {

@@ -46,6 +46,18 @@ export function useStartSession() {
   })
 }
 
+/** Inicia un entrenamiento siguiendo un día de rutina. */
+export function useStartSessionFromRoutineDay() {
+  const { user } = useAuth()
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<SessionDetail, AppError, string>({
+    mutationFn: (routineDayId) =>
+      workoutService.startSessionFromRoutineDay(requireUserId(user?.id), routineDayId),
+    onSuccess: refreshSessions,
+  })
+}
+
 /** Cierra el entrenamiento: pasa al historial. */
 export function useFinishSession() {
   const refreshSessions = useRefreshSessions()

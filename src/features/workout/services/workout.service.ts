@@ -10,6 +10,7 @@ import type {
   Exercise,
   LogSetInput,
   Routine,
+  RoutineDayDetail,
   RoutineDetail,
   SessionDetail,
   WorkoutSession,
@@ -28,9 +29,28 @@ function secondaryMuscles(values: CreateExerciseValues) {
 function toSessionDetail(
   session: WorkoutSession,
   sets: readonly WorkoutSetWithExercise[],
+  plan: RoutineDayDetail | null = null,
 ): SessionDetail {
   const exercises = groupSetsByExercise(sets)
-  return { session, exercises, stats: calculateSessionStats(session, exercises) }
+  return { session, exercises, stats: calculateSessionStats(session, exercises), plan }
+}
+
+/** Día de rutina que originó la sesión, con sus ejercicios prescritos. */
+async function loadPlan(routineDayId: string | null): Promise<RoutineDayDetail | null> {
+  if (!routineDayId) return null
+
+  const day = await workoutRepository.findRoutineDay(routineDayId)
+  // El día puede haberse borrado después de empezar: la sesión sigue siendo
+  // válida, simplemente se queda sin plan.
+  if (!day) return null
+
+  return { day, exercises: await workoutRepository.listExercisesByDays([day.id]) }
+}
+
+/** Sesión completa: sus series y, si nace de una rutina, su plan. */
+async function loadSessionDetail(session: WorkoutSession): Promise<SessionDetail> {
+  const sets = await workoutRepository.listSetsBySessions([session.id])
+  return toSessionDetail(session, sets, await loadPlan(session.routine_day_id))
 }
 
 /** Reglas de negocio de entrenamiento. Traduce errores técnicos a `AppError`. */
@@ -104,10 +124,7 @@ export const workoutService = {
   async getActiveSession(userId: string): Promise<SessionDetail | null> {
     try {
       const session = await workoutRepository.findActiveSession(userId)
-      if (!session) return null
-
-      const sets = await workoutRepository.listSetsBySessions([session.id])
-      return toSessionDetail(session, sets)
+      return session ? await loadSessionDetail(session) : null
     } catch (error) {
       throw toAppError(error)
     }
@@ -123,13 +140,28 @@ export const workoutService = {
   async startSession(userId: string): Promise<SessionDetail> {
     try {
       const active = await workoutRepository.findActiveSession(userId)
-      if (active) {
-        const sets = await workoutRepository.listSetsBySessions([active.id])
-        return toSessionDetail(active, sets)
-      }
+      if (active) return await loadSessionDetail(active)
 
-      const session = await workoutRepository.insertSession(userId)
-      return toSessionDetail(session, [])
+      return toSessionDetail(await workoutRepository.insertSession(userId), [])
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Inicia un entrenamiento siguiendo un día de rutina.
+   *
+   * La sesión queda enlazada al día (`routine_day_id`), de donde salen los
+   * ejercicios prescritos. Si ya había un entrenamiento en curso se devuelve
+   * ese: nunca se pisa lo que el usuario está haciendo.
+   */
+  async startSessionFromRoutineDay(userId: string, routineDayId: string): Promise<SessionDetail> {
+    try {
+      const active = await workoutRepository.findActiveSession(userId)
+      if (active) return await loadSessionDetail(active)
+
+      const session = await workoutRepository.insertSession(userId, routineDayId)
+      return await loadSessionDetail(session)
     } catch (error) {
       throw toAppError(error)
     }
