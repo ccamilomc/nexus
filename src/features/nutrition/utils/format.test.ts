@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FoodRef } from '../types/nutrition.types'
-import { formatCalories, formatCop, formatGrams, formatQuantity, formatServing } from './format'
+import {
+  formatCalories,
+  formatCop,
+  formatGrams,
+  formatQuantity,
+  formatServing,
+  formatTime,
+  formatVolumeMl,
+} from './format'
 
 const EGG: FoodRef = {
   id: 'egg',
@@ -30,6 +38,32 @@ describe('formatGrams', () => {
   it('deja un decimal como mucho', () => {
     expect(formatGrams(31)).toBe('31 g')
     expect(formatGrams(6.3)).toBe('6,3 g')
+  })
+})
+
+describe('formatVolumeMl', () => {
+  it('usa mililitros por debajo del litro', () => {
+    expect(formatVolumeMl(250)).toBe('250 ml')
+    expect(formatVolumeMl(999)).toBe('999 ml')
+  })
+
+  it('cambia a litros a partir de un litro, como se habla', () => {
+    expect(formatVolumeMl(1000)).toBe('1 L')
+    expect(formatVolumeMl(1750)).toBe('1,8 L')
+  })
+
+  it('un día sin agua muestra cero', () => {
+    expect(formatVolumeMl(0)).toBe('0 ml')
+  })
+})
+
+describe('formatTime', () => {
+  it('muestra la hora local en formato 24 h', () => {
+    expect(formatTime(new Date(2026, 6, 25, 14, 30).toISOString())).toBe('14:30')
+  })
+
+  it('no rompe con una fecha inválida', () => {
+    expect(formatTime('no es una fecha')).toBe('—')
   })
 })
 

@@ -18,3 +18,20 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
 export const MEAL_TYPES_IN_ORDER: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack']
 
 export const ALL_MEAL_TYPES: readonly MealType[] = Constants.public.Enums.meal_type
+
+export interface WaterQuickAmount {
+  readonly ml: number
+  readonly label: string
+}
+
+/**
+ * Atajos para registrar agua de un toque.
+ *
+ * Beber es la acción más repetida del día: si hay que escribir una cantidad
+ * cada vez, se deja de registrar. Estas son las medidas reales de un vaso y
+ * de una botella.
+ */
+export const WATER_QUICK_AMOUNTS: readonly WaterQuickAmount[] = [
+  { ml: 250, label: 'Vaso' },
+  { ml: 500, label: 'Botella' },
+]

@@ -6,6 +6,7 @@ import type {
   MealLogItem,
   MealLogItemWithFood,
   MealType,
+  WaterLog,
 } from '../types/nutrition.types'
 
 /** Alimento con lo que la interfaz necesita para calcular y mostrar macros. */
@@ -97,6 +98,41 @@ export const nutritionRepository = {
 
   async deleteMealLogItem(itemId: string): Promise<void> {
     const { error } = await supabase.from('meal_log_items').delete().eq('id', itemId)
+
+    if (error) throw error
+  },
+
+  /** Registros de agua dentro de un rango (el día local, en la práctica). */
+  async listWaterLogsBetween(userId: string, fromIso: string, toIso: string): Promise<WaterLog[]> {
+    const { data, error } = await supabase
+      .from('water_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .gte('logged_at', fromIso)
+      .lt('logged_at', toIso)
+      .order('logged_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  async insertWaterLog(userId: string, amountMl: number, loggedAtIso: string): Promise<WaterLog> {
+    const { data, error } = await supabase
+      .from('water_logs')
+      .insert({ user_id: userId, amount_ml: amountMl, logged_at: loggedAtIso })
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async softDeleteWaterLog(waterLogId: string, deletedAtIso: string): Promise<void> {
+    const { error } = await supabase
+      .from('water_logs')
+      .update({ deleted_at: deletedAtIso })
+      .eq('id', waterLogId)
 
     if (error) throw error
   },

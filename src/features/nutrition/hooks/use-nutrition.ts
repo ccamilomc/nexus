@@ -7,7 +7,7 @@ import { type AppError, createAppError } from '@/core/error'
 import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { AddFoodInput } from '../services/nutrition.service'
 import { nutritionService } from '../services/nutrition.service'
-import type { DayNutrition, Food, MealType } from '../types/nutrition.types'
+import type { DayNutrition, DayWater, Food, MealType } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -117,6 +117,38 @@ export function useAddFoodToMeal(date: Date) {
         foodId,
         servings,
       } satisfies AddFoodInput),
+    onSuccess: refresh,
+  })
+}
+
+/** El agua bebida en un día, con cada registro y el total. */
+export function useDayWater(date: Date) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<DayWater | null, AppError>({
+    queryKey: nutritionKeys.water(userId, toDayKey(date)),
+    queryFn: () => (userId ? nutritionService.getDayWater(userId, date) : null),
+  })
+}
+
+/** Registra agua de un toque. */
+export function useAddWater() {
+  const { user } = useAuth()
+  const refresh = useRefreshDays()
+
+  return useMutation<void, AppError, number>({
+    mutationFn: (amountMl) => nutritionService.addWater(requireUserId(user?.id), amountMl),
+    onSuccess: refresh,
+  })
+}
+
+/** Quita un registro de agua hecho por error. */
+export function useRemoveWater() {
+  const refresh = useRefreshDays()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (waterLogId) => nutritionService.removeWater(waterLogId),
     onSuccess: refresh,
   })
 }

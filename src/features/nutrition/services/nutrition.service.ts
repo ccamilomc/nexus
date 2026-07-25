@@ -3,9 +3,10 @@ import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
 import type { CreateFoodValues } from '../schemas/nutrition.schema'
-import type { DayNutrition, Food, MealType } from '../types/nutrition.types'
+import type { DayNutrition, DayWater, Food, MealType } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { dayRange } from '../utils/day-range'
+import { sumWaterMl } from '../utils/water'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'
@@ -124,6 +125,36 @@ export const nutritionService = {
         food_id: foodId,
         servings,
       })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** El agua bebida en un día, con cada registro y el total. */
+  async getDayWater(userId: string, date: Date): Promise<DayWater> {
+    try {
+      const { fromIso, toIso } = dayRange(date)
+      const logs = await nutritionRepository.listWaterLogsBetween(userId, fromIso, toIso)
+
+      return { logs, totalMl: sumWaterMl(logs) }
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Registra agua. La hora es la de ahora: se bebe en el momento. */
+  async addWater(userId: string, amountMl: number): Promise<void> {
+    try {
+      await nutritionRepository.insertWaterLog(userId, amountMl, new Date().toISOString())
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Quita un registro de agua hecho por error. */
+  async removeWater(waterLogId: string): Promise<void> {
+    try {
+      await nutritionRepository.softDeleteWaterLog(waterLogId, new Date().toISOString())
     } catch (error) {
       throw toAppError(error)
     }
