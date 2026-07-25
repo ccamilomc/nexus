@@ -48,6 +48,13 @@ export interface SessionDetail {
   readonly session: WorkoutSession
   readonly exercises: readonly SessionExercise[]
   readonly stats: SessionStats
+  /**
+   * Día de rutina que originó la sesión, con sus ejercicios prescritos.
+   *
+   * Se lee del servidor (vía `routine_day_id`) en lugar de pasarse al navegar:
+   * así el plan sigue ahí aunque se recargue la página a mitad del gimnasio.
+   */
+  readonly plan: RoutineDayDetail | null
 }
 
 /** Datos necesarios para registrar una serie. */

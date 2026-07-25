@@ -54,6 +54,20 @@ export function formatTargets(
   reps: number | null,
   weightKg: number | null,
 ): string {
+  return formatOptionalTargets(sets, reps, weightKg) ?? 'Sin objetivos'
+}
+
+/**
+ * Como `formatTargets`, pero `null` cuando no hay ningún objetivo fijado.
+ *
+ * Sirve para omitir la pista durante el entrenamiento: «Objetivo: Sin
+ * objetivos» sería ruido; ahí, o hay una cifra que perseguir, o no se dice nada.
+ */
+export function formatOptionalTargets(
+  sets: number | null,
+  reps: number | null,
+  weightKg: number | null,
+): string | null {
   const parts: string[] = []
 
   if (sets !== null && reps !== null) parts.push(`${sets}×${reps}`)
@@ -62,7 +76,7 @@ export function formatTargets(
 
   if (weightKg !== null) parts.push(formatWeight(weightKg))
 
-  return parts.length > 0 ? parts.join(' · ') : 'Sin objetivos'
+  return parts.length > 0 ? parts.join(' · ') : null
 }
 
 function isSameDay(a: Date, b: Date): boolean {

@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   formatElapsed,
   formatMinutes,
+  formatOptionalTargets,
   formatSessionDate,
   formatTargets,
   formatVolume,
@@ -79,6 +80,16 @@ describe('formatTargets', () => {
 
   it('avisa cuando no hay ningún objetivo', () => {
     expect(formatTargets(null, null, null)).toBe('Sin objetivos')
+  })
+})
+
+describe('formatOptionalTargets', () => {
+  it('devuelve el mismo texto cuando hay objetivos', () => {
+    expect(formatOptionalTargets(3, 10, 60)).toBe('3×10 · 60 kg')
+  })
+
+  it('devuelve null cuando no hay ninguno, para poder omitir la pista', () => {
+    expect(formatOptionalTargets(null, null, null)).toBeNull()
   })
 })
 

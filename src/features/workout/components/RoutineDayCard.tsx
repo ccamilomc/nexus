@@ -1,12 +1,15 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Play, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+import { ROUTES } from '@/app/router/routes'
 import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 
 import { MUSCLE_GROUP_LABELS } from '../constants/workout.constants'
+import { useActiveSession, useStartSessionFromRoutineDay } from '../hooks/use-active-session'
 import { useRemoveRoutineDay, useRemoveRoutineExercise } from '../hooks/use-routine-detail'
 import type { RoutineDayDetail } from '../types/workout.types'
 import { formatTargets } from '../utils/format'
@@ -23,6 +26,13 @@ export function RoutineDayCard({ routineId, detail }: RoutineDayCardProps) {
   const [isAdding, setIsAdding] = useState(false)
   const removeDay = useRemoveRoutineDay(routineId)
   const removeExercise = useRemoveRoutineExercise(routineId)
+  const startSession = useStartSessionFromRoutineDay()
+  const { data: activeSession } = useActiveSession()
+  const navigate = useNavigate()
+
+  // Sólo puede haber un entrenamiento a la vez: si ya hay uno, no se ofrece
+  // empezar otro (el service lo respeta, pero es mejor no invitar a hacerlo).
+  const hasActiveSession = Boolean(activeSession)
 
   return (
     <Card>
@@ -77,6 +87,28 @@ export function RoutineDayCard({ routineId, detail }: RoutineDayCardProps) {
 
         {removeDay.isError ? <FormAlert>{removeDay.error.message}</FormAlert> : null}
         {removeExercise.isError ? <FormAlert>{removeExercise.error.message}</FormAlert> : null}
+        {startSession.isError ? <FormAlert>{startSession.error.message}</FormAlert> : null}
+
+        {exercises.length > 0 ? (
+          <div className="space-y-1.5">
+            <Button
+              type="button"
+              className="w-full"
+              disabled={hasActiveSession || startSession.isPending}
+              onClick={() =>
+                startSession.mutate(day.id, { onSuccess: () => navigate(ROUTES.workout) })
+              }
+            >
+              <Play aria-hidden />
+              {startSession.isPending ? 'Iniciando…' : 'Entrenar este día'}
+            </Button>
+            {hasActiveSession ? (
+              <p className="text-center text-xs text-muted-foreground">
+                Ya tienes un entrenamiento en curso.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         {isAdding ? (
           <AddExerciseToDay

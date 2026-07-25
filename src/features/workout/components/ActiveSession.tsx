@@ -7,7 +7,9 @@ import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 
 import { useDiscardSession, useFinishSession } from '../hooks/use-active-session'
-import type { Exercise, ExerciseRef, SessionDetail, WorkoutSet } from '../types/workout.types'
+import type { Exercise, SessionDetail } from '../types/workout.types'
+import { formatOptionalTargets } from '../utils/format'
+import { buildSessionItems } from '../utils/session-items'
 import { ExercisePicker } from './ExercisePicker'
 import { SessionExerciseCard } from './SessionExerciseCard'
 import { SessionSummary } from './SessionSummary'
@@ -17,31 +19,23 @@ interface ActiveSessionProps {
   readonly detail: SessionDetail
 }
 
-interface SessionItem {
-  readonly exercise: ExerciseRef
-  readonly sets: readonly WorkoutSet[]
-}
-
 /**
  * Entrenamiento en curso: sus ejercicios, sus series y el cierre de la sesión.
  *
- * Un ejercicio elegido pero todavía sin series sólo vive en esta pantalla: se
- * guarda al registrar su primera serie (ver docs/04-modelo-de-datos.md).
+ * Un ejercicio elegido a mano pero todavía sin series sólo vive en esta
+ * pantalla: se guarda al registrar su primera serie. Los que vienen de una
+ * rutina se leen del plan, así que sobreviven a una recarga
+ * (ver docs/04-modelo-de-datos.md).
  */
 export function ActiveSession({ detail }: ActiveSessionProps) {
-  const { session, exercises, stats } = detail
+  const { session, exercises, stats, plan } = detail
   const [drafts, setDrafts] = useState<readonly Exercise[]>([])
-  const [isPickerOpen, setIsPickerOpen] = useState(() => exercises.length === 0)
+  // Con un plan detrás no hace falta abrir el selector: ya hay qué hacer.
+  const [isPickerOpen, setIsPickerOpen] = useState(() => exercises.length === 0 && plan === null)
   const finishSession = useFinishSession()
   const discardSession = useDiscardSession()
 
-  const loggedIds = exercises.map(({ exercise }) => exercise.id)
-  const items: readonly SessionItem[] = [
-    ...exercises,
-    ...drafts
-      .filter((exercise) => !loggedIds.includes(exercise.id))
-      .map((exercise) => ({ exercise, sets: [] })),
-  ]
+  const items = buildSessionItems(exercises, plan, drafts)
 
   const forgetDraft = (exerciseId: string) =>
     setDrafts((current) => current.filter((exercise) => exercise.id !== exerciseId))
@@ -57,6 +51,7 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
               <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
                 Entrenamiento en curso
               </h2>
+              {plan ? <p className="text-sm font-medium">{plan.day.name}</p> : null}
               <SessionTimer startedAt={session.started_at} />
             </div>
             <SessionSummary stats={stats} />
@@ -82,17 +77,28 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
 
       {items.length > 0 ? (
         <ul className="space-y-3">
-          {items.map(({ exercise, sets }) => (
-            <li key={exercise.id}>
-              <SessionExerciseCard
-                sessionId={session.id}
-                exercise={exercise}
-                sets={sets}
-                onSetLogged={() => forgetDraft(exercise.id)}
-                onRemove={sets.length === 0 ? () => forgetDraft(exercise.id) : undefined}
-              />
-            </li>
-          ))}
+          {items.map(({ exercise, sets, prescribed, canRemove }) => {
+            const target = prescribed
+              ? formatOptionalTargets(
+                  prescribed.target_sets,
+                  prescribed.target_reps,
+                  prescribed.target_weight,
+                )
+              : null
+
+            return (
+              <li key={exercise.id}>
+                <SessionExerciseCard
+                  sessionId={session.id}
+                  exercise={exercise}
+                  sets={sets}
+                  onSetLogged={() => forgetDraft(exercise.id)}
+                  onRemove={canRemove ? () => forgetDraft(exercise.id) : undefined}
+                  {...(target ? { target } : {})}
+                />
+              </li>
+            )
+          })}
         </ul>
       ) : null}
 

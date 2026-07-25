@@ -139,6 +139,17 @@ comportamiento correcto: un ejercicio sin series no se hizo.
 una serie, la siguiente sigue numerando hacia arriba). La numeración que ve el
 usuario —"Serie 1", "Serie 2"— es posicional y se calcula al mostrar.
 
+### Entrenar siguiendo una rutina
+
+Una sesión puede nacer de un día de rutina: se guarda su `routine_day_id` y de
+ahí se leen los **ejercicios prescritos**, que la pantalla precarga junto a sus
+objetivos. El plan **no viaja en la navegación**: se lee del servidor en cada
+carga, así sigue ahí aunque se recargue la página a mitad del entrenamiento.
+
+La regla anterior se mantiene: un ejercicio prescrito **no forma parte** de la
+sesión hasta que tiene series. Si no se hace, simplemente no aparece en el
+historial; no hace falta "saltarlo" de forma explícita.
+
 ## Nutrition (económica)
 
 - **foods**: catálogo (global o personal) con macros por porción **y
