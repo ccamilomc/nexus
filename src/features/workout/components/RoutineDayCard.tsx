@@ -70,8 +70,8 @@ export function RoutineDayCard({ routineId, detail }: RoutineDayCardProps) {
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  size="iconSm"
+                  className="text-muted-foreground hover:text-destructive"
                   disabled={removeExercise.isPending}
                   aria-label={`Quitar ${routineExercise.exercise.name} del día ${day.name}`}
                   onClick={() => removeExercise.mutate(routineExercise.id)}

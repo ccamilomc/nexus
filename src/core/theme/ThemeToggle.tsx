@@ -38,7 +38,9 @@ export function ThemeToggle() {
             }}
             aria-pressed={isActive}
             className={cn(
-              'inline-flex h-8 w-8 items-center justify-center rounded-md transition-colors',
+              // 40 px: son tres botones pegados, así que se agrandan de verdad
+              // en lugar de ampliar el área invisible (se solaparían entre sí).
+              'inline-flex h-10 w-10 items-center justify-center rounded-md transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               isActive
                 ? 'bg-accent text-accent-foreground'
