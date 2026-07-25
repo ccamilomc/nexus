@@ -27,6 +27,7 @@ export type FoodRef = Pick<
   | 'protein_g'
   | 'carbs_g'
   | 'fat_g'
+  | 'cost_per_serving'
 >
 
 /** Alimento registrado dentro de una comida, con el alimento al que referencia. */
@@ -65,6 +66,18 @@ export interface DayNutrition {
 export interface DayWater {
   readonly logs: readonly WaterLog[]
   readonly totalMl: number
+}
+
+/**
+ * Gasto en comida de un periodo.
+ *
+ * El precio de un alimento es opcional, así que el total puede ser parcial:
+ * por eso se lleva la cuenta de cuántos alimentos no lo tienen.
+ */
+export interface WeeklySpend {
+  readonly totalCop: number
+  readonly itemsWithPrice: number
+  readonly itemsWithoutPrice: number
 }
 
 /**

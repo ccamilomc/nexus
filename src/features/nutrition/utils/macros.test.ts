@@ -13,6 +13,7 @@ const EGG: FoodRef = {
   protein_g: 6.3,
   carbs_g: 0.4,
   fat_g: 5,
+  cost_per_serving: null,
 }
 
 const RICE: FoodRef = {
@@ -25,6 +26,7 @@ const RICE: FoodRef = {
   protein_g: 2.7,
   carbs_g: 28,
   fat_g: 0.3,
+  cost_per_serving: null,
 }
 
 function item(food: FoodRef, servings: number): MealLogItemWithFood {

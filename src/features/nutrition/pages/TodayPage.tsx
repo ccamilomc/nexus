@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { LoadFailure, SkeletonList } from '@/shared/components/feedback'
 
+import { BudgetCard } from '../components/BudgetCard'
 import { DaySummaryCard } from '../components/DaySummaryCard'
 import { MealSection } from '../components/MealSection'
 import { WaterCard } from '../components/WaterCard'
@@ -27,6 +28,8 @@ export function TodayPage() {
       <DaySummaryCard totals={data.totals} goal={goal ?? null} />
 
       <WaterCard date={today} />
+
+      <BudgetCard date={today} />
 
       <ul className="space-y-3">
         {data.meals.map((meal) => (
