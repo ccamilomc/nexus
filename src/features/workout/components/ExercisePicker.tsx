@@ -5,10 +5,10 @@ import { FormAlert, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import { matchesQuery } from '@/shared/utils'
 
 import { useExercises } from '../hooks/use-exercises'
 import type { Exercise } from '../types/workout.types'
-import { matchesQuery } from '../utils/search'
 import { ExerciseForm } from './ExerciseForm'
 import { ExerciseList } from './ExerciseList'
 
