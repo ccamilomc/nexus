@@ -93,4 +93,39 @@
       'rlig' 1,
       'calt' 1;
   }
+
+  /**
+   * Menos movimiento para quien lo pide (docs/11-ux-ui-y-diseno.md).
+   *
+   * No se apaga todo: el color y la opacidad se conservan porque comunican
+   * estado —cargando, foco, error— sin desplazar nada. Lo que desaparece es
+   * el movimiento, que es lo que molesta o marea.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+
+    /* Los indicadores de carga siguen latiendo: sin ellos se perdería la
+       señal de «estamos trabajando». Laten en opacidad, no se mueven. */
+    .animate-pulse,
+    .animate-spin {
+      animation: nexus-loading 1.8s ease-in-out infinite !important;
+    }
+  }
+
+  @keyframes nexus-loading {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
 }

@@ -52,6 +52,14 @@ que "cambió de aplicación" al pasar de Workout a Nutrition.
 - Toda animación puede eliminarse sin romper la funcionalidad y respeta
   `prefers-reduced-motion`.
 
+### Movimiento reducido
+
+Implementado de forma global en `src/styles/globals.css`. La regla no apaga
+todo: **el color y la opacidad se conservan** porque comunican estado (cargando,
+foco, error) sin desplazar nada; **lo que desaparece es el movimiento**, que es
+lo que molesta o marea. Los indicadores de carga siguen latiendo en opacidad
+para no perder la señal de «estamos trabajando».
+
 ## Estados de UI (obligatorios)
 
 Cada pantalla/consulta contempla **los cinco**:
@@ -95,7 +103,14 @@ Requisito, no opcional (detalle transversal aquí; auditoría en Sprint 16):
 - `labels`, `roles` y ARIA cuando corresponda.
 - **Contraste** adecuado en ambos temas (objetivo WCAG AA).
 - No transmitir información **sólo** por color.
-- Objetivos táctiles suficientes en móvil.
+- **Objetivos táctiles de 44 px como mínimo.** Nexus se usa en el gimnasio, con
+  el móvil en la mano y prisa: un botón de borrar que falla es un error caro.
+  - En filas densas, el tamaño **visual** puede ser menor (32 px) siempre que el
+    área pulsable llegue a 44 px: para eso está la variante `iconSm` del
+    `Button`, que la amplía con un pseudo-elemento invisible.
+  - En **controles adyacentes** (p. ej. el selector de tema) no se usa esa
+    técnica: las áreas se solaparían y se pulsaría el botón equivocado. Ahí los
+    controles se agrandan de verdad.
 
 Nunca se sacrifica accesibilidad por estética.
 

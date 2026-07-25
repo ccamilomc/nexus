@@ -21,6 +21,11 @@ const buttonVariants = cva(
         sm: 'h-9 rounded-md px-3',
         lg: 'h-11 rounded-md px-8',
         icon: 'h-10 w-10',
+        // Icono compacto para filas densas: se ve de 32 px, pero el área
+        // pulsable llega a 44 px (mínimo accesible) mediante un pseudo-elemento
+        // invisible. Así el dedo acierta sin engordar la fila.
+        iconSm:
+          'relative h-8 w-8 after:absolute after:left-1/2 after:top-1/2 after:h-11 after:w-11 after:-translate-x-1/2 after:-translate-y-1/2 after:content-[""]',
       },
     },
     defaultVariants: {

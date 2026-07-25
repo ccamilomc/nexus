@@ -80,8 +80,8 @@ export function SessionExerciseCard({
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                  size="iconSm"
+                  className="text-muted-foreground hover:text-destructive"
                   disabled={removeSet.isPending}
                   aria-label={`Eliminar la serie ${index + 1} de ${exercise.name}`}
                   onClick={() => removeSet.mutate(set.id)}
