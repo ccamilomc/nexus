@@ -3,10 +3,12 @@ import { Droplet, Plus, Trash2 } from 'lucide-react'
 import { FormAlert, Skeleton } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { Progress } from '@/shared/components/ui/progress'
 
 import { WATER_QUICK_AMOUNTS } from '../constants/nutrition.constants'
-import { useAddWater, useDayWater, useRemoveWater } from '../hooks/use-nutrition'
+import { useActiveGoal, useAddWater, useDayWater, useRemoveWater } from '../hooks/use-nutrition'
 import { formatTime, formatVolumeMl } from '../utils/format'
+import { calculateProgress } from '../utils/goal-progress'
 
 interface WaterCardProps {
   readonly date: Date
@@ -15,8 +17,11 @@ interface WaterCardProps {
 /** Agua bebida hoy, con atajos para registrar de un toque. */
 export function WaterCard({ date }: WaterCardProps) {
   const { data, isPending, isError, error } = useDayWater(date)
+  const { data: goal } = useActiveGoal()
   const addWater = useAddWater()
   const removeWater = useRemoveWater()
+
+  const progress = goal ? calculateProgress(data?.totalMl ?? 0, goal.water_ml_target) : null
 
   return (
     <Card>
@@ -31,9 +36,30 @@ export function WaterCard({ date }: WaterCardProps) {
           ) : (
             <p className="text-lg font-semibold tabular-nums">
               {formatVolumeMl(data?.totalMl ?? 0)}
+              {progress ? (
+                <span className="text-sm font-normal text-muted-foreground">
+                  {' '}
+                  / {formatVolumeMl(progress.target)}
+                </span>
+              ) : null}
             </p>
           )}
         </div>
+
+        {progress ? (
+          <div className="space-y-1">
+            <Progress
+              value={progress.percent}
+              label={`Agua: ${progress.percent}% del objetivo`}
+              isExceeded={progress.isExceeded}
+            />
+            <p className="text-xs text-muted-foreground">
+              {progress.remaining === 0
+                ? '¡Objetivo cumplido!'
+                : `Te faltan ${formatVolumeMl(progress.remaining)}.`}
+            </p>
+          </div>
+        ) : null}
 
         <div className="flex flex-wrap gap-2">
           {WATER_QUICK_AMOUNTS.map(({ ml, label }) => (

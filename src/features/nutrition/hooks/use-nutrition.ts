@@ -4,10 +4,16 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 
-import type { CreateFoodValues } from '../schemas/nutrition.schema'
+import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
 import type { AddFoodInput } from '../services/nutrition.service'
 import { nutritionService } from '../services/nutrition.service'
-import type { DayNutrition, DayWater, Food, MealType } from '../types/nutrition.types'
+import type {
+  DayNutrition,
+  DayWater,
+  Food,
+  MealType,
+  NutritionGoal,
+} from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -118,6 +124,28 @@ export function useAddFoodToMeal(date: Date) {
         servings,
       } satisfies AddFoodInput),
     onSuccess: refresh,
+  })
+}
+
+/** Objetivos vigentes, o `null` si aún no se han fijado. */
+export function useActiveGoal() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<NutritionGoal | null, AppError>({
+    queryKey: nutritionKeys.goal(userId),
+    queryFn: () => (userId ? nutritionService.getActiveGoal(userId) : null),
+  })
+}
+
+/** Guarda los objetivos (jubila los anteriores). */
+export function useSaveGoal() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation<NutritionGoal, AppError, NutritionGoalValues>({
+    mutationFn: (values) => nutritionService.saveGoal(requireUserId(user?.id), values),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: nutritionKeys.goal(user?.id) }),
   })
 }
 

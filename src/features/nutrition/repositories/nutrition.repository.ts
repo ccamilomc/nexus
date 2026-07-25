@@ -6,6 +6,7 @@ import type {
   MealLogItem,
   MealLogItemWithFood,
   MealType,
+  NutritionGoal,
   WaterLog,
 } from '../types/nutrition.types'
 
@@ -100,6 +101,43 @@ export const nutritionRepository = {
     const { error } = await supabase.from('meal_log_items').delete().eq('id', itemId)
 
     if (error) throw error
+  },
+
+  async findActiveGoal(userId: string): Promise<NutritionGoal | null> {
+    const { data, error } = await supabase
+      .from('nutrition_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('effective_from', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
+  /** Jubila los objetivos vigentes: el historial se conserva (ver docs/04). */
+  async deactivateGoals(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('nutrition_goals')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (error) throw error
+  },
+
+  async insertGoal(input: TablesInsert<'nutrition_goals'>): Promise<NutritionGoal> {
+    const { data, error } = await supabase
+      .from('nutrition_goals')
+      .insert(input)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
   },
 
   /** Registros de agua dentro de un rango (el día local, en la práctica). */
