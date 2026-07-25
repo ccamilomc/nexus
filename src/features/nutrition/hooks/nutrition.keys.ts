@@ -10,4 +10,6 @@ export const nutritionKeys = {
   days: () => [...nutritionKeys.all, 'days'] as const,
   day: (userId: string | undefined, isoDate: string) =>
     [...nutritionKeys.days(), userId, isoDate] as const,
+  water: (userId: string | undefined, isoDate: string) =>
+    [...nutritionKeys.days(), 'water', userId, isoDate] as const,
 }

@@ -12,6 +12,7 @@ export type Food = Tables<'foods'>
 export type MealLog = Tables<'meal_logs'>
 export type MealLogItem = Tables<'meal_log_items'>
 export type MealType = Enums<'meal_type'>
+export type WaterLog = Tables<'water_logs'>
 
 /** Datos del alimento que acompañan a un ítem registrado (llegan por join). */
 export type FoodRef = Pick<
@@ -57,4 +58,10 @@ export interface MealEntry {
 export interface DayNutrition {
   readonly meals: readonly MealEntry[]
   readonly totals: Macros
+}
+
+/** La hidratación de un día: cada registro y el total. */
+export interface DayWater {
+  readonly logs: readonly WaterLog[]
+  readonly totalMl: number
 }

@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { MacroSummary } from '../components/MacroSummary'
 import { MealSection } from '../components/MealSection'
+import { WaterCard } from '../components/WaterCard'
 import { useDayNutrition } from '../hooks/use-nutrition'
 
 /** Lo que se ha comido hoy, por comidas, con los macros del día. */
@@ -30,6 +31,8 @@ export function TodayPage() {
           <MacroSummary macros={data.totals} />
         </CardContent>
       </Card>
+
+      <WaterCard date={today} />
 
       <ul className="space-y-3">
         {data.meals.map((meal) => (
