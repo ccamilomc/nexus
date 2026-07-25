@@ -17,13 +17,45 @@ export function useExercises() {
   })
 }
 
+/** Invalida el catálogo tras crear, editar o borrar un ejercicio. */
+function useRefreshExercises() {
+  const queryClient = useQueryClient()
+
+  return () => queryClient.invalidateQueries({ queryKey: workoutKeys.exercises() })
+}
+
 /** Crea un ejercicio propio y refresca el catálogo. */
 export function useCreateExercise() {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
+  const refresh = useRefreshExercises()
 
   return useMutation<Exercise, AppError, CreateExerciseValues>({
     mutationFn: (values) => workoutService.createExercise(requireUserId(user?.id), values),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: workoutKeys.exercises() }),
+    onSuccess: refresh,
+  })
+}
+
+interface UpdateExerciseInput {
+  readonly exerciseId: string
+  readonly values: CreateExerciseValues
+}
+
+/** Edita un ejercicio propio y refresca el catálogo. */
+export function useUpdateExercise() {
+  const refresh = useRefreshExercises()
+
+  return useMutation<Exercise, AppError, UpdateExerciseInput>({
+    mutationFn: ({ exerciseId, values }) => workoutService.updateExercise(exerciseId, values),
+    onSuccess: refresh,
+  })
+}
+
+/** Borra un ejercicio propio y refresca el catálogo. */
+export function useDeleteExercise() {
+  const refresh = useRefreshExercises()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (exerciseId) => workoutService.deleteExercise(exerciseId),
+    onSuccess: refresh,
   })
 }

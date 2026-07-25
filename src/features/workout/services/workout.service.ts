@@ -1,4 +1,4 @@
-import { toAppError } from '@/core/error'
+import { createAppError, toAppError } from '@/core/error'
 
 import { workoutRepository } from '../repositories/workout.repository'
 import type {
@@ -15,6 +15,7 @@ import type {
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
+import { isForeignKeyViolation } from '../utils/postgrest-error'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 
@@ -49,6 +50,45 @@ export const workoutService = {
         ...(values.instructions ? { instructions: values.instructions } : {}),
       })
     } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Edita un ejercicio propio. La RLS impide tocar los globales.
+   *
+   * Vaciar las notas las borra (`null`), no las deja como cadena vacía.
+   */
+  async updateExercise(exerciseId: string, values: CreateExerciseValues): Promise<Exercise> {
+    try {
+      return await workoutRepository.updateExercise(exerciseId, {
+        name: values.name,
+        muscle_group: values.muscleGroup,
+        equipment: values.equipment,
+        instructions: values.instructions ?? null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra un ejercicio propio.
+   *
+   * Si aún se usa en una rutina o en un entrenamiento, la base lo impide
+   * (`on delete restrict`); se traduce a un mensaje claro en vez de un error
+   * técnico.
+   */
+  async deleteExercise(exerciseId: string): Promise<void> {
+    try {
+      await workoutRepository.deleteExercise(exerciseId)
+    } catch (error) {
+      if (isForeignKeyViolation(error)) {
+        throw createAppError(
+          'conflict',
+          'No puedes borrar un ejercicio que ya usas en una rutina o un entrenamiento. Quítalo de ahí primero.',
+        )
+      }
       throw toAppError(error)
     }
   },

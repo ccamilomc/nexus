@@ -52,7 +52,7 @@ export function ExercisePicker({ excludedIds, onSelect, onClose }: ExercisePicke
           // Al crear desde aquí, el nuevo ejercicio se añade directo a la sesión.
           <ExerciseForm
             initialName={query}
-            onCreated={onSelect}
+            onSaved={onSelect}
             onCancel={() => setIsCreating(false)}
           />
         ) : (

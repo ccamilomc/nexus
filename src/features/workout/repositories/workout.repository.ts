@@ -65,6 +65,24 @@ export const workoutRepository = {
     return data
   },
 
+  async updateExercise(exerciseId: string, patch: TablesUpdate<'exercises'>): Promise<Exercise> {
+    const { data, error } = await supabase
+      .from('exercises')
+      .update(patch)
+      .eq('id', exerciseId)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async deleteExercise(exerciseId: string): Promise<void> {
+    const { error } = await supabase.from('exercises').delete().eq('id', exerciseId)
+
+    if (error) throw error
+  },
+
   async findActiveSession(userId: string): Promise<WorkoutSession | null> {
     const { data, error } = await supabase
       .from('workout_sessions')
