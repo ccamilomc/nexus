@@ -1,10 +1,35 @@
-import { toAppError } from '@/core/error'
+import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
+import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { DayNutrition, Food, MealType } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { dayRange } from '../utils/day-range'
+
+/** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
+const CURRENCY_COP = 'COP'
+
+/**
+ * Traduce el formulario a la fila de la base.
+ *
+ * Los opcionales vacíos se guardan como `null`, no como `''` o `0`: «sin
+ * marca» y «sin precio» son ausencia de dato, no un dato vacío.
+ */
+function toFoodRow(values: CreateFoodValues) {
+  return {
+    name: values.name,
+    brand: values.brand ?? null,
+    serving_size: values.servingSize,
+    serving_unit: values.servingUnit,
+    calories: values.calories,
+    protein_g: values.proteinG,
+    carbs_g: values.carbsG,
+    fat_g: values.fatG,
+    cost_per_serving: values.costPerServing ?? null,
+    currency: values.costPerServing === undefined ? null : CURRENCY_COP,
+  }
+}
 
 /** Datos necesarios para registrar un alimento en una comida. */
 export interface AddFoodInput {
@@ -21,6 +46,45 @@ export const nutritionService = {
     try {
       return await nutritionRepository.listFoods()
     } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Crea un alimento propio del usuario (queda como `is_custom`). */
+  async createFood(userId: string, values: CreateFoodValues): Promise<Food> {
+    try {
+      return await nutritionRepository.insertFood({ user_id: userId, ...toFoodRow(values) })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Edita un alimento propio. La RLS impide tocar los del catálogo global. */
+  async updateFood(foodId: string, values: CreateFoodValues): Promise<Food> {
+    try {
+      return await nutritionRepository.updateFood(foodId, toFoodRow(values))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra un alimento propio.
+   *
+   * Si ya se registró en alguna comida, la base lo impide
+   * (`on delete restrict`): se traduce a un mensaje claro en vez de un error
+   * técnico.
+   */
+  async deleteFood(foodId: string): Promise<void> {
+    try {
+      await nutritionRepository.deleteFood(foodId)
+    } catch (error) {
+      if (isForeignKeyViolation(error)) {
+        throw createAppError(
+          'conflict',
+          'No puedes borrar un alimento que ya registraste en una comida. Quítalo de ahí primero.',
+        )
+      }
       throw toAppError(error)
     }
   },

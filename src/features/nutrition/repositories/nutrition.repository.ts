@@ -1,4 +1,4 @@
-import { supabase, type TablesInsert } from '@/core/supabase'
+import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Food,
@@ -22,6 +22,31 @@ export const nutritionRepository = {
 
     if (error) throw error
     return data ?? []
+  },
+
+  async insertFood(input: TablesInsert<'foods'>): Promise<Food> {
+    const { data, error } = await supabase.from('foods').insert(input).select('*').single()
+
+    if (error) throw error
+    return data
+  },
+
+  async updateFood(foodId: string, patch: TablesUpdate<'foods'>): Promise<Food> {
+    const { data, error } = await supabase
+      .from('foods')
+      .update(patch)
+      .eq('id', foodId)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  async deleteFood(foodId: string): Promise<void> {
+    const { error } = await supabase.from('foods').delete().eq('id', foodId)
+
+    if (error) throw error
   },
 
   /** Comidas registradas dentro de un rango (el día local, en la práctica). */

@@ -5,6 +5,22 @@ import type { FoodRef } from '../types/nutrition.types'
 const integerFormatter = new Intl.NumberFormat('es', { maximumFractionDigits: 0 })
 const decimalFormatter = new Intl.NumberFormat('es', { maximumFractionDigits: 1 })
 
+/**
+ * Precios en pesos colombianos.
+ *
+ * Sin decimales a propósito: el peso no tiene centavos en circulación, así que
+ * mostrar «$ 12.500,00» sería ruido.
+ */
+const copFormatter = new Intl.NumberFormat('es-CO', {
+  style: 'currency',
+  currency: 'COP',
+  maximumFractionDigits: 0,
+})
+
+export function formatCop(amount: number): string {
+  return copFormatter.format(amount)
+}
+
 /** Calorías, siempre enteras: `1.850 kcal`. */
 export function formatCalories(calories: number): string {
   return `${integerFormatter.format(Math.round(calories))} kcal`

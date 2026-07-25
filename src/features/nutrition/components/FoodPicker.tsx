@@ -1,4 +1,4 @@
-import { X } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
 import { useId, useState } from 'react'
 
 import { FormAlert, SkeletonList } from '@/shared/components/feedback'
@@ -10,19 +10,27 @@ import { matchesQuery } from '@/shared/utils'
 import { useFoods } from '../hooks/use-nutrition'
 import type { Food } from '../types/nutrition.types'
 import { formatCalories, formatServing } from '../utils/format'
+import { FoodForm } from './FoodForm'
 
 interface FoodPickerProps {
   readonly onSelect: (food: Food) => void
   readonly onClose: () => void
 }
 
-/** Panel para elegir el alimento que se va a registrar. */
+/** Panel para elegir el alimento que se va a registrar (o crear uno nuevo). */
 export function FoodPicker({ onSelect, onClose }: FoodPickerProps) {
   const [query, setQuery] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
   const { data, isPending, isError, error } = useFoods()
   const titleId = useId()
 
   const available = (data ?? []).filter((food) => matchesQuery(food.name, query))
+
+  // Al crear desde aquí, el alimento nuevo pasa directo al paso de cantidad:
+  // estás comiendo eso ahora mismo.
+  if (isCreating) {
+    return <FoodForm initialName={query} onSaved={onSelect} onCancel={() => setIsCreating(false)} />
+  }
 
   return (
     <Card role="region" aria-labelledby={titleId}>
@@ -78,6 +86,16 @@ export function FoodPicker({ onSelect, onClose }: FoodPickerProps) {
             ))}
           </ul>
         )}
+
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => setIsCreating(true)}
+        >
+          <Plus aria-hidden />
+          Crear alimento nuevo
+        </Button>
       </CardContent>
     </Card>
   )
