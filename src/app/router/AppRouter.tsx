@@ -33,8 +33,14 @@ const RoutinesPage = lazy(async () => ({
 const RoutineDetailPage = lazy(async () => ({
   default: (await import('@/features/workout')).RoutineDetailPage,
 }))
-const NutritionPage = lazy(async () => ({
-  default: (await import('@/features/nutrition')).NutritionPage,
+const NutritionLayout = lazy(async () => ({
+  default: (await import('@/features/nutrition')).NutritionLayout,
+}))
+const TodayPage = lazy(async () => ({
+  default: (await import('@/features/nutrition')).TodayPage,
+}))
+const FoodsPage = lazy(async () => ({
+  default: (await import('@/features/nutrition')).FoodsPage,
 }))
 const HabitsPage = lazy(async () => ({
   default: (await import('@/features/habits')).HabitsPage,
@@ -84,7 +90,10 @@ export function AppRouter() {
               <Route path={ROUTES.workoutHistory} element={<WorkoutHistoryPage />} />
               <Route path={ROUTES.workoutExercises} element={<ExercisesPage />} />
             </Route>
-            <Route path={ROUTES.nutrition} element={<NutritionPage />} />
+            <Route path={ROUTES.nutrition} element={<NutritionLayout />}>
+              <Route index element={<TodayPage />} />
+              <Route path={ROUTES.nutritionFoods} element={<FoodsPage />} />
+            </Route>
             <Route path={ROUTES.habits} element={<HabitsPage />} />
             <Route path={ROUTES.study} element={<StudyPage />} />
             <Route path={ROUTES.sleep} element={<SleepPage />} />

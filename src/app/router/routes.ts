@@ -16,6 +16,7 @@ export const ROUTES = {
   workoutExercises: '/entrenamiento/ejercicios',
   workoutRoutines: '/entrenamiento/rutinas',
   nutrition: '/nutricion',
+  nutritionFoods: '/nutricion/alimentos',
   habits: '/habitos',
   study: '/estudio',
   sleep: '/sueno',

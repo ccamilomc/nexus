@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FoodRef } from '../types/nutrition.types'
-import { formatCalories, formatGrams, formatQuantity, formatServing } from './format'
+import { formatCalories, formatCop, formatGrams, formatQuantity, formatServing } from './format'
 
 const EGG: FoodRef = {
   id: 'egg',
@@ -30,6 +30,19 @@ describe('formatGrams', () => {
   it('deja un decimal como mucho', () => {
     expect(formatGrams(31)).toBe('31 g')
     expect(formatGrams(6.3)).toBe('6,3 g')
+  })
+})
+
+describe('formatCop', () => {
+  it('muestra pesos colombianos sin centavos', () => {
+    const precio = formatCop(12500)
+
+    expect(precio).toContain('12.500')
+    expect(precio).not.toContain(',')
+  })
+
+  it('redondea en lugar de inventar decimales', () => {
+    expect(formatCop(18000.4)).toContain('18.000')
   })
 })
 

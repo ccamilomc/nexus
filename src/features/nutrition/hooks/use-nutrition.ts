@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 
+import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { AddFoodInput } from '../services/nutrition.service'
 import { nutritionService } from '../services/nutrition.service'
 import type { DayNutrition, Food, MealType } from '../types/nutrition.types'
@@ -25,6 +26,53 @@ export function useFoods() {
   return useQuery<Food[], AppError>({
     queryKey: nutritionKeys.foods(),
     queryFn: () => nutritionService.getFoods(),
+  })
+}
+
+/** Invalida el catálogo tras crear, editar o borrar un alimento. */
+function useRefreshFoods() {
+  const queryClient = useQueryClient()
+
+  return useCallback(() => {
+    // También lo consumido: un alimento editado cambia los macros del día.
+    void queryClient.invalidateQueries({ queryKey: nutritionKeys.days() })
+    return queryClient.invalidateQueries({ queryKey: nutritionKeys.foods() })
+  }, [queryClient])
+}
+
+/** Crea un alimento propio. */
+export function useCreateFood() {
+  const { user } = useAuth()
+  const refresh = useRefreshFoods()
+
+  return useMutation<Food, AppError, CreateFoodValues>({
+    mutationFn: (values) => nutritionService.createFood(requireUserId(user?.id), values),
+    onSuccess: refresh,
+  })
+}
+
+interface UpdateFoodVariables {
+  readonly foodId: string
+  readonly values: CreateFoodValues
+}
+
+/** Edita un alimento propio. */
+export function useUpdateFood() {
+  const refresh = useRefreshFoods()
+
+  return useMutation<Food, AppError, UpdateFoodVariables>({
+    mutationFn: ({ foodId, values }) => nutritionService.updateFood(foodId, values),
+    onSuccess: refresh,
+  })
+}
+
+/** Borra un alimento propio. */
+export function useDeleteFood() {
+  const refresh = useRefreshFoods()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (foodId) => nutritionService.deleteFood(foodId),
+    onSuccess: refresh,
   })
 }
 

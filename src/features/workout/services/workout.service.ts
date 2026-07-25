@@ -1,4 +1,4 @@
-import { createAppError, toAppError } from '@/core/error'
+import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
 
 import { workoutRepository } from '../repositories/workout.repository'
 import type {
@@ -16,7 +16,6 @@ import type {
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
-import { isForeignKeyViolation } from '../utils/postgrest-error'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 

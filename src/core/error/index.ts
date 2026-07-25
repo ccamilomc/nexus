@@ -6,3 +6,4 @@ export {
   toAppError,
 } from './app-error'
 export { AppErrorBoundary } from './AppErrorBoundary'
+export { isForeignKeyViolation } from './postgrest-error'
