@@ -6,16 +6,41 @@ import { Button } from '@/shared/components/ui/button'
 
 import { ExerciseForm } from '../components/ExerciseForm'
 import { ExerciseList } from '../components/ExerciseList'
-import { useExercises } from '../hooks/use-exercises'
+import { useDeleteExercise, useExercises } from '../hooks/use-exercises'
+import type { Exercise } from '../types/workout.types'
 
-/** Catálogo de ejercicios (globales y propios) y creación de ejercicios propios. */
+/** Catálogo de ejercicios (globales y propios), y creación/edición/borrado de los propios. */
 export function ExercisesPage() {
   const { data, isPending, isError, error, refetch } = useExercises()
+  const deleteExercise = useDeleteExercise()
   const [isCreating, setIsCreating] = useState(false)
-  const [createdName, setCreatedName] = useState<string | null>(null)
+  const [editing, setEditing] = useState<Exercise | null>(null)
+  const [savedName, setSavedName] = useState<string | null>(null)
 
   if (isPending) return <SkeletonList label="Cargando ejercicios" rows={6} rowClassName="h-14" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
+
+  const isFormOpen = isCreating || editing !== null
+
+  const openCreate = () => {
+    setEditing(null)
+    setSavedName(null)
+    deleteExercise.reset()
+    setIsCreating(true)
+  }
+
+  const openEdit = (exercise: Exercise) => {
+    setIsCreating(false)
+    setSavedName(null)
+    deleteExercise.reset()
+    setEditing(exercise)
+  }
+
+  const onSaved = (exercise: Exercise) => {
+    setIsCreating(false)
+    setEditing(null)
+    setSavedName(exercise.name)
+  }
 
   return (
     <div className="space-y-4">
@@ -23,37 +48,28 @@ export function ExercisesPage() {
         <p className="text-sm text-muted-foreground">
           {data.length} {data.length === 1 ? 'ejercicio' : 'ejercicios'}
         </p>
-        {isCreating ? null : (
-          <Button
-            type="button"
-            size="sm"
-            onClick={() => {
-              setCreatedName(null)
-              setIsCreating(true)
-            }}
-          >
+        {isFormOpen ? null : (
+          <Button type="button" size="sm" onClick={openCreate}>
             <Plus aria-hidden />
             Crear ejercicio
           </Button>
         )}
       </div>
 
-      {createdName ? (
-        <FormAlert variant="success">Guardamos «{createdName}» en tu catálogo.</FormAlert>
+      {savedName ? (
+        <FormAlert variant="success">Guardamos «{savedName}» en tu catálogo.</FormAlert>
       ) : null}
 
-      {isCreating ? (
-        <ExerciseForm
-          onCreated={(exercise) => {
-            setIsCreating(false)
-            setCreatedName(exercise.name)
-          }}
-          onCancel={() => setIsCreating(false)}
-        />
+      {deleteExercise.isError ? <FormAlert>{deleteExercise.error.message}</FormAlert> : null}
+
+      {editing ? (
+        <ExerciseForm exercise={editing} onSaved={onSaved} onCancel={() => setEditing(null)} />
+      ) : isCreating ? (
+        <ExerciseForm onSaved={onSaved} onCancel={() => setIsCreating(false)} />
       ) : null}
 
       {data.length === 0 ? (
-        isCreating ? null : (
+        isFormOpen ? null : (
           <EmptyState
             icon={Dumbbell}
             title="Aún no hay ejercicios"
@@ -61,7 +77,14 @@ export function ExercisesPage() {
           />
         )
       ) : (
-        <ExerciseList exercises={data} />
+        <ExerciseList
+          exercises={data}
+          onEdit={openEdit}
+          onDelete={(exercise) => {
+            setSavedName(null)
+            deleteExercise.mutate(exercise.id)
+          }}
+        />
       )}
     </div>
   )

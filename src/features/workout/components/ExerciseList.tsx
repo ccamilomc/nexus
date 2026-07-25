@@ -1,3 +1,7 @@
+import { Pencil } from 'lucide-react'
+
+import { Button } from '@/shared/components/ui/button'
+import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { cn } from '@/shared/lib/utils'
 
 import { EQUIPMENT_LABELS, MUSCLE_GROUP_LABELS } from '../constants/workout.constants'
@@ -5,8 +9,11 @@ import type { Exercise } from '../types/workout.types'
 
 interface ExerciseListProps {
   readonly exercises: readonly Exercise[]
-  /** Si se indica, cada ejercicio se vuelve seleccionable. */
+  /** Si se indica, cada ejercicio se vuelve seleccionable (modo selector). */
   readonly onSelect?: (exercise: Exercise) => void
+  /** Editar/borrar; sólo se ofrecen en los ejercicios propios. */
+  readonly onEdit?: (exercise: Exercise) => void
+  readonly onDelete?: (exercise: Exercise) => void
 }
 
 function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
@@ -22,7 +29,7 @@ function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
 }
 
 /** Lista de ejercicios agrupada por grupo muscular. */
-export function ExerciseList({ exercises, onSelect }: ExerciseListProps) {
+export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: ExerciseListProps) {
   const groups = new Map<Exercise['muscle_group'], Exercise[]>()
   for (const exercise of exercises) {
     const current = groups.get(exercise.muscle_group) ?? []
@@ -31,6 +38,7 @@ export function ExerciseList({ exercises, onSelect }: ExerciseListProps) {
   }
 
   const itemClassName = 'rounded-lg border border-border bg-card p-3 text-left'
+  const hasActions = Boolean(onEdit || onDelete)
 
   return (
     <div className="space-y-6">
@@ -57,6 +65,32 @@ export function ExerciseList({ exercises, onSelect }: ExerciseListProps) {
                 ) : (
                   <div className={itemClassName}>
                     <ExerciseSummary exercise={exercise} />
+                    {hasActions && exercise.is_custom ? (
+                      <div className="mt-2 flex flex-wrap items-center gap-1">
+                        {onEdit ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            aria-label={`Editar ${exercise.name}`}
+                            onClick={() => onEdit(exercise)}
+                          >
+                            <Pencil aria-hidden />
+                            Editar
+                          </Button>
+                        ) : null}
+                        {onDelete ? (
+                          <ConfirmButton
+                            label="Borrar"
+                            confirmLabel="Sí, borrar"
+                            size="sm"
+                            aria-label={`Borrar ${exercise.name}`}
+                            onConfirm={() => onDelete(exercise)}
+                            className="text-muted-foreground"
+                          />
+                        ) : null}
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </li>

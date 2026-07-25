@@ -10,20 +10,35 @@ import { Select } from '@/shared/components/ui/select'
 import { Textarea } from '@/shared/components/ui/textarea'
 
 import { EQUIPMENT_OPTIONS, MUSCLE_GROUP_OPTIONS } from '../constants/workout.constants'
-import { useCreateExercise } from '../hooks/use-exercises'
+import { useCreateExercise, useUpdateExercise } from '../hooks/use-exercises'
 import { createExerciseSchema, type CreateExerciseValues } from '../schemas/workout.schema'
 import type { Exercise } from '../types/workout.types'
 
 interface ExerciseFormProps {
-  /** Nombre inicial: útil al crear desde una búsqueda sin resultados. */
+  /** Nombre inicial al crear desde una búsqueda sin resultados (modo creación). */
   readonly initialName?: string
-  readonly onCreated: (exercise: Exercise) => void
+  /** Si se indica, el formulario edita ese ejercicio en lugar de crear uno. */
+  readonly exercise?: Exercise
+  readonly onSaved: (exercise: Exercise) => void
   readonly onCancel: () => void
 }
 
-/** Formulario para crear un ejercicio propio. Reutilizable en tab y selector. */
-export function ExerciseForm({ initialName = '', onCreated, onCancel }: ExerciseFormProps) {
+/** Valores del formulario a partir de un ejercicio existente (modo edición). */
+function toFormValues(exercise: Exercise): CreateExerciseValues {
+  return {
+    name: exercise.name,
+    muscleGroup: exercise.muscle_group,
+    equipment: exercise.equipment,
+    ...(exercise.instructions ? { instructions: exercise.instructions } : {}),
+  }
+}
+
+/** Formulario para crear o editar un ejercicio propio. */
+export function ExerciseForm({ initialName = '', exercise, onSaved, onCancel }: ExerciseFormProps) {
   const createExercise = useCreateExercise()
+  const updateExercise = useUpdateExercise()
+  const isEditing = exercise !== undefined
+  const pending = isEditing ? updateExercise : createExercise
 
   const {
     register,
@@ -31,11 +46,17 @@ export function ExerciseForm({ initialName = '', onCreated, onCancel }: Exercise
     formState: { errors },
   } = useForm<CreateExerciseValues>({
     resolver: zodResolver(createExerciseSchema),
-    defaultValues: { name: initialName, muscleGroup: 'chest', equipment: 'none' },
+    defaultValues: exercise
+      ? toFormValues(exercise)
+      : { name: initialName, muscleGroup: 'chest', equipment: 'none' },
   })
 
   const onSubmit = handleSubmit((values) => {
-    createExercise.mutate(values, { onSuccess: onCreated })
+    if (exercise) {
+      updateExercise.mutate({ exerciseId: exercise.id, values }, { onSuccess: onSaved })
+    } else {
+      createExercise.mutate(values, { onSuccess: onSaved })
+    }
   })
 
   return (
@@ -92,11 +113,15 @@ export function ExerciseForm({ initialName = '', onCreated, onCancel }: Exercise
             />
           </FormField>
 
-          {createExercise.isError ? <FormAlert>{createExercise.error.message}</FormAlert> : null}
+          {pending.isError ? <FormAlert>{pending.error.message}</FormAlert> : null}
 
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" disabled={createExercise.isPending}>
-              {createExercise.isPending ? 'Guardando…' : 'Guardar ejercicio'}
+            <Button type="submit" disabled={pending.isPending}>
+              {pending.isPending
+                ? 'Guardando…'
+                : isEditing
+                  ? 'Guardar cambios'
+                  : 'Guardar ejercicio'}
             </Button>
             <Button type="button" variant="ghost" onClick={onCancel}>
               Cancelar
