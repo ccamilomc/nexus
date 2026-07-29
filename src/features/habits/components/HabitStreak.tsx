@@ -13,6 +13,11 @@ interface HabitStreakProps {
  * no se recrimina nada, sólo se dice que aún no empieza (la gamificación
  * motiva, nunca castiga; ver docs/11-ux-ui-y-diseno.md).
  */
+/** Concuerda en singular y plural: «1 día seguido», «3 días seguidos». */
+function formatStreak(streak: number): string {
+  return streak === 1 ? '1 día seguido' : `${streak} días seguidos`
+}
+
 export function HabitStreak({ streak }: HabitStreakProps) {
   const hasStreak = streak > 0
 
@@ -24,7 +29,7 @@ export function HabitStreak({ streak }: HabitStreakProps) {
       )}
     >
       <Flame className="h-3.5 w-3.5" aria-hidden />
-      {hasStreak ? `${streak} ${streak === 1 ? 'día' : 'días'} seguidos` : 'Sin racha todavía'}
+      {hasStreak ? formatStreak(streak) : 'Sin racha todavía'}
     </p>
   )
 }
