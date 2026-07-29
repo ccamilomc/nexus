@@ -188,6 +188,33 @@ erDiagram
     habits ||--o{ habit_logs : registra
 ```
 
+### Cómo se cuenta una racha
+
+La racha **no se almacena**: se calcula a partir de los `habit_logs`, para que
+no pueda quedar desincronizada. Dos reglas la definen:
+
+1. **Si hoy todavía no está marcado, la racha no se rompe.** El día no ha
+   terminado, así que se cuenta hasta ayer. Ver una racha de 30 días a cero a
+   las nueve de la mañana desmotiva y además es falso: aún no se ha fallado.
+2. **Se rompe en cuanto falta un día anterior.** Ahí el hábito sí se dejó.
+
+Sólo cuentan los registros con `completed = true`; uno en `false` es «lo
+intenté y no salió», que no suma.
+
+### Desmarcar borra el registro
+
+Quitar la marca de un día hace un **borrado real**, no lógico, a diferencia del
+resto del modelo. El motivo es el índice único `uq_habit_logs_habit_date` sobre
+(`habit_id`, `date`) _donde `deleted_at is null`_: dejar una fila marcada como
+borrada ocuparía el hueco e impediría volver a marcar ese mismo día. Además,
+para una racha «no lo hice» y «no lo registré» son lo mismo.
+
+### La fecha es local
+
+`habit_logs.date` es una columna `date`, no `timestamptz`: un hábito se cumple
+«el martes», no «a las 21:04 del martes». Se guarda la fecha **local** del
+usuario para que marcar a las 23:50 cuente en el día que está viviendo.
+
 ## Study
 
 - **subjects**: materia (`name`, color, `weekly_target_minutes`).
