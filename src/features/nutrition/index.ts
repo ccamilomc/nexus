@@ -1,3 +1,5 @@
+export type { NutritionSummary } from './hooks/use-nutrition-summary'
+export { useNutritionSummary } from './hooks/use-nutrition-summary'
 export { FoodsPage } from './pages/FoodsPage'
 export { GoalsPage } from './pages/GoalsPage'
 export { NutritionLayout } from './pages/NutritionLayout'
