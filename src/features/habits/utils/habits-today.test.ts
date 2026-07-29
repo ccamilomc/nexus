@@ -1,0 +1,98 @@
+import { describe, expect, it } from 'vitest'
+
+import type { Habit, HabitLog } from '../types/habits.types'
+import { toDateKey } from './date-key'
+import { buildHabitsToday } from './habits-today'
+
+const TODAY = new Date(2026, 6, 29)
+
+function dayKey(offset: number): string {
+  const day = new Date(TODAY)
+  day.setDate(day.getDate() - offset)
+  return toDateKey(day)
+}
+
+function habit(id: string, name: string): Habit {
+  return {
+    id,
+    user_id: 'user-1',
+    name,
+    description: null,
+    icon: 'circle-check',
+    color: '#3b82f6',
+    frequency: 'daily',
+    target_count: 1,
+    target_weekdays: null,
+    is_active: true,
+    archived_at: null,
+    created_at: '2026-07-01T10:00:00.000Z',
+    updated_at: '2026-07-01T10:00:00.000Z',
+    deleted_at: null,
+  }
+}
+
+function log(habitId: string, offset: number, completed = true): HabitLog {
+  return {
+    id: `log-${habitId}-${offset}`,
+    user_id: 'user-1',
+    habit_id: habitId,
+    date: dayKey(offset),
+    count: 1,
+    completed,
+    notes: null,
+    created_at: '2026-07-29T10:00:00.000Z',
+    updated_at: '2026-07-29T10:00:00.000Z',
+    deleted_at: null,
+  }
+}
+
+describe('buildHabitsToday', () => {
+  it('marca lo hecho hoy y calcula la racha', () => {
+    const [entry] = buildHabitsToday(
+      [habit('h1', 'Leer')],
+      [log('h1', 0), log('h1', 1), log('h1', 2)],
+      TODAY,
+      7,
+    )
+
+    expect(entry?.isDoneToday).toBe(true)
+    expect(entry?.streak).toBe(3)
+  })
+
+  it('un hábito sin registros aparece igual, a cero', () => {
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [], TODAY, 7)
+
+    expect(entry?.isDoneToday).toBe(false)
+    expect(entry?.streak).toBe(0)
+    expect(entry?.recentDays).toHaveLength(7)
+    expect(entry?.recentDays.every((day) => !day.isDone)).toBe(true)
+  })
+
+  it('no mezcla los registros de dos hábitos', () => {
+    const entries = buildHabitsToday(
+      [habit('h1', 'Leer'), habit('h2', 'Meditar')],
+      [log('h1', 0), log('h1', 1)],
+      TODAY,
+      7,
+    )
+
+    expect(entries[0]?.streak).toBe(2)
+    expect(entries[1]?.streak).toBe(0)
+    expect(entries[1]?.isDoneToday).toBe(false)
+  })
+
+  it('ignora los registros no cumplidos', () => {
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0, false)], TODAY, 7)
+
+    expect(entry?.isDoneToday).toBe(false)
+    expect(entry?.streak).toBe(0)
+  })
+
+  it('los días recientes van del más antiguo al más reciente y acaban hoy', () => {
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0)], TODAY, 3)
+    const days = entry?.recentDays ?? []
+
+    expect(days.map((day) => day.dateKey)).toEqual([dayKey(2), dayKey(1), dayKey(0)])
+    expect(days.at(-1)?.isDone).toBe(true)
+  })
+})
