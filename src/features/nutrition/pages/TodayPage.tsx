@@ -1,6 +1,5 @@
-import { useMemo } from 'react'
-
 import { LoadFailure, SkeletonList } from '@/shared/components/feedback'
+import { useToday } from '@/shared/hooks'
 
 import { BudgetCard } from '../components/BudgetCard'
 import { DaySummaryCard } from '../components/DaySummaryCard'
@@ -10,9 +9,9 @@ import { useActiveGoal, useDayNutrition } from '../hooks/use-nutrition'
 
 /** Lo que se ha comido hoy, por comidas, con los macros del día. */
 export function TodayPage() {
-  // Una única referencia temporal para todo el render: si cambiara a media
-  // pantalla, la consulta y los registros mirarían días distintos.
-  const today = useMemo(() => new Date(), [])
+  // Una única referencia temporal para todo el render, que además se pone al
+  // día sola si la pantalla se queda abierta y cruza la medianoche.
+  const today = useToday()
   const { data, isPending, isError, error, refetch } = useDayNutrition(today)
   // Los objetivos son opcionales: si fallan o no existen, el día se ve igual.
   const { data: goal } = useActiveGoal()

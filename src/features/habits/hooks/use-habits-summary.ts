@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useToday } from '@/shared/hooks'
 
 import { useHabitsToday } from './use-habits'
 
@@ -17,7 +17,7 @@ export interface HabitsSummary {
 }
 
 export function useHabitsSummary(): HabitsSummary {
-  const today = useMemo(() => new Date(), [])
+  const today = useToday()
   const { data, isPending } = useHabitsToday(today)
 
   const habits = data ?? []

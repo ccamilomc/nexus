@@ -98,16 +98,23 @@ export const habitsService = {
   },
 
   /**
-   * Marca o desmarca un hábito en una fecha.
+   * Marca o desmarca un hábito en un día.
+   *
+   * El día llega ya como clave `YYYY-MM-DD` —lo que guarda la columna `date`—
+   * porque un hábito se cumple «el martes», no en un instante: así se puede
+   * corregir un día pasado sin convertir fechas de ida y vuelta.
    *
    * Desmarcar **borra** el registro en lugar de dejarlo en `completed: false`:
    * «no lo hice» y «no lo registré» son lo mismo para una racha, y así el
    * índice único por (hábito, fecha) permite volver a marcarlo.
    */
-  async toggleHabit(userId: string, habitId: string, date: Date, isDone: boolean): Promise<void> {
+  async toggleHabit(
+    userId: string,
+    habitId: string,
+    dateKey: string,
+    isDone: boolean,
+  ): Promise<void> {
     try {
-      const dateKey = toDateKey(date)
-
       if (isDone) {
         await habitsRepository.deleteLog(habitId, dateKey)
         return

@@ -55,18 +55,20 @@ export function useCreateHabit() {
 
 interface ToggleHabitVariables {
   readonly habitId: string
+  /** Día a marcar, en `YYYY-MM-DD`: puede ser hoy o uno ya pasado. */
+  readonly dateKey: string
   /** Estado **actual**: el servicio lo invierte. */
   readonly isDone: boolean
 }
 
-/** Marca o desmarca un hábito en el día indicado. */
-export function useToggleHabit(date: Date) {
+/** Marca o desmarca un hábito en un día. */
+export function useToggleHabit() {
   const { user } = useAuth()
   const refresh = useRefreshHabits()
 
   return useMutation<void, AppError, ToggleHabitVariables>({
-    mutationFn: ({ habitId, isDone }) =>
-      habitsService.toggleHabit(requireUserId(user?.id), habitId, date, isDone),
+    mutationFn: ({ habitId, dateKey, isDone }) =>
+      habitsService.toggleHabit(requireUserId(user?.id), habitId, dateKey, isDone),
     onSuccess: refresh,
   })
 }

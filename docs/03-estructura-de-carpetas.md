@@ -59,7 +59,7 @@ nexus/
 │   │   │   ├── form/              # Campos de formulario (FormField)
 │   │   │   └── feedback/          # Estados de UI: EmptyState, Skeleton,
 │   │   │                          # LoadFailure, FormAlert
-│   │   ├── hooks/                 # Hooks genéricos (useDebounce, useMediaQuery…)
+│   │   ├── hooks/                 # Hooks genéricos (useToday, useMediaQuery…)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas
 │   │   ├── types/                 # Tipos globales compartidos

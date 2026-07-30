@@ -183,8 +183,10 @@ describe('habitsService.getHabitsToday', () => {
 })
 
 describe('habitsService.toggleHabit', () => {
+  const TODAY_KEY = toDateKey(TODAY)
+
   it('marcar inserta el registro del día', async () => {
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY, false)
+    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
 
     expect(insertLog).toHaveBeenCalledExactlyOnceWith({
       user_id: USER_ID,
@@ -197,24 +199,23 @@ describe('habitsService.toggleHabit', () => {
   it('desmarcar borra el registro en lugar de dejarlo a medias', async () => {
     // Borrado real: el índice único por (hábito, fecha) sólo mira filas vivas,
     // así que una tumba impediría volver a marcar ese mismo día.
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY, true)
+    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, true)
 
     expect(deleteLog).toHaveBeenCalledExactlyOnceWith('h1', '2026-07-29')
     expect(insertLog).not.toHaveBeenCalled()
   })
 
-  it('marcar a las 23:50 cuenta en el día que el usuario está viviendo', async () => {
-    // La misma hora en UTC ya es el día siguiente: la fecha ha de ser la local.
-    await habitsService.toggleHabit(USER_ID, 'h1', new Date(2026, 6, 29, 23, 50), false)
+  it('marca un día ya pasado, para arreglar el olvido de ayer', async () => {
+    await habitsService.toggleHabit(USER_ID, 'h1', '2026-07-27', false)
 
-    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-29' }))
+    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-27' }))
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     insertLog.mockRejectedValue(new Error('duplicate key value'))
 
     const error: unknown = await habitsService
-      .toggleHabit(USER_ID, 'h1', TODAY, false)
+      .toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
       .catch((e) => e)
 
     expect(isAppError(error)).toBe(true)

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useToday } from '@/shared/hooks'
 
 import { formatCalories, formatVolumeMl } from '../utils/format'
 import { useActiveGoal, useDayNutrition, useDayWater } from './use-nutrition'
@@ -24,7 +24,7 @@ function describe(consumed: string, target: string | null): string {
 }
 
 export function useNutritionSummary(): NutritionSummary {
-  const today = useMemo(() => new Date(), [])
+  const today = useToday()
   const day = useDayNutrition(today)
   const water = useDayWater(today)
   const goal = useActiveGoal()
