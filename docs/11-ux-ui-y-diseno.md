@@ -111,6 +111,10 @@ Requisito, no opcional (detalle transversal aquí; auditoría en Sprint 16):
   - En **controles adyacentes** (p. ej. el selector de tema) no se usa esa
     técnica: las áreas se solaparían y se pulsaría el botón equivocado. Ahí los
     controles se agrandan de verdad.
+  - Cuando ni así caben, se documenta el porqué: los siete días del
+    mini-calendario de hábitos miden **36 px** porque a 44 no entran en una
+    pantalla de 320 px. Siguen por encima del mínimo de WCAG 2.2 (24 px) y
+    llevan separación entre ellos.
 
 Nunca se sacrifica accesibilidad por estética.
 

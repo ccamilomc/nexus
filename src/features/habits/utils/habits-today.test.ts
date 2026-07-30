@@ -98,6 +98,24 @@ describe('buildHabitsToday', () => {
     expect(days.at(-1)?.isDone).toBe(true)
   })
 
+  it('los días anteriores a la creación del hábito no se pueden marcar', () => {
+    // El hábito nació el 1 de julio: en junio no existía, así que marcarlo ahí
+    // sumaría a la racha días que la constancia no cuenta.
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [], new Date(2026, 6, 2), 7, 30)
+    const days = entry?.recentDays ?? []
+
+    expect(days.filter((day) => day.isEditable).map((day) => day.dateKey)).toEqual([
+      '2026-07-01',
+      '2026-07-02',
+    ])
+  })
+
+  it('los días desde la creación son corregibles, estén hechos o no', () => {
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 1)], TODAY, 3, 30)
+
+    expect(entry?.recentDays.every((day) => day.isEditable)).toBe(true)
+  })
+
   it('calcula la constancia desde la creación del hábito, no antes', () => {
     // El hábito se creó el 1 de julio y hoy es el 29: la ventana de 30 días
     // empezaría el 30 de junio, así que se recorta a los 29 días que el hábito

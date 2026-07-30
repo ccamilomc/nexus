@@ -30,12 +30,19 @@ export function buildHabitsToday(
 
   return habits.map((habit) => {
     const completed = completedByHabit.get(habit.id) ?? new Set<string>()
+    // Las claves `YYYY-MM-DD` se comparan como texto, que en ese formato
+    // equivale a compararlas como fechas.
+    const startKey = toDateKey(new Date(habit.created_at))
 
     return {
       habit,
       isDoneToday: completed.has(todayKey),
       streak: calculateStreak(completed, today),
-      recentDays: window.map((dateKey) => ({ dateKey, isDone: completed.has(dateKey) })),
+      recentDays: window.map((dateKey) => ({
+        dateKey,
+        isDone: completed.has(dateKey),
+        isEditable: dateKey >= startKey,
+      })),
       consistency: calculateConsistency(
         completed,
         today,

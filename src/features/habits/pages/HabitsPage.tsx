@@ -1,19 +1,22 @@
 import { Plus, Repeat } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
 import { Button } from '@/shared/components/ui/button'
+import { useToday } from '@/shared/hooks'
 
 import { HabitCard } from '../components/HabitCard'
 import { HabitForm } from '../components/HabitForm'
 import { useHabitsToday } from '../hooks/use-habits'
+import { toDateKey } from '../utils/date-key'
 
 /** Los hábitos de hoy: marcarlos, ver la racha y crear nuevos. */
 export function HabitsPage() {
-  // Una única referencia temporal por render: si cambiara a media pantalla, la
-  // consulta y el marcado mirarían días distintos.
-  const today = useMemo(() => new Date(), [])
+  // Una única referencia temporal para todo el render, que además se pone al
+  // día sola si la pantalla se queda abierta y cruza la medianoche.
+  const today = useToday()
+  const todayKey = toDateKey(today)
   const { data, isPending, isError, error, refetch } = useHabitsToday(today)
   const [isCreating, setIsCreating] = useState(false)
 
@@ -62,7 +65,7 @@ export function HabitsPage() {
             <ul className="space-y-3">
               {data.map((entry) => (
                 <li key={entry.habit.id}>
-                  <HabitCard date={today} entry={entry} />
+                  <HabitCard todayKey={todayKey} entry={entry} />
                 </li>
               ))}
             </ul>

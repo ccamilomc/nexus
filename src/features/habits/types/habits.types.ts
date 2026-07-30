@@ -26,6 +26,13 @@ export interface HabitDay {
   /** Fecha local en `YYYY-MM-DD`. */
   readonly dateKey: string
   readonly isDone: boolean
+  /**
+   * Si se puede marcar o desmarcar.
+   *
+   * Es `false` en los días **anteriores a la creación del hábito**: ahí no
+   * existía, y marcarlos sumaría a la racha días que la constancia no cuenta.
+   */
+  readonly isEditable: boolean
 }
 
 /**

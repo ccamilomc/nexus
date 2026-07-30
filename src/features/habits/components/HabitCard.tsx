@@ -12,14 +12,15 @@ import { HabitStreak } from './HabitStreak'
 import { HabitWeek } from './HabitWeek'
 
 interface HabitCardProps {
-  readonly date: Date
+  /** Día de hoy en `YYYY-MM-DD`. */
+  readonly todayKey: string
   readonly entry: HabitToday
 }
 
-/** Un hábito: marcarlo hoy, su racha y sus últimos días. */
-export function HabitCard({ date, entry }: HabitCardProps) {
+/** Un hábito: marcarlo hoy, corregir días pasados, su racha y su constancia. */
+export function HabitCard({ todayKey, entry }: HabitCardProps) {
   const { habit, isDoneToday, streak, recentDays, consistency } = entry
-  const toggle = useToggleHabit(date)
+  const toggle = useToggleHabit()
   const archive = useArchiveHabit()
 
   return (
@@ -33,7 +34,9 @@ export function HabitCard({ date, entry }: HabitCardProps) {
             aria-checked={isDoneToday}
             aria-label={`${habit.name}: marcar como ${isDoneToday ? 'no cumplido' : 'cumplido'} hoy`}
             disabled={toggle.isPending}
-            onClick={() => toggle.mutate({ habitId: habit.id, isDone: isDoneToday })}
+            onClick={() =>
+              toggle.mutate({ habitId: habit.id, dateKey: todayKey, isDone: isDoneToday })
+            }
             className={cn(
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-full border-2 transition-colors',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
@@ -60,7 +63,14 @@ export function HabitCard({ date, entry }: HabitCardProps) {
         <HabitConsistencyBar consistency={consistency} />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <HabitWeek days={recentDays} />
+          <HabitWeek
+            days={recentDays}
+            habitName={habit.name}
+            disabled={toggle.isPending}
+            onToggle={({ dateKey, isDone }) =>
+              toggle.mutate({ habitId: habit.id, dateKey, isDone })
+            }
+          />
           <ConfirmButton
             label="Archivar"
             confirmLabel="Sí, archivar"

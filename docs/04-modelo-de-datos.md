@@ -208,6 +208,18 @@ viaje). Así una racha de 200 días se cuenta entera y la carga habitual se
 resuelve con una única consulta: quien no encadena años no paga por los que sí.
 Recortarla al borde de la ventana castigaría justo a quien mejor lo hace.
 
+### Se pueden corregir días pasados
+
+Olvidarse de marcar ayer es lo más común que le pasa a un hábito, así que cada
+día del mini-calendario es un interruptor: la fecha y el estado ya están en
+pantalla. Los días **anteriores a la creación del hábito** se muestran apagados
+y no se pueden tocar — ahí no existía, y marcarlos sumaría a la racha días que
+la constancia no cuenta.
+
+Por eso el servicio recibe el día como clave `YYYY-MM-DD` (lo que guarda la
+columna `date`) en lugar de un instante: un hábito se cumple «el martes», y así
+corregir un día pasado no obliga a convertir fechas de ida y vuelta.
+
 ### Desmarcar borra el registro
 
 Quitar la marca de un día hace un **borrado real**, no lógico, a diferencia del
