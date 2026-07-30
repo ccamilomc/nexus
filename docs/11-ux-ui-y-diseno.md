@@ -90,6 +90,17 @@ nunca queda sin saber qué ocurrió.
 Es el centro del sistema. Responde de inmediato: ¿cómo voy?, ¿qué hago hoy?, ¿qué
 está pendiente?, ¿qué mejoró/empeoró? No muestra información innecesaria.
 
+**«Registrar rápido» registra de verdad cuando puede.** Lo que se resuelve en un
+toque se hace ahí mismo (el agua); lo que exige elegir algo —qué comiste, qué
+entrenaste— lleva a su pantalla. Un panel llamado «registrar» que sólo navega
+promete lo que no cumple. Las dos clases de acción se ven y se tocan igual: quien
+las usa no tiene por qué adivinar de cuál se trata.
+
+Las acciones que registran **no viven en el dashboard**: cada feature expone
+desde su barrel un hook con etiquetas ya formadas y una acción sin argumentos
+(`useQuickWater`), igual que con los resúmenes. El dashboard no sabe de
+mililitros ni de unidades.
+
 ## Gamificación
 
 Debe **motivar, no manipular ni castigar**. Foco en rachas, logros, progreso y
