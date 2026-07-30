@@ -1,6 +1,6 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–7 terminados (Workout y Nutrition completos). Siguiente: Sprint 8 (Habits).
+> **Estado:** Sprints 0–8 terminados (Workout, Nutrition y Habits completos). Siguiente: Sprint 9 (Study).
 > **Versión del diseño:** 1.0
 > **Fecha:** 2026-07-29
 

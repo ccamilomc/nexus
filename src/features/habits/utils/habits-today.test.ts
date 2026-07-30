@@ -53,6 +53,7 @@ describe('buildHabitsToday', () => {
       [log('h1', 0), log('h1', 1), log('h1', 2)],
       TODAY,
       7,
+      30,
     )
 
     expect(entry?.isDoneToday).toBe(true)
@@ -60,7 +61,7 @@ describe('buildHabitsToday', () => {
   })
 
   it('un hábito sin registros aparece igual, a cero', () => {
-    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [], TODAY, 7)
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [], TODAY, 7, 30)
 
     expect(entry?.isDoneToday).toBe(false)
     expect(entry?.streak).toBe(0)
@@ -74,6 +75,7 @@ describe('buildHabitsToday', () => {
       [log('h1', 0), log('h1', 1)],
       TODAY,
       7,
+      30,
     )
 
     expect(entries[0]?.streak).toBe(2)
@@ -82,17 +84,33 @@ describe('buildHabitsToday', () => {
   })
 
   it('ignora los registros no cumplidos', () => {
-    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0, false)], TODAY, 7)
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0, false)], TODAY, 7, 30)
 
     expect(entry?.isDoneToday).toBe(false)
     expect(entry?.streak).toBe(0)
   })
 
   it('los días recientes van del más antiguo al más reciente y acaban hoy', () => {
-    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0)], TODAY, 3)
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 0)], TODAY, 3, 30)
     const days = entry?.recentDays ?? []
 
     expect(days.map((day) => day.dateKey)).toEqual([dayKey(2), dayKey(1), dayKey(0)])
     expect(days.at(-1)?.isDone).toBe(true)
+  })
+
+  it('calcula la constancia desde la creación del hábito, no antes', () => {
+    // El hábito se creó el 1 de julio y hoy es el 29: la ventana de 30 días
+    // empezaría el 30 de junio, así que se recorta a los 29 días que el hábito
+    // lleva existiendo.
+    const [entry] = buildHabitsToday(
+      [habit('h1', 'Leer')],
+      [log('h1', 0), log('h1', 1)],
+      TODAY,
+      7,
+      30,
+    )
+
+    expect(entry?.consistency.doneDays).toBe(2)
+    expect(entry?.consistency.totalDays).toBe(29)
   })
 })

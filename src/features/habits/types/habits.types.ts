@@ -18,10 +18,24 @@ export interface HabitToday {
   readonly streak: number
   /** Últimos días, del más antiguo al más reciente, para el mini-calendario. */
   readonly recentDays: readonly HabitDay[]
+  /** Cumplimiento en las últimas semanas, para ver la tendencia. */
+  readonly consistency: HabitConsistency
 }
 
 export interface HabitDay {
   /** Fecha local en `YYYY-MM-DD`. */
   readonly dateKey: string
   readonly isDone: boolean
+}
+
+/**
+ * Constancia de un hábito en una ventana de días.
+ *
+ * `totalDays` puede ser menor que la ventana pedida: nunca cuenta días
+ * anteriores a la creación del hábito.
+ */
+export interface HabitConsistency {
+  readonly doneDays: number
+  readonly totalDays: number
+  readonly percent: number
 }

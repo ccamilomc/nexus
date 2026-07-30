@@ -7,6 +7,7 @@ import { cn } from '@/shared/lib/utils'
 
 import { useArchiveHabit, useToggleHabit } from '../hooks/use-habits'
 import type { HabitToday } from '../types/habits.types'
+import { HabitConsistencyBar } from './HabitConsistencyBar'
 import { HabitStreak } from './HabitStreak'
 import { HabitWeek } from './HabitWeek'
 
@@ -17,7 +18,7 @@ interface HabitCardProps {
 
 /** Un hábito: marcarlo hoy, su racha y sus últimos días. */
 export function HabitCard({ date, entry }: HabitCardProps) {
-  const { habit, isDoneToday, streak, recentDays } = entry
+  const { habit, isDoneToday, streak, recentDays, consistency } = entry
   const toggle = useToggleHabit(date)
   const archive = useArchiveHabit()
 
@@ -55,6 +56,8 @@ export function HabitCard({ date, entry }: HabitCardProps) {
             <HabitStreak streak={streak} />
           </div>
         </div>
+
+        <HabitConsistencyBar consistency={consistency} />
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <HabitWeek days={recentDays} />
