@@ -2,18 +2,32 @@ import { toAppError } from '@/core/error'
 
 import { habitsRepository } from '../repositories/habits.repository'
 import type { CreateHabitValues } from '../schemas/habits.schema'
-import type { Habit, HabitToday } from '../types/habits.types'
-import { lastDays, toDateKey } from '../utils/date-key'
+import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
+import { minusDays, previousDay, toDateKey } from '../utils/date-key'
 import { buildHabitsToday } from '../utils/habits-today'
+import { hasCompletedOn } from '../utils/streak'
 
 /**
- * Días que se traen para pintar el mini-calendario y calcular la racha.
+ * Ventana inicial del historial.
  *
- * 60 días cubren de sobra cualquier racha razonable sin traerse el historial
- * entero. Si alguien supera los 60 días seguidos, la racha se verá recortada;
- * es un límite conocido y se ampliará cuando haga falta.
+ * Cubre el mini-calendario, la constancia y casi cualquier racha con una sola
+ * consulta.
  */
 const HISTORY_DAYS = 60
+
+/**
+ * Tramo que se pide cuando una racha sigue viva en el día más antiguo traído.
+ *
+ * Un año por viaje: quien lleve años sin fallar paga una consulta por año, y
+ * quien no —la inmensa mayoría de las cargas— no paga ninguna.
+ */
+const HISTORY_CHUNK_DAYS = 365
+
+/**
+ * Tope de tramos (~10 años). No es un límite del producto: es una red de
+ * seguridad para que un dato imposible no encadene consultas sin fin.
+ */
+const MAX_HISTORY_CHUNKS = 10
 
 /** Días que se muestran en el mini-calendario de cada hábito. */
 export const RECENT_DAYS = 7
@@ -26,6 +40,35 @@ export const RECENT_DAYS = 7
  */
 export const CONSISTENCY_DAYS = 30
 
+/**
+ * Registros necesarios para pintar la pantalla y calcular las rachas.
+ *
+ * Se trae una ventana reciente y, **sólo si alguna racha sigue viva en su día
+ * más antiguo**, se piden tramos anteriores. Así una racha larga no se recorta
+ * al borde de la ventana —lo que castigaría justo a quien mejor lo hace— y el
+ * caso normal se sigue resolviendo con una única consulta.
+ */
+async function loadHistory(userId: string, today: Date): Promise<readonly HabitLog[]> {
+  const logs: HabitLog[] = []
+  let toDate = today
+  let days = HISTORY_DAYS
+
+  for (let chunk = 0; chunk < MAX_HISTORY_CHUNKS; chunk += 1) {
+    const fromDate = minusDays(toDate, days - 1)
+    const fromKey = toDateKey(fromDate)
+
+    logs.push(...(await habitsRepository.listLogsBetween(userId, fromKey, toDateKey(toDate))))
+
+    // Ninguna racha llega al día más antiguo traído: no hay nada más que buscar.
+    if (!hasCompletedOn(logs, fromKey)) break
+
+    toDate = previousDay(fromDate)
+    days = HISTORY_CHUNK_DAYS
+  }
+
+  return logs
+}
+
 /** Reglas de negocio de hábitos. Traduce errores técnicos a `AppError`. */
 export const habitsService = {
   /** Los hábitos activos con su estado de hoy, su racha y sus últimos días. */
@@ -34,9 +77,7 @@ export const habitsService = {
       const habits = await habitsRepository.listHabits(userId)
       if (habits.length === 0) return []
 
-      const window = lastDays(today, HISTORY_DAYS)
-      const fromKey = toDateKey(window[0] ?? today)
-      const logs = await habitsRepository.listLogsBetween(userId, fromKey, toDateKey(today))
+      const logs = await loadHistory(userId, today)
 
       return buildHabitsToday(habits, logs, today, RECENT_DAYS, CONSISTENCY_DAYS)
     } catch (error) {

@@ -15,12 +15,17 @@ export function toDateKey(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+/** La fecha `days` días antes de `date`, sin tocar el original. */
+export function minusDays(date: Date, days: number): Date {
+  const result = new Date(date)
+  result.setDate(result.getDate() - days)
+
+  return result
+}
+
 /** El día anterior a `date`, sin tocar el original. */
 export function previousDay(date: Date): Date {
-  const previous = new Date(date)
-  previous.setDate(previous.getDate() - 1)
-
-  return previous
+  return minusDays(date, 1)
 }
 
 /** Los últimos `days` días, del más antiguo al más reciente (incluye hoy). */
@@ -28,9 +33,7 @@ export function lastDays(today: Date, days: number): readonly Date[] {
   const result: Date[] = []
 
   for (let offset = days - 1; offset >= 0; offset -= 1) {
-    const day = new Date(today)
-    day.setDate(day.getDate() - offset)
-    result.push(day)
+    result.push(minusDays(today, offset))
   }
 
   return result

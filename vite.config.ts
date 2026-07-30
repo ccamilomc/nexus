@@ -16,5 +16,10 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: './src/test/setup.ts',
     css: true,
+    // Media jornada de Nexus se apoya en la fecha **local** (un hábito se cumple
+    // «el martes», no a las 21:04 UTC; ver docs/04-modelo-de-datos.md). Fijar la
+    // zona horaria hace que los tests midan lo mismo aquí y en CI, que corre en
+    // UTC: sin esto, un fallo de zona horaria sólo aparecería en producción.
+    env: { TZ: 'America/Bogota' },
   },
 })

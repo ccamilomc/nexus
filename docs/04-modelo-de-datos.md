@@ -201,6 +201,13 @@ no pueda quedar desincronizada. Dos reglas la definen:
 Sólo cuentan los registros con `completed = true`; uno en `false` es «lo
 intenté y no salió», que no suma.
 
+**Una racha no tiene techo.** El servicio trae primero los últimos 60 días —lo
+que necesitan el mini-calendario y la constancia— y **sólo si alguna racha sigue
+viva en el día más antiguo traído** pide otro tramo hacia atrás (un año por
+viaje). Así una racha de 200 días se cuenta entera y la carga habitual se
+resuelve con una única consulta: quien no encadena años no paga por los que sí.
+Recortarla al borde de la ventana castigaría justo a quien mejor lo hace.
+
 ### Desmarcar borra el registro
 
 Quitar la marca de un día hace un **borrado real**, no lógico, a diferencia del

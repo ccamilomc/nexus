@@ -114,6 +114,17 @@ Se prueba lo que **aporta valor**, no por cobertura. Prioridad:
 Herramientas: Vitest + Testing Library. Los tests del motor usan `DailyContext`
 fijos, sin red ni BD.
 
+**Services**: se prueban sustituyendo su repositorio con `vi.mock` y una
+factoría. Así el test mide **reglas de negocio** (¿reutiliza la comida del día?,
+¿respeta el entrenamiento en curso?, ¿traduce el error a un mensaje humano?) y
+no consultas SQL. La factoría evita además cargar el módulo real, que arrastraría
+el cliente de Supabase y sus variables de entorno —ausentes en CI—.
+
+**Zona horaria**: los tests corren siempre en `America/Bogota`
+(`test.env.TZ` en `vite.config.ts`). Buena parte del producto se apoya en la
+fecha local; sin fijarla, un fallo de zona horaria pasaría en CI (que corre en
+UTC) y sólo aparecería en producción.
+
 ## Definición de "terminado" (checklist de código)
 
 Una funcionalidad no está terminada hasta que: compila, sin errores de TS ni
