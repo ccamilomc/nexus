@@ -1,5 +1,7 @@
 export type { NutritionSummary } from './hooks/use-nutrition-summary'
 export { useNutritionSummary } from './hooks/use-nutrition-summary'
+export type { QuickWater } from './hooks/use-quick-water'
+export { useQuickWater } from './hooks/use-quick-water'
 export { FoodsPage } from './pages/FoodsPage'
 export { GoalsPage } from './pages/GoalsPage'
 export { NutritionLayout } from './pages/NutritionLayout'
