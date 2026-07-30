@@ -134,4 +134,27 @@ export const habitsService = {
       throw toAppError(error)
     }
   },
+
+  /** Los hábitos archivados, para poder consultarlos y recuperarlos. */
+  async getArchivedHabits(userId: string): Promise<readonly Habit[]> {
+    try {
+      return await habitsRepository.listArchivedHabits(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Devuelve un hábito archivado a la lista.
+   *
+   * Su historial nunca se tocó, así que la racha y la constancia vuelven tal y
+   * como estaban: archivar es guardar, no borrar.
+   */
+  async restoreHabit(habitId: string): Promise<void> {
+    try {
+      await habitsRepository.updateHabit(habitId, { archived_at: null })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
 }

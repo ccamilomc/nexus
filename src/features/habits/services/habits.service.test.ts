@@ -15,6 +15,7 @@ import { habitsService } from './habits.service'
 vi.mock('../repositories/habits.repository', () => ({
   habitsRepository: {
     listHabits: vi.fn(),
+    listArchivedHabits: vi.fn(),
     listLogsBetween: vi.fn(),
     insertHabit: vi.fn(),
     updateHabit: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('../repositories/habits.repository', () => ({
 }))
 
 const listHabits = vi.mocked(habitsRepository.listHabits)
+const listArchivedHabits = vi.mocked(habitsRepository.listArchivedHabits)
 const listLogsBetween = vi.mocked(habitsRepository.listLogsBetween)
 const insertHabit = vi.mocked(habitsRepository.insertHabit)
 const updateHabit = vi.mocked(habitsRepository.updateHabit)
@@ -246,5 +248,34 @@ describe('habitsService.archiveHabit', () => {
     const [habitId, patch] = updateHabit.mock.calls[0] ?? []
     expect(habitId).toBe('h1')
     expect(typeof patch?.archived_at).toBe('string')
+  })
+})
+
+describe('habitsService.restoreHabit', () => {
+  it('recuperar sólo quita la fecha de archivado: el historial nunca se tocó', async () => {
+    updateHabit.mockResolvedValue(habit('h1'))
+
+    await habitsService.restoreHabit('h1')
+
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', { archived_at: null })
+  })
+
+  it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
+    updateHabit.mockRejectedValue(new Error('violates row-level security policy'))
+
+    const error: unknown = await habitsService.restoreHabit('h1').catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).not.toContain('row-level security')
+  })
+})
+
+describe('habitsService.getArchivedHabits', () => {
+  it('devuelve los archivados tal cual los da el repositorio', async () => {
+    const archived = habit('h9')
+    listArchivedHabits.mockResolvedValue([archived])
+
+    await expect(habitsService.getArchivedHabits(USER_ID)).resolves.toEqual([archived])
+    expect(listArchivedHabits).toHaveBeenCalledExactlyOnceWith(USER_ID)
   })
 })

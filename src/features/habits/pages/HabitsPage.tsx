@@ -6,6 +6,7 @@ import { PageHeader } from '@/shared/components/layout'
 import { Button } from '@/shared/components/ui/button'
 import { useToday } from '@/shared/hooks'
 
+import { ArchivedHabits } from '../components/ArchivedHabits'
 import { HabitCard } from '../components/HabitCard'
 import { HabitForm } from '../components/HabitForm'
 import { useHabitsToday } from '../hooks/use-habits'
@@ -70,6 +71,8 @@ export function HabitsPage() {
               ))}
             </ul>
           )}
+
+          <ArchivedHabits />
         </div>
       )}
     </>

@@ -17,6 +17,20 @@ export const habitsRepository = {
     return data ?? []
   },
 
+  /** Los archivados, del último retirado al primero. */
+  async listArchivedHabits(userId: string): Promise<Habit[]> {
+    const { data, error } = await supabase
+      .from('habits')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .not('archived_at', 'is', null)
+      .order('archived_at', { ascending: false })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async insertHabit(input: TablesInsert<'habits'>): Promise<Habit> {
     const { data, error } = await supabase.from('habits').insert(input).select('*').single()
 

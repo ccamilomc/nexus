@@ -13,6 +13,7 @@ export const habitsKeys = {
   all: ['habits'] as const,
   today: (userId: string | undefined, dateKey: string) =>
     [...habitsKeys.all, 'today', userId, dateKey] as const,
+  archived: (userId: string | undefined) => [...habitsKeys.all, 'archived', userId] as const,
 }
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -79,6 +80,33 @@ export function useArchiveHabit() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (habitId) => habitsService.archiveHabit(habitId),
+    onSuccess: refresh,
+  })
+}
+
+/**
+ * Hábitos archivados.
+ *
+ * Sólo se consultan cuando alguien los pide (`enabled`): la pantalla de cada
+ * día no tiene por qué pagar una consulta por algo que casi nunca se mira.
+ */
+export function useArchivedHabits(enabled: boolean) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<readonly Habit[], AppError>({
+    queryKey: habitsKeys.archived(userId),
+    queryFn: () => (userId ? habitsService.getArchivedHabits(userId) : []),
+    enabled,
+  })
+}
+
+/** Devuelve un hábito archivado a la lista. */
+export function useRestoreHabit() {
+  const refresh = useRefreshHabits()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (habitId) => habitsService.restoreHabit(habitId),
     onSuccess: refresh,
   })
 }

@@ -188,6 +188,28 @@ erDiagram
     habits ||--o{ habit_logs : registra
 ```
 
+### Archivar guarda; sólo `archived_at` decide qué se ve
+
+Un hábito archivado **sale de la lista del día pero no se pierde**: se consulta
+y se recupera desde «Hábitos archivados», y vuelve con su racha y su constancia
+intactas, porque su historial nunca se tocó. Archivar sin poder deshacerlo sería
+un borrado con otro nombre.
+
+Qué columna manda, para que no haya dudas:
+
+| Columna        | Significado                                    | ¿La lee la app?                 |
+| -------------- | ---------------------------------------------- | ------------------------------- |
+| `archived_at`  | Retirado de la lista, con la fecha en que fue. | **Sí**: es la única que filtra. |
+| `deleted_at`   | Borrado lógico, para sincronizar offline.      | Sí, en todas las consultas.     |
+| `is_active`    | Heredada del esquema inicial.                  | **No.** Ver abajo.              |
+| `target_count` | Cuántas veces al día hay que cumplirlo.        | **No**: hoy se asume 1.         |
+
+`is_active` **duplicaría** lo que ya dice `archived_at`, y dos formas de expresar
+«este hábito no está en juego» son una invitación a que se desincronicen: se deja
+sin usar a propósito. `target_count` es distinto — no lo duplica nadie y, junto a
+`habit_logs.count`, es lo que soportará «3 vasos al día» cuando esa funcionalidad
+se aborde; mientras tanto un hábito se cumple o no se cumple.
+
 ### Cómo se cuenta una racha
 
 La racha **no se almacena**: se calcula a partir de los `habit_logs`, para que
