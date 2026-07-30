@@ -1,3 +1,4 @@
+import type { HabitLog } from '../types/habits.types'
 import { previousDay, toDateKey } from './date-key'
 
 /**
@@ -20,4 +21,15 @@ export function calculateStreak(completedDates: ReadonlySet<string>, today: Date
   }
 
   return streak
+}
+
+/**
+ * ¿Algún hábito tiene cumplido ese día?
+ *
+ * Sirve para saber si merece la pena mirar más atrás en el historial: si el día
+ * más antiguo que se ha traído está cumplido, esa racha puede venir de antes y
+ * contarla con lo que hay la dejaría corta.
+ */
+export function hasCompletedOn(logs: readonly HabitLog[], dateKey: string): boolean {
+  return logs.some((log) => log.completed && log.date === dateKey)
 }

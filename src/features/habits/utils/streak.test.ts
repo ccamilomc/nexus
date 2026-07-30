@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import type { HabitLog } from '../types/habits.types'
 import { toDateKey } from './date-key'
-import { calculateStreak } from './streak'
+import { calculateStreak, hasCompletedOn } from './streak'
 
 /** Conjunto de fechas cumplidas a partir de desplazamientos desde `today`. */
 function completed(today: Date, ...offsets: readonly number[]): Set<string> {
@@ -48,5 +49,41 @@ describe('calculateStreak', () => {
     const firstOfAugust = new Date(2026, 7, 1)
 
     expect(calculateStreak(completed(firstOfAugust, 0, 1, 2), firstOfAugust)).toBe(3)
+  })
+})
+
+/** Registro de un hábito en una fecha, cumplido o intentado. */
+function log(dateKey: string, isCompleted: boolean): HabitLog {
+  return {
+    id: `log-${dateKey}`,
+    user_id: 'user-1',
+    habit_id: 'h1',
+    date: dateKey,
+    count: 1,
+    completed: isCompleted,
+    notes: null,
+    created_at: `${dateKey}T10:00:00.000Z`,
+    updated_at: `${dateKey}T10:00:00.000Z`,
+    deleted_at: null,
+  }
+}
+
+describe('hasCompletedOn', () => {
+  it('reconoce el día cumplido', () => {
+    expect(hasCompletedOn([log('2026-07-01', true)], '2026-07-01')).toBe(true)
+  })
+
+  it('un día registrado pero no cumplido no cuenta', () => {
+    // Si contara, se pediría un tramo más de historial para nada: la racha ya
+    // está rota en ese día.
+    expect(hasCompletedOn([log('2026-07-01', false)], '2026-07-01')).toBe(false)
+  })
+
+  it('no confunde días vecinos', () => {
+    expect(hasCompletedOn([log('2026-07-02', true)], '2026-07-01')).toBe(false)
+  })
+
+  it('sin registros es falso', () => {
+    expect(hasCompletedOn([], '2026-07-01')).toBe(false)
   })
 })
