@@ -18,6 +18,14 @@ const HISTORY_DAYS = 60
 /** Días que se muestran en el mini-calendario de cada hábito. */
 export const RECENT_DAYS = 7
 
+/**
+ * Ventana de la constancia.
+ *
+ * 30 días son el mes «rodante» con el que la gente juzga si mantiene un hábito,
+ * y salen de los registros que ya se traen: no cuesta ninguna consulta extra.
+ */
+export const CONSISTENCY_DAYS = 30
+
 /** Reglas de negocio de hábitos. Traduce errores técnicos a `AppError`. */
 export const habitsService = {
   /** Los hábitos activos con su estado de hoy, su racha y sus últimos días. */
@@ -30,7 +38,7 @@ export const habitsService = {
       const fromKey = toDateKey(window[0] ?? today)
       const logs = await habitsRepository.listLogsBetween(userId, fromKey, toDateKey(today))
 
-      return buildHabitsToday(habits, logs, today, RECENT_DAYS)
+      return buildHabitsToday(habits, logs, today, RECENT_DAYS, CONSISTENCY_DAYS)
     } catch (error) {
       throw toAppError(error)
     }

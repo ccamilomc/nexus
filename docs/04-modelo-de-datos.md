@@ -209,6 +209,20 @@ resto del modelo. El motivo es el índice único `uq_habit_logs_habit_date` sobr
 borrada ocuparía el hueco e impediría volver a marcar ese mismo día. Además,
 para una racha «no lo hice» y «no lo registré» son lo mismo.
 
+### La constancia se mide desde que el hábito existe
+
+Junto a la racha se muestra la **constancia**: cuántos de los últimos 30 días se
+cumplió. La ventana **nunca empieza antes de la creación del hábito**: uno
+creado anteayer y cumplido los dos días vale «2 de 2 · 100 %», no
+«2 de 30 · 7 %». Penalizar días en los que el hábito no existía sería falso y
+desmotivaría justo al empezar.
+
+Sale de los registros que ya se consultan para la racha, así que no cuesta
+ninguna consulta extra. Es deliberadamente **una línea y no un calendario
+mensual**: responde «¿lo estoy manteniendo?», que es lo que se consulta a
+diario. Las vistas históricas ricas (gráficas, comparativas) pertenecen a
+[Analytics](./09-roadmap-y-sprints.md), no a cada dominio.
+
 ### La fecha es local
 
 `habit_logs.date` es una columna `date`, no `timestamptz`: un hábito se cumple
