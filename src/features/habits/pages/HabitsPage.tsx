@@ -1,10 +1,10 @@
 import { Plus, Repeat } from 'lucide-react'
 import { useState } from 'react'
 
+import { useToday } from '@/core/time'
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
 import { Button } from '@/shared/components/ui/button'
-import { useToday } from '@/shared/hooks'
 
 import { ArchivedHabits } from '../components/ArchivedHabits'
 import { HabitCard } from '../components/HabitCard'

@@ -1,5 +1,5 @@
+import { useToday } from '@/core/time'
 import { LoadFailure, SkeletonList } from '@/shared/components/feedback'
-import { useToday } from '@/shared/hooks'
 
 import { BudgetCard } from '../components/BudgetCard'
 import { DaySummaryCard } from '../components/DaySummaryCard'

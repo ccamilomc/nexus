@@ -1,4 +1,4 @@
-import { useToday } from '@/shared/hooks'
+import { useToday } from '@/core/time'
 
 import { formatCalories, formatVolumeMl } from '../utils/format'
 import { useActiveGoal, useDayNutrition, useDayWater } from './use-nutrition'

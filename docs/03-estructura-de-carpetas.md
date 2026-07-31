@@ -28,6 +28,7 @@ nexus/
 │   │   ├── config/                # Lectura tipada de env, constantes globales
 │   │   ├── supabase/              # Cliente Supabase (única instancia)
 │   │   ├── theme/                 # Tema, design tokens, dark mode
+│   │   ├── time/                  # Reloj de la app: useToday() y useNow()
 │   │   ├── error/                 # ErrorBoundary, normalización de errores
 │   │   ├── offline/               # Motor de sincronización y cola offline
 │   │   └── logger/                # Punto único de logging
@@ -59,7 +60,7 @@ nexus/
 │   │   │   ├── form/              # Campos de formulario (FormField)
 │   │   │   └── feedback/          # Estados de UI: EmptyState, Skeleton,
 │   │   │                          # LoadFailure, FormAlert
-│   │   ├── hooks/                 # Hooks genéricos (useToday, useMediaQuery…)
+│   │   ├── hooks/                 # Hooks genéricos (useDebounce, useMediaQuery…)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas
 │   │   ├── types/                 # Tipos globales compartidos
