@@ -6,7 +6,7 @@ import { type AppError, createAppError } from '@/core/error'
 
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
 import { studyService } from '../services/study.service'
-import type { DayStudy, Subject } from '../types/study.types'
+import type { DayStudy, StudySessionWithSubject, Subject } from '../types/study.types'
 import { studyKeys } from './study.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -112,6 +112,64 @@ export function useRemoveSession() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (sessionId) => studyService.removeSession(sessionId),
+    onSuccess: refresh,
+  })
+}
+
+/** La sesión que sigue corriendo, si la hay. */
+export function useActiveStudySession() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<StudySessionWithSubject | null, AppError>({
+    queryKey: studyKeys.activeSession(userId),
+    queryFn: () => (userId ? studyService.getActiveSession(userId) : null),
+  })
+}
+
+/** Refresca la sesión en curso y lo estudiado: al parar, una pasa a la otra. */
+function useRefreshSessions() {
+  const queryClient = useQueryClient()
+
+  return useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: studyKeys.days() })
+    return queryClient.invalidateQueries({ queryKey: studyKeys.all })
+  }, [queryClient])
+}
+
+/** Pone el cronómetro en marcha para una materia. */
+export function useStartStudySession() {
+  const { user } = useAuth()
+  const refresh = useRefreshSessions()
+
+  return useMutation<StudySessionWithSubject, AppError, string>({
+    mutationFn: (subjectId) => studyService.startSession(requireUserId(user?.id), subjectId),
+    onSuccess: refresh,
+  })
+}
+
+interface FinishSessionVariables {
+  readonly sessionId: string
+  /** Inicio guardado en el servidor: de ahí sale la duración, no del reloj local. */
+  readonly startedAt: string
+}
+
+/** Para el cronómetro y guarda lo estudiado. */
+export function useFinishStudySession() {
+  const refresh = useRefreshSessions()
+
+  return useMutation<void, AppError, FinishSessionVariables>({
+    mutationFn: ({ sessionId, startedAt }) => studyService.finishSession(sessionId, startedAt),
+    onSuccess: refresh,
+  })
+}
+
+/** Descarta la sesión en curso sin registrarla. */
+export function useDiscardStudySession() {
+  const refresh = useRefreshSessions()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (sessionId) => studyService.discardSession(sessionId),
     onSuccess: refresh,
   })
 }

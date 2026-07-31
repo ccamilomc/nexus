@@ -1,10 +1,11 @@
-import { toAppError } from '@/core/error'
+import { createAppError, toAppError } from '@/core/error'
 import { dayRange } from '@/shared/utils'
 
 import { studyRepository } from '../repositories/study.repository'
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
-import type { DayStudy, Subject } from '../types/study.types'
+import type { DayStudy, StudySessionWithSubject, Subject } from '../types/study.types'
 import { buildDayStudy } from '../utils/day-study'
+import { elapsedMinutes } from '../utils/elapsed-minutes'
 
 const MS_PER_MINUTE = 60_000
 
@@ -100,6 +101,72 @@ export const studyService = {
 
   /** Quita una sesión registrada por error. */
   async removeSession(sessionId: string): Promise<void> {
+    try {
+      await studyRepository.softDeleteSession(sessionId, new Date().toISOString())
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** La sesión que sigue corriendo, si la hay. */
+  async getActiveSession(userId: string): Promise<StudySessionWithSubject | null> {
+    try {
+      return await studyRepository.findActiveSession(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Pone el cronómetro en marcha.
+   *
+   * Sólo puede haber una sesión corriendo: si ya hay una, se devuelve esa misma
+   * en lugar de abrir otra. Así una doble pulsación —o el móvil y el portátil a
+   * la vez— nunca parten el rato de estudio en dos registros.
+   */
+  async startSession(userId: string, subjectId: string): Promise<StudySessionWithSubject> {
+    try {
+      const active = await studyRepository.findActiveSession(userId)
+      if (active) return active
+
+      await studyRepository.insertSession({
+        user_id: userId,
+        subject_id: subjectId,
+        started_at: new Date().toISOString(),
+      })
+
+      // Se relee para recuperar la materia enlazada, que la inserción no trae.
+      const started = await studyRepository.findActiveSession(userId)
+      if (!started) throw createAppError('unknown')
+
+      return started
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Para el cronómetro y guarda lo estudiado.
+   *
+   * La duración se calcula desde la hora de inicio del servidor, no desde lo que
+   * marcaba la pantalla: así el registro es el mismo aunque la pestaña estuviera
+   * suspendida o el reloj del dispositivo vaya desviado.
+   */
+  async finishSession(sessionId: string, startedAtIso: string): Promise<void> {
+    try {
+      const endedAt = new Date()
+
+      await studyRepository.updateSession(sessionId, {
+        ended_at: endedAt.toISOString(),
+        duration_minutes: elapsedMinutes(startedAtIso, endedAt),
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Descarta la sesión en curso: no llegó a ser tiempo de estudio. */
+  async discardSession(sessionId: string): Promise<void> {
     try {
       await studyRepository.softDeleteSession(sessionId, new Date().toISOString())
     } catch (error) {

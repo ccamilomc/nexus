@@ -2,9 +2,9 @@ import { Clock } from 'lucide-react'
 
 import { Skeleton } from '@/shared/components/feedback'
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { formatMinutes } from '@/shared/utils'
 
 import type { DayStudy } from '../types/study.types'
-import { formatMinutes } from '../utils/format'
 
 interface DayStudyCardProps {
   readonly day: DayStudy | null
