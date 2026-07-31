@@ -13,6 +13,7 @@ import type {
   Food,
   MealType,
   NutritionGoal,
+  RepeatableMeal,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
@@ -169,6 +170,34 @@ export function useDayWater(date: Date) {
   return useQuery<DayWater | null, AppError>({
     queryKey: nutritionKeys.water(userId, toDayKey(date)),
     queryFn: () => (userId ? nutritionService.getDayWater(userId, date) : null),
+  })
+}
+
+/** Lo que se puede repetir en cada comida del día (una sola consulta). */
+export function useRepeatableMeals(date: Date) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<ReadonlyMap<MealType, RepeatableMeal>, AppError>({
+    queryKey: nutritionKeys.repeatable(userId, toDayKey(date)),
+    queryFn: () => (userId ? nutritionService.getRepeatableMeals(userId, date) : new Map()),
+  })
+}
+
+interface RepeatMealVariables {
+  readonly date: Date
+  readonly mealType: MealType
+}
+
+/** Repite en el día una comida ya registrada antes. */
+export function useRepeatMeal() {
+  const { user } = useAuth()
+  const refresh = useRefreshDays()
+
+  return useMutation<void, AppError, RepeatMealVariables>({
+    mutationFn: ({ date, mealType }) =>
+      nutritionService.repeatMeal(requireUserId(user?.id), date, mealType),
+    onSuccess: refresh,
   })
 }
 

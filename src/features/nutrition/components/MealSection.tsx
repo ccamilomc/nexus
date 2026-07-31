@@ -7,23 +7,27 @@ import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { MEAL_TYPE_LABELS } from '../constants/nutrition.constants'
 import { useRemoveMealItem } from '../hooks/use-nutrition'
-import type { Food, MealEntry } from '../types/nutrition.types'
+import type { Food, MealEntry, RepeatableMeal } from '../types/nutrition.types'
 import { formatCalories, formatQuantity } from '../utils/format'
 import { macrosForServings } from '../utils/macros'
 import { AddFoodForm } from './AddFoodForm'
 import { FoodPicker } from './FoodPicker'
 import { MacroSummary } from './MacroSummary'
+import { RepeatMealButton } from './RepeatMealButton'
 
 interface MealSectionProps {
   readonly date: Date
   readonly meal: MealEntry
+  /** Qué se puede repetir en esta comida; `null` si no hay nada anterior. */
+  readonly repeatable: RepeatableMeal | null
 }
 
 /** Una comida del día: lo que se registró en ella y cómo añadir más. */
-export function MealSection({ date, meal }: MealSectionProps) {
+export function MealSection({ date, meal, repeatable }: MealSectionProps) {
   const [isPicking, setIsPicking] = useState(false)
   const [selected, setSelected] = useState<Food | null>(null)
   const removeItem = useRemoveMealItem()
+  const isEmpty = meal.items.length === 0
 
   const close = () => {
     setIsPicking(false)
@@ -83,16 +87,25 @@ export function MealSection({ date, meal }: MealSectionProps) {
         ) : isPicking ? (
           <FoodPicker onSelect={setSelected} onClose={close} />
         ) : (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={() => setIsPicking(true)}
-          >
-            <Plus aria-hidden />
-            Añadir alimento
-          </Button>
+          <div className="space-y-2">
+            {/*
+              Repetir sólo se ofrece en una comida vacía: con algo ya
+              registrado, el gesto que se busca es añadir, no duplicar.
+            */}
+            {isEmpty && repeatable ? (
+              <RepeatMealButton date={date} mealType={meal.mealType} template={repeatable} />
+            ) : null}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={() => setIsPicking(true)}
+            >
+              <Plus aria-hidden />
+              Añadir alimento
+            </Button>
+          </div>
         )}
       </CardContent>
     </Card>
