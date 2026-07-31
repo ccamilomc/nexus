@@ -307,6 +307,20 @@ Reglas, las mismas que en entrenamiento:
   guardaría una sesión vacía, que es como no haber registrado nada.
 - **Descartar** hace borrado lógico: ese rato no llegó a ser tiempo de estudio.
 
+### La semana es lo que responde «¿voy bien?»
+
+El total de hoy no puede contestar esa pregunta: una jornada floja no significa
+nada y cuatro seguidas sí. Por eso el objetivo es **semanal** (de lunes a
+domingo, como el presupuesto de nutrición) y la pantalla mide el avance contra
+él, por materia y en conjunto.
+
+Dos reglas de la lista:
+
+- **Una materia con objetivo aparece aunque esté a cero**: la que se olvidó toda
+  la semana es justo la que hay que ver.
+- **Una materia sin objetivo sólo aparece si se estudió**: sin cifra que
+  perseguir ni tiempo que mostrar, no dice nada.
+
 ### El objetivo se guarda en minutos y se pide en horas
 
 `weekly_target_minutes` está en minutos porque es la unidad en que se mide todo

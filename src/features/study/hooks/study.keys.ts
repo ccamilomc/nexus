@@ -11,4 +11,6 @@ export const studyKeys = {
   activeSession: (userId: string | undefined) => [...studyKeys.all, 'active', userId] as const,
   day: (userId: string | undefined, dayKey: string) =>
     [...studyKeys.days(), userId, dayKey] as const,
+  week: (userId: string | undefined, dayKey: string) =>
+    [...studyKeys.days(), 'week', userId, dayKey] as const,
 }

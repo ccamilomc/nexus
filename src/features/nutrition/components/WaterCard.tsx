@@ -4,12 +4,11 @@ import { FormAlert, Skeleton } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Progress } from '@/shared/components/ui/progress'
-import { formatTime } from '@/shared/utils'
+import { calculateProgress, formatTime } from '@/shared/utils'
 
 import { WATER_QUICK_AMOUNTS } from '../constants/nutrition.constants'
 import { useActiveGoal, useAddWater, useDayWater, useRemoveWater } from '../hooks/use-nutrition'
 import { formatVolumeMl } from '../utils/format'
-import { calculateProgress } from '../utils/goal-progress'
 
 interface WaterCardProps {
   readonly date: Date

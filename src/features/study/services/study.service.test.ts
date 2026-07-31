@@ -252,6 +252,41 @@ describe('studyService.discardSession', () => {
   })
 })
 
+describe('studyService.getWeekStudy', () => {
+  it('acota la semana de lunes a domingo y mide el avance', async () => {
+    listSubjects.mockResolvedValue([{ ...SAVED_SUBJECT, weekly_target_minutes: 600 }])
+    listSessionsBetween.mockResolvedValue([session('a', 200), session('b', 100)])
+
+    const week = await studyService.getWeekStudy(USER_ID, DATE)
+
+    const [, fromIso, toIso] = listSessionsBetween.mock.calls[0] ?? []
+    // El 30 de julio de 2026 es jueves: la semana arranca el lunes 27.
+    expect(fromIso).toBe(new Date(2026, 6, 27).toISOString())
+    expect(toIso).toBe(new Date(2026, 7, 3).toISOString())
+    expect(week.totalMinutes).toBe(300)
+    expect(week.progress?.percent).toBe(50)
+  })
+
+  it('una materia con objetivo sin tocar aparece a cero', async () => {
+    listSubjects.mockResolvedValue([{ ...SAVED_SUBJECT, weekly_target_minutes: 300 }])
+    listSessionsBetween.mockResolvedValue([])
+
+    const week = await studyService.getWeekStudy(USER_ID, DATE)
+
+    expect(week.bySubject).toHaveLength(1)
+    expect(week.bySubject[0]?.minutes).toBe(0)
+  })
+
+  it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
+    listSubjects.mockRejectedValue(new Error('connection terminated unexpectedly'))
+
+    const error: unknown = await studyService.getWeekStudy(USER_ID, DATE).catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).not.toContain('connection')
+  })
+})
+
 describe('studyService.getDayStudy', () => {
   it('acota el día por hora local y suma lo estudiado', async () => {
     listSessionsBetween.mockResolvedValue([session('a', 50), session('b', 25)])

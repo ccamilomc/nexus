@@ -2,10 +2,10 @@ import { Link } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { calculateProgress } from '@/shared/utils'
 
 import type { Macros, NutritionGoal } from '../types/nutrition.types'
 import { formatCalories, formatGrams } from '../utils/format'
-import { calculateProgress } from '../utils/goal-progress'
 import { GoalProgressRow } from './GoalProgressRow'
 import { MacroSummary } from './MacroSummary'
 

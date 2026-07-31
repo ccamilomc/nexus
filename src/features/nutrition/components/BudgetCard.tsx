@@ -5,10 +5,10 @@ import { ROUTES } from '@/app/router/routes'
 import { Skeleton } from '@/shared/components/feedback'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Progress } from '@/shared/components/ui/progress'
+import { calculateProgress } from '@/shared/utils'
 
 import { useActiveGoal, useWeekSpend } from '../hooks/use-nutrition'
 import { formatCop } from '../utils/format'
-import { calculateProgress } from '../utils/goal-progress'
 
 interface BudgetCardProps {
   readonly date: Date

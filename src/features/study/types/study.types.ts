@@ -1,4 +1,5 @@
 import type { Tables } from '@/core/supabase'
+import type { GoalProgress } from '@/shared/utils'
 
 /**
  * Tipos del dominio de estudio.
@@ -33,4 +34,28 @@ export interface DayStudy {
   readonly totalMinutes: number
   /** Materias con tiempo, de más a menos estudiada. */
   readonly bySubject: readonly SubjectTime[]
+}
+
+/** Una materia en la semana: lo estudiado frente a lo que se propuso. */
+export interface SubjectWeek {
+  readonly subject: SubjectRef
+  readonly minutes: number
+  /** Objetivo semanal en minutos; `null` si la materia no se fijó ninguno. */
+  readonly targetMinutes: number | null
+  /** Avance hacia el objetivo; `null` cuando no hay objetivo que medir. */
+  readonly progress: GoalProgress | null
+}
+
+/**
+ * La semana de estudio: el total, el objetivo conjunto y el detalle por materia.
+ *
+ * Responde «¿voy bien?», que es la pregunta que el total de hoy no puede
+ * contestar: una jornada floja no significa nada; cuatro seguidas, sí.
+ */
+export interface WeekStudy {
+  readonly totalMinutes: number
+  /** Suma de los objetivos fijados; `null` si ninguna materia tiene. */
+  readonly targetMinutes: number | null
+  readonly progress: GoalProgress | null
+  readonly bySubject: readonly SubjectWeek[]
 }

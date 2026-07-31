@@ -1,8 +1,8 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–8 terminados (Workout, Nutrition y Habits completos). Siguiente: Sprint 9 (Study).
+> **Estado:** Sprints 0–9 terminados (Workout, Nutrition, Habits y Study completos). Siguiente: Sprint 10 (Sleep).
 > **Versión del diseño:** 1.0
-> **Fecha:** 2026-07-29
+> **Fecha:** 2026-07-31
 
 Esta carpeta es la **fuente de verdad** de la arquitectura de Nexus. La regla es
 absoluta: **la documentación existe antes que el código** y nunca puede quedar
