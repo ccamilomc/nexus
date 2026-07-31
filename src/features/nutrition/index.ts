@@ -1,3 +1,5 @@
+export type { NutritionContext } from './hooks/use-nutrition-context'
+export { useNutritionContext } from './hooks/use-nutrition-context'
 export type { NutritionSummary } from './hooks/use-nutrition-summary'
 export { useNutritionSummary } from './hooks/use-nutrition-summary'
 export type { QuickWater } from './hooks/use-quick-water'

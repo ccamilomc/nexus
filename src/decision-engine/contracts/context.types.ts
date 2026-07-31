@@ -75,9 +75,17 @@ export interface DailyContext {
   readonly nutrition: {
     readonly todayIntake: MacroTotals
     readonly todaySpend: number
+    /** Agua bebida hoy, en mililitros. */
+    readonly todayWaterMl: number
   }
   readonly study: {
     readonly weekMinutes: number
+  }
+  readonly habits: {
+    /** Hábitos activos hoy. */
+    readonly total: number
+    /** Cuántos de ellos ya están cumplidos. */
+    readonly done: number
   }
   readonly sleep: {
     readonly lastNightMinutes?: number

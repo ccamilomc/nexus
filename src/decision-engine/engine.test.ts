@@ -13,8 +13,10 @@ const CONTEXT: DailyContext = {
   nutrition: {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     todaySpend: 0,
+    todayWaterMl: 0,
   },
   study: { weekMinutes: 0 },
+  habits: { total: 0, done: 0 },
   sleep: {},
   constraints: {},
 }

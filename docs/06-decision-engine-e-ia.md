@@ -100,6 +100,31 @@ flowchart LR
     OUT -->|explica| AI["Capa IA"]
 ```
 
+### Primeras reglas activas (Plan del día)
+
+Adelantadas al Sprint 9 —antes que las insignia— porque **una app que sólo
+registra no ayuda a decidir**, y estas cuatro se construyen con lo que las
+features ya guardan, sin datos nuevos. Alimentan la pantalla `/plan`, que
+responde «¿qué me falta hoy?».
+
+| Regla              | Cuándo habla                                     | Prioridad                         |
+| ------------------ | ------------------------------------------------ | --------------------------------- |
+| `water-pending@1`  | Hay objetivo de agua y aún falta.                | Sube a alta a partir de las 19 h. |
+| `habits-pending@1` | Quedan hábitos sin marcar.                       | Sube a alta a partir de las 20 h. |
+| `workout-gap@1`    | 3+ días desde el último entrenamiento.           | Alta a partir de una semana.      |
+| `study-behind@1`   | El estudio va por debajo del ritmo de la semana. | Alta el último día.               |
+
+Tres decisiones que las hacen útiles en vez de ruidosas:
+
+- **Comparan con lo que toca ahora, no con el objetivo entero.** `study-behind`
+  mide contra la parte del objetivo que corresponde al día de la semana en que
+  se está; si no, avisaría todos los lunes.
+- **Callan cuando no hay nada que decir.** `workout-gap` no habla si nunca se ha
+  entrenado: recordarle a alguien que no ha empezado no ayuda. `study-behind` no
+  habla el lunes: con un día vivido no hay evidencia de retraso.
+- **No recriminan.** Los mensajes hablan de lo que queda por hacer, nunca de lo
+  fallado (ver [11 · UX](./11-ux-ui-y-diseno.md#gamificación)).
+
 ### Reglas insignia (v1)
 
 #### 1. Recálculo del día (`day_recalculation`)
@@ -144,11 +169,21 @@ encajar en el tiempo/energía disponibles, preservando los grupos musculares cla
 
 ### Cómo lo consumen las features
 
-1. Cada service expone un método para construir su parte del `DailyContext`.
-2. Un `PlanningService` compone el `DailyContext` completo.
-3. Llama a `engine.evaluate(ctx)`.
-4. Persiste las `Recommendation[]` en la tabla `recommendations`.
-5. La UI las muestra en el Dashboard/Planning; el usuario **acepta o descarta**.
+1. Cada feature expone desde su **barrel** un hook que construye su parte del
+   `DailyContext` (`useNutritionContext`, `useHabitsContext`, `useStudyContext`,
+   `useWorkoutContext`). Devuelven **datos**, no frases: son los hermanos de los
+   hooks de resumen, que sí devuelven texto porque los consume una pantalla.
+2. `useDailyPlan` (en `planning`) los reúne y llama a `evaluate(context)`.
+3. La UI muestra las `Recommendation[]` en `/plan`, cada una **con su motivo**.
+
+Dos detalles que importan:
+
+- **No se evalúa con datos a medias.** Mientras algún dominio carga, el plan
+  espera: con ceros saldrían avisos falsos («te falta toda el agua») que
+  desaparecerían un segundo después.
+- **Todavía no se persisten.** Las recomendaciones se calculan al vuelo cada vez.
+  Guardarlas en la tabla `recommendations` sólo hace falta cuando haya que
+  recordar si el usuario las aceptó o descartó, que llega con el Sprint 13.
 
 ---
 

@@ -1,3 +1,5 @@
+export type { WorkoutContext } from './hooks/use-workout-context'
+export { useWorkoutContext } from './hooks/use-workout-context'
 export { ExercisesPage } from './pages/ExercisesPage'
 export { RoutineDetailPage } from './pages/RoutineDetailPage'
 export { RoutinesPage } from './pages/RoutinesPage'
