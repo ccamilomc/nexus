@@ -7,6 +7,15 @@
  */
 
 const MS_PER_DAY = 86_400_000
+const MS_PER_HOUR = 3_600_000
+
+/** Horas completas entre dos instantes ISO; nunca negativas. */
+export function hoursBetween(fromIso: string, toIso: string): number {
+  const elapsed = new Date(toIso).getTime() - new Date(fromIso).getTime()
+  if (!Number.isFinite(elapsed)) return 0
+
+  return Math.max(0, Math.floor(elapsed / MS_PER_HOUR))
+}
 
 /** Hora local (0-23) de un instante ISO. */
 export function hourOf(iso: string): number {

@@ -7,6 +7,7 @@ import { HabitsSummaryCard } from './HabitsSummaryCard'
 import { NutritionSummaryCard } from './NutritionSummaryCard'
 import { StudySummaryCard } from './StudySummaryCard'
 import { SummaryCard } from './SummaryCard'
+import { WorkoutSummaryCard } from './WorkoutSummaryCard'
 
 /**
  * Dominios ya conectados a sus datos, por ruta.
@@ -15,6 +16,7 @@ import { SummaryCard } from './SummaryCard'
  * estado vacío, así el dashboard no cambia de forma con cada sprint.
  */
 const CONNECTED_CARDS: Readonly<Record<string, ComponentType<SummaryItem>>> = {
+  [ROUTES.workout]: WorkoutSummaryCard,
   [ROUTES.nutrition]: NutritionSummaryCard,
   [ROUTES.habits]: HabitsSummaryCard,
   [ROUTES.study]: StudySummaryCard,

@@ -107,12 +107,19 @@ registra no ayuda a decidir**, y estas cuatro se construyen con lo que las
 features ya guardan, sin datos nuevos. Alimentan la pantalla `/plan`, que
 responde «¿qué me falta hoy?».
 
-| Regla              | Cuándo habla                                     | Prioridad                         |
-| ------------------ | ------------------------------------------------ | --------------------------------- |
-| `water-pending@1`  | Hay objetivo de agua y aún falta.                | Sube a alta a partir de las 19 h. |
-| `habits-pending@1` | Quedan hábitos sin marcar.                       | Sube a alta a partir de las 20 h. |
-| `workout-gap@1`    | 3+ días desde el último entrenamiento.           | Alta a partir de una semana.      |
-| `study-behind@1`   | El estudio va por debajo del ritmo de la semana. | Alta el último día.               |
+| Regla                    | Cuándo habla                                     | Prioridad                         |
+| ------------------------ | ------------------------------------------------ | --------------------------------- |
+| `water-pending@1`        | Hay objetivo de agua y aún falta.                | Sube a alta a partir de las 19 h. |
+| `habits-pending@1`       | Quedan hábitos sin marcar.                       | Sube a alta a partir de las 20 h. |
+| `workout-gap@1`          | 3+ días desde el último entrenamiento.           | Alta a partir de una semana.      |
+| `workout-open-session@1` | Un entrenamiento lleva 6+ horas sin cerrar.      | Media.                            |
+| `study-behind@1`         | El estudio va por debajo del ritmo de la semana. | Alta el último día.               |
+
+`workout-open-session` salió de **usar la app**: había una sesión vacía con el
+cronómetro en 108 horas mientras el plan decía «llevas 7 días sin entrenar». Las
+dos cosas eran ciertas —una sesión sin terminar no cuenta como entrenamiento—
+pero juntas el sistema se contradecía. La regla saca el enganche a la luz en vez
+de cerrarlo por su cuenta: el motor **sugiere**, no ejecuta.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 

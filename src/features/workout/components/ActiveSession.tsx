@@ -57,6 +57,11 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
             <SessionSummary stats={stats} />
           </div>
 
+          {/*
+            Terminar y descartar van juntos: son las dos salidas de la sesión.
+            Con el descartar al final de la pantalla, quien empezó sin querer
+            tenía que recorrer todo el catálogo de ejercicios para encontrarlo.
+          */}
           <div className="space-y-1.5">
             <Button
               type="button"
@@ -71,6 +76,14 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
                 Registra una serie para poder terminar.
               </p>
             )}
+            <ConfirmButton
+              label="Descartar"
+              confirmLabel="Sí, descartar"
+              size="sm"
+              disabled={discardSession.isPending}
+              onConfirm={() => discardSession.mutate(session.id)}
+              className="text-muted-foreground"
+            />
           </div>
         </CardContent>
       </Card>
@@ -125,17 +138,6 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
 
       {finishSession.isError ? <FormAlert>{finishSession.error.message}</FormAlert> : null}
       {discardSession.isError ? <FormAlert>{discardSession.error.message}</FormAlert> : null}
-
-      <div className="flex justify-center pt-2">
-        <ConfirmButton
-          label="Descartar entrenamiento"
-          confirmLabel="Sí, descartar"
-          size="sm"
-          disabled={discardSession.isPending}
-          onConfirm={() => discardSession.mutate(session.id)}
-          className="text-muted-foreground"
-        />
-      </div>
     </div>
   )
 }

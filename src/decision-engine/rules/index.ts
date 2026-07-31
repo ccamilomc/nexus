@@ -3,6 +3,7 @@ import { habitsPendingRule } from './habits-pending'
 import { studyBehindRule } from './study-behind'
 import { waterPendingRule } from './water-pending'
 import { workoutGapRule } from './workout-gap'
+import { workoutOpenSessionRule } from './workout-open-session'
 
 /**
  * Registro de reglas del motor. Cada regla vive en su propio archivo.
@@ -16,5 +17,6 @@ export const rules: readonly Rule[] = [
   waterPendingRule,
   habitsPendingRule,
   workoutGapRule,
+  workoutOpenSessionRule,
   studyBehindRule,
 ]
