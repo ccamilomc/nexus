@@ -1,4 +1,4 @@
-import { useToday } from '@/shared/hooks'
+import { useToday } from '@/core/time'
 
 import { WATER_QUICK_AMOUNTS } from '../constants/nutrition.constants'
 import { formatVolumeMl } from '../utils/format'

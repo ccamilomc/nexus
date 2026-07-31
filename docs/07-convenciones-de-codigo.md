@@ -61,6 +61,13 @@ Ver detalle en [02 · Arquitectura](./02-arquitectura.md).
 
 Nunca duplicar estado ni sincronizarlo a mano. Una sola fuente de verdad por dato.
 
+**El tiempo también es un dato.** Nunca se llama a `new Date()` para decidir qué
+día o qué hora es en la interfaz: se usan `useToday()` y `useNow()` de
+`@/core/time`. Calcularlo en cada pantalla lo congela en el momento del montaje
+—la que quedó abierta anoche registraría en el día de ayer— y además crea tantas
+versiones de «hoy» como pantallas. Es un provider, y no un store de Zustand,
+porque es una fuente ambiental como la sesión, no estado de interfaz.
+
 ## Nomenclatura
 
 | Elemento                     | Convención         | Ejemplo                  |

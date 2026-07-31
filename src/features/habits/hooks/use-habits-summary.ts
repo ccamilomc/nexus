@@ -1,4 +1,4 @@
-import { useToday } from '@/shared/hooks'
+import { useToday } from '@/core/time'
 
 import { useHabitsToday } from './use-habits'
 
