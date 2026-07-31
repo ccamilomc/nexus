@@ -1,44 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  formatElapsed,
-  formatMinutes,
   formatOptionalTargets,
   formatSessionDate,
   formatTargets,
   formatVolume,
   formatWeight,
 } from './format'
-
-describe('formatMinutes', () => {
-  it('muestra sólo minutos por debajo de una hora', () => {
-    expect(formatMinutes(45)).toBe('45 min')
-  })
-
-  it('separa horas y minutos a partir de una hora', () => {
-    expect(formatMinutes(65)).toBe('1 h 05 min')
-    expect(formatMinutes(120)).toBe('2 h 00 min')
-  })
-
-  it('usa un guion cuando no hay duración', () => {
-    expect(formatMinutes(null)).toBe('—')
-  })
-})
-
-describe('formatElapsed', () => {
-  it('muestra minutos y segundos', () => {
-    expect(formatElapsed(0)).toBe('00:00')
-    expect(formatElapsed(462)).toBe('07:42')
-  })
-
-  it('añade las horas cuando corresponde', () => {
-    expect(formatElapsed(3909)).toBe('1:05:09')
-  })
-
-  it('nunca muestra tiempos negativos', () => {
-    expect(formatElapsed(-10)).toBe('00:00')
-  })
-})
 
 describe('formatWeight', () => {
   it('omite los decimales innecesarios', () => {

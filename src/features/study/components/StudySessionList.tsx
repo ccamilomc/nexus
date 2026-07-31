@@ -2,11 +2,10 @@ import { Trash2 } from 'lucide-react'
 
 import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
-import { formatTime } from '@/shared/utils'
+import { formatMinutes, formatTime } from '@/shared/utils'
 
 import { useRemoveSession } from '../hooks/use-study'
 import type { StudySessionWithSubject } from '../types/study.types'
-import { formatMinutes } from '../utils/format'
 
 interface StudySessionListProps {
   readonly sessions: readonly StudySessionWithSubject[]

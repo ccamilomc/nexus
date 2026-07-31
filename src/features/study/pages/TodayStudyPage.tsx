@@ -9,13 +9,15 @@ import { Button } from '@/shared/components/ui/button'
 import { DayStudyCard } from '../components/DayStudyCard'
 import { StudyLogForm } from '../components/StudyLogForm'
 import { StudySessionList } from '../components/StudySessionList'
-import { useDayStudy, useSubjects } from '../hooks/use-study'
+import { StudyTimerCard } from '../components/StudyTimerCard'
+import { useActiveStudySession, useDayStudy, useSubjects } from '../hooks/use-study'
 
-/** Lo estudiado hoy y el registro de nuevas sesiones. */
+/** Lo estudiado hoy, el cronómetro y el registro de nuevas sesiones. */
 export function TodayStudyPage() {
   const today = useToday()
   const subjects = useSubjects()
   const day = useDayStudy(today)
+  const active = useActiveStudySession()
 
   if (subjects.isPending || day.isPending) {
     return <SkeletonList label="Cargando lo de hoy" rows={3} rowClassName="h-24" />
@@ -49,6 +51,7 @@ export function TodayStudyPage() {
   return (
     <div className="space-y-4">
       <DayStudyCard day={day.data} isPending={false} />
+      <StudyTimerCard subjects={subjects.data} active={active.data ?? null} />
       <StudyLogForm subjects={subjects.data} />
       <StudySessionList sessions={day.data?.sessions ?? []} />
     </div>

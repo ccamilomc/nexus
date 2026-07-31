@@ -38,7 +38,12 @@ export const studyRepository = {
     return data
   },
 
-  /** Sesiones dentro de un rango, por su inicio (el día local, en la práctica). */
+  /**
+   * Sesiones **terminadas** dentro de un rango, por su inicio.
+   *
+   * La que está en curso se pide aparte: mientras corre no tiene duración que
+   * sumar, y aparecería en la lista del día como una sesión de cero minutos.
+   */
   async listSessionsBetween(
     userId: string,
     fromIso: string,
@@ -49,12 +54,44 @@ export const studyRepository = {
       .select(SESSION_WITH_SUBJECT)
       .eq('user_id', userId)
       .is('deleted_at', null)
+      .not('ended_at', 'is', null)
       .gte('started_at', fromIso)
       .lt('started_at', toIso)
       .order('started_at', { ascending: false })
 
     if (error) throw error
     return data ?? []
+  },
+
+  /** La sesión que sigue corriendo, si la hay: la que no tiene fin. */
+  async findActiveSession(userId: string): Promise<StudySessionWithSubject | null> {
+    const { data, error } = await supabase
+      .from('study_sessions')
+      .select(SESSION_WITH_SUBJECT)
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .is('ended_at', null)
+      .order('started_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
+  async updateSession(
+    sessionId: string,
+    patch: TablesUpdate<'study_sessions'>,
+  ): Promise<StudySession> {
+    const { data, error } = await supabase
+      .from('study_sessions')
+      .update(patch)
+      .eq('id', sessionId)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
   },
 
   async insertSession(input: TablesInsert<'study_sessions'>): Promise<StudySession> {

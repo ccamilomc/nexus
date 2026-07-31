@@ -1,5 +1,7 @@
+import { formatMinutes } from '@/shared/utils'
+
 import type { SessionStats } from '../types/workout.types'
-import { formatMinutes, formatVolume } from '../utils/format'
+import { formatVolume } from '../utils/format'
 
 interface SessionSummaryProps {
   readonly stats: SessionStats

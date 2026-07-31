@@ -4,11 +4,11 @@ import { useState } from 'react'
 import { EmptyState, FormAlert, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
+import { formatMinutes } from '@/shared/utils'
 
 import { SubjectForm } from '../components/SubjectForm'
 import { useDeleteSubject, useSubjects } from '../hooks/use-study'
 import type { Subject } from '../types/study.types'
-import { formatMinutes } from '../utils/format'
 
 /** Las materias del usuario: crearlas, editarlas y retirarlas. */
 export function SubjectsPage() {

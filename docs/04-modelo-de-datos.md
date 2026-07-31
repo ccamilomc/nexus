@@ -289,6 +289,24 @@ ahora, así queda a una hora verosímil.
 Los **totales** (del día, por materia) sí se calculan siempre a partir de las
 sesiones, como el resto del proyecto.
 
+### Una sesión en curso es la que no tiene fin
+
+El cronómetro no vive en la pantalla: al empezar se crea la sesión con su
+`started_at` y **sin `ended_at`**, que es lo que la marca como en curso. El
+tiempo que se muestra se calcula desde esa hora del servidor, así que sobrevive
+a recargar la página o a seguir en otro dispositivo.
+
+Reglas, las mismas que en entrenamiento:
+
+- **Sólo puede haber una corriendo.** Si ya hay, empezar devuelve esa misma: una
+  doble pulsación no parte el rato de estudio en dos registros.
+- **Las sesiones sin terminar no cuentan en el día.** Aún no tienen duración, así
+  que aparecerían como sesiones de cero minutos; se consultan aparte.
+- **Al parar, la duración se mide desde `started_at`**, no desde lo que marcaba
+  la pantalla, y **nunca baja de un minuto**: parar a los cuarenta segundos
+  guardaría una sesión vacía, que es como no haber registrado nada.
+- **Descartar** hace borrado lógico: ese rato no llegó a ser tiempo de estudio.
+
 ### El objetivo se guarda en minutos y se pide en horas
 
 `weekly_target_minutes` está en minutos porque es la unidad en que se mide todo

@@ -1,32 +1,12 @@
-/** Formato de los números que muestra el módulo de entrenamiento. Funciones puras. */
-
-const SECONDS_PER_MINUTE = 60
-const MINUTES_PER_HOUR = 60
+/**
+ * Formato de los números que muestra el módulo de entrenamiento. Funciones puras.
+ *
+ * Las duraciones (`formatMinutes`, `formatElapsed`) viven en `@/shared/utils`:
+ * las comparte con estudio y un criterio distinto en cada módulo se nota.
+ */
 
 /** Sin decimales innecesarios: `62,5 kg` pero `60 kg`. */
 const decimalFormatter = new Intl.NumberFormat('es', { maximumFractionDigits: 2 })
-
-/** Duración en minutos como texto corto: `45 min`, `1 h 05 min`. */
-export function formatMinutes(minutes: number | null): string {
-  if (minutes === null || minutes < 0) return '—'
-
-  const hours = Math.floor(minutes / MINUTES_PER_HOUR)
-  const rest = minutes % MINUTES_PER_HOUR
-
-  if (hours === 0) return `${rest} min`
-  return `${hours} h ${String(rest).padStart(2, '0')} min`
-}
-
-/** Cronómetro en curso: `07:42`, `1:05:09` a partir de una hora. */
-export function formatElapsed(totalSeconds: number): string {
-  const safeSeconds = Math.max(0, Math.floor(totalSeconds))
-  const hours = Math.floor(safeSeconds / (SECONDS_PER_MINUTE * MINUTES_PER_HOUR))
-  const minutes = Math.floor(safeSeconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR
-  const seconds = safeSeconds % SECONDS_PER_MINUTE
-
-  const mmss = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-  return hours > 0 ? `${hours}:${mmss}` : mmss
-}
 
 /**
  * Carga de una serie. Un peso de cero no es un dato que falte: significa que el

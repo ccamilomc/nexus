@@ -1,7 +1,7 @@
 import { Timer } from 'lucide-react'
 
-import { useElapsedSeconds } from '../hooks/use-elapsed-seconds'
-import { formatElapsed } from '../utils/format'
+import { useElapsedSeconds } from '@/shared/hooks'
+import { formatElapsed } from '@/shared/utils'
 
 interface SessionTimerProps {
   readonly startedAt: string

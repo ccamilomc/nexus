@@ -22,7 +22,9 @@ vi.mock('../repositories/study.repository', () => ({
     insertSubject: vi.fn(),
     updateSubject: vi.fn(),
     listSessionsBetween: vi.fn(),
+    findActiveSession: vi.fn(),
     insertSession: vi.fn(),
+    updateSession: vi.fn(),
     softDeleteSession: vi.fn(),
   },
 }))
@@ -31,7 +33,10 @@ const listSubjects = vi.mocked(studyRepository.listSubjects)
 const insertSubject = vi.mocked(studyRepository.insertSubject)
 const updateSubject = vi.mocked(studyRepository.updateSubject)
 const listSessionsBetween = vi.mocked(studyRepository.listSessionsBetween)
+const findActiveSession = vi.mocked(studyRepository.findActiveSession)
 const insertSession = vi.mocked(studyRepository.insertSession)
+const updateSession = vi.mocked(studyRepository.updateSession)
+const softDeleteSession = vi.mocked(studyRepository.softDeleteSession)
 
 const USER_ID = 'user-1'
 /** 30 de julio de 2026, a las seis de la tarde. */
@@ -68,13 +73,27 @@ function session(id: string, minutes: number): StudySessionWithSubject {
   return { ...SAVED_SESSION, id, duration_minutes: minutes, subject: CALCULO }
 }
 
+/** Sesión en marcha: la que todavía no tiene fin. */
+function running(startedAt: string): StudySessionWithSubject {
+  return {
+    ...SAVED_SESSION,
+    id: 'en-curso',
+    started_at: startedAt,
+    ended_at: null,
+    duration_minutes: 0,
+    subject: CALCULO,
+  }
+}
+
 beforeEach(() => {
   vi.clearAllMocks()
   listSubjects.mockResolvedValue([])
   listSessionsBetween.mockResolvedValue([])
+  findActiveSession.mockResolvedValue(null)
   insertSubject.mockResolvedValue(SAVED_SUBJECT)
   updateSubject.mockResolvedValue(SAVED_SUBJECT)
   insertSession.mockResolvedValue(SAVED_SESSION)
+  updateSession.mockResolvedValue(SAVED_SESSION)
 })
 
 describe('studyService.createSubject', () => {
@@ -152,6 +171,84 @@ describe('studyService.logStudy', () => {
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')
+  })
+})
+
+describe('studyService.startSession', () => {
+  it('arranca el cronómetro para la materia elegida', async () => {
+    findActiveSession
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(running('2026-07-30T21:00:00.000Z'))
+
+    const active = await studyService.startSession(USER_ID, CALCULO.id)
+
+    expect(insertSession).toHaveBeenCalledWith(
+      expect.objectContaining({ user_id: USER_ID, subject_id: CALCULO.id }),
+    )
+    // La sesión vuelve con su materia, que la inserción no trae.
+    expect(active.subject).toEqual(CALCULO)
+    expect(active.ended_at).toBeNull()
+  })
+
+  it('no abre una segunda sesión si ya hay uno corriendo', async () => {
+    // Doble pulsación, o el móvil y el portátil a la vez.
+    const enCurso = running('2026-07-30T21:00:00.000Z')
+    findActiveSession.mockResolvedValue(enCurso)
+
+    const active = await studyService.startSession(USER_ID, 'otra-materia')
+
+    expect(insertSession).not.toHaveBeenCalled()
+    expect(active.id).toBe(enCurso.id)
+  })
+
+  it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
+    insertSession.mockRejectedValue(new Error('violates row-level security policy'))
+
+    const error: unknown = await studyService.startSession(USER_ID, CALCULO.id).catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).not.toContain('row-level security')
+  })
+})
+
+describe('studyService.finishSession', () => {
+  it('guarda la duración medida desde la hora de inicio del servidor', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(DATE)
+
+    // Empezó a las 16:45; son las 18:00.
+    await studyService.finishSession('en-curso', new Date(2026, 6, 30, 16, 45).toISOString())
+
+    expect(updateSession).toHaveBeenCalledWith('en-curso', {
+      ended_at: DATE.toISOString(),
+      duration_minutes: 75,
+    })
+
+    vi.useRealTimers()
+  })
+
+  it('parar enseguida guarda un minuto, no una sesión vacía', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(DATE)
+
+    await studyService.finishSession('en-curso', new Date(DATE.getTime() - 20_000).toISOString())
+
+    expect(updateSession).toHaveBeenCalledWith(
+      'en-curso',
+      expect.objectContaining({ duration_minutes: 1 }),
+    )
+
+    vi.useRealTimers()
+  })
+})
+
+describe('studyService.discardSession', () => {
+  it('descarta sin dejar rastro en el día', async () => {
+    await studyService.discardSession('en-curso')
+
+    const [sessionId, deletedAt] = softDeleteSession.mock.calls[0] ?? []
+    expect(sessionId).toBe('en-curso')
+    expect(typeof deletedAt).toBe('string')
   })
 })
 
