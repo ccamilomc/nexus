@@ -71,6 +71,8 @@ export interface DailyContext {
   readonly plan: readonly PlanItemSnapshot[]
   readonly workout: {
     readonly recentSessions: readonly WorkoutSessionSnapshot[]
+    /** Inicio del entrenamiento en curso (ISO), si hay alguno sin terminar. */
+    readonly activeSessionStartedAt?: string
   }
   readonly nutrition: {
     readonly todayIntake: MacroTotals

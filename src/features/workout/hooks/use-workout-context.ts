@@ -1,5 +1,6 @@
 import type { DailyContext } from '@/decision-engine'
 
+import { useActiveSession } from './use-active-session'
 import { useSessionHistory } from './use-session-history'
 
 /** Parte del contexto diario que aporta entrenamiento. */
@@ -26,9 +27,10 @@ function toDateKey(iso: string): string {
  */
 export function useWorkoutContext(): WorkoutContext {
   const { data, isPending } = useSessionHistory()
+  const active = useActiveSession()
 
   return {
-    isPending,
+    isPending: isPending || active.isPending,
     workout: {
       recentSessions: (data ?? []).map(({ session, stats }) => ({
         id: session.id,
@@ -36,6 +38,10 @@ export function useWorkoutContext(): WorkoutContext {
         durationMinutes: stats.durationMinutes ?? 0,
         ...(session.perceived_effort === null ? {} : { perceivedEffort: session.perceived_effort }),
       })),
+      // Una sesión sin terminar no cuenta como entrenamiento, pero el motor
+      // necesita saber que existe: si no, diría «llevas días sin entrenar»
+      // mientras la pantalla muestra un cronómetro corriendo.
+      ...(active.data ? { activeSessionStartedAt: active.data.session.started_at } : {}),
     },
   }
 }

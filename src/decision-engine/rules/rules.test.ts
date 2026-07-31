@@ -5,6 +5,7 @@ import { habitsPendingRule } from './habits-pending'
 import { studyBehindRule } from './study-behind'
 import { waterPendingRule } from './water-pending'
 import { workoutGapRule } from './workout-gap'
+import { workoutOpenSessionRule } from './workout-open-session'
 
 /** Contexto vacío: cada test enciende sólo lo que su regla necesita. */
 const EMPTY: DailyContext = {
@@ -150,6 +151,40 @@ describe('workoutGapRule', () => {
     }
 
     expect(workoutGapRule.evaluate(context)[0]?.data).toMatchObject({ days: 3 })
+  })
+})
+
+describe('workoutOpenSessionRule', () => {
+  const withOpenSession = (startedAt: string, now = at(20)): DailyContext => ({
+    ...EMPTY,
+    now,
+    workout: { recentSessions: [], activeSessionStartedAt: startedAt },
+  })
+
+  it('no aplica si no hay ninguna sesión abierta', () => {
+    expect(workoutOpenSessionRule.appliesTo(EMPTY)).toBe(false)
+  })
+
+  it('no molesta a quien está entrenando ahora mismo', () => {
+    // Una hora de gimnasio es un entrenamiento, no un olvido.
+    expect(workoutOpenSessionRule.appliesTo(withOpenSession(at(19), at(20)))).toBe(false)
+  })
+
+  it('avisa cuando la sesión lleva horas abierta', () => {
+    const context = withOpenSession(at(6), at(20))
+
+    expect(workoutOpenSessionRule.appliesTo(context)).toBe(true)
+    expect(workoutOpenSessionRule.evaluate(context)[0]?.reason).toContain('14 horas')
+  })
+
+  it('cuenta en días cuando lleva más de uno', () => {
+    // El caso real que lo motivó: una sesión vacía con el cronómetro en 108 h.
+    const [recommendation] = workoutOpenSessionRule.evaluate(
+      withOpenSession(new Date(2026, 6, 26, 8, 0).toISOString(), at(20)),
+    )
+
+    expect(recommendation?.reason).toContain('4 días')
+    expect(recommendation?.message).toContain('no cuenta en tu historial')
   })
 })
 
