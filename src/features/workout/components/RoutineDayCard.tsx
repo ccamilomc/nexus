@@ -1,6 +1,6 @@
 import { Play, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
 import { FormAlert } from '@/shared/components/feedback'
@@ -103,8 +103,14 @@ export function RoutineDayCard({ routineId, detail }: RoutineDayCardProps) {
               {startSession.isPending ? 'Iniciando…' : 'Entrenar este día'}
             </Button>
             {hasActiveSession ? (
+              // Un aviso que bloquea sin decir dónde resolverlo deja al usuario
+              // atascado: desde aquí no se ve qué entrenamiento hay abierto.
               <p className="text-center text-xs text-muted-foreground">
-                Ya tienes un entrenamiento en curso.
+                Ya tienes un entrenamiento en curso.{' '}
+                <Link to={ROUTES.workout} className="font-medium text-primary underline">
+                  Ve a terminarlo
+                </Link>
+                .
               </p>
             ) : null}
           </div>
