@@ -1,4 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
+import { dayRange, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -12,10 +13,8 @@ import type {
   WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
-import { dayRange } from '../utils/day-range'
 import { calculateSpend } from '../utils/spend'
 import { sumWaterMl } from '../utils/water'
-import { weekRange } from '../utils/week-range'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'

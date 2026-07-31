@@ -30,14 +30,6 @@ export function formatVolumeMl(ml: number): string {
   return `${decimalFormatter.format(ml / ML_PER_LITER)} L`
 }
 
-/** Hora local de un registro: `14:30`. */
-export function formatTime(isoDate: string): string {
-  const date = new Date(isoDate)
-  if (Number.isNaN(date.getTime())) return '—'
-
-  return date.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false })
-}
-
 /** Calorías, siempre enteras: `1.850 kcal`. */
 export function formatCalories(calories: number): string {
   return `${integerFormatter.format(Math.round(calories))} kcal`

@@ -277,6 +277,33 @@ usuario para que marcar a las 23:50 cuente en el día que está viviendo.
   `duration_minutes`, `focus_rating`, técnica). Soporta las **horas variables**:
   el motor compara horas reales vs objetivo semanal y ajusta el plan.
 
+### La duración se almacena; los totales se calculan
+
+`duration_minutes` es la **excepción** a la regla de calcular en vez de
+almacenar, y es deliberada: una sesión se registra _después_ de estudiar («hoy
+le metí hora y media»), cuando ya no hay un inicio y un fin fiables que restar.
+La duración es el dato que el usuario aporta; `started_at` y `ended_at` sólo
+sitúan la sesión en el día. Al registrar N minutos se coloca hacia atrás desde
+ahora, así queda a una hora verosímil.
+
+Los **totales** (del día, por materia) sí se calculan siempre a partir de las
+sesiones, como el resto del proyecto.
+
+### El objetivo se guarda en minutos y se pide en horas
+
+`weekly_target_minutes` está en minutos porque es la unidad en que se mide todo
+lo demás del dominio, pero nadie piensa su semana en minutos: el formulario pide
+horas («7,5») y el servicio traduce. La conversión vive en el servicio, no en el
+componente.
+
+### Una sesión sin materia cuenta, pero no se puede crear
+
+`subject_id` admite nulo en el esquema y la aplicación **siempre exige materia**:
+sin ella, «¿en qué estudié?» se queda sin respuesta y el objetivo semanal no
+tiene a qué agarrarse. El código tolera el nulo (esas sesiones suman al total del
+día sin aparecer en el reparto por materia) para no romperse ante datos
+importados o anteriores.
+
 ```mermaid
 erDiagram
     profiles ||--o{ subjects : crea
