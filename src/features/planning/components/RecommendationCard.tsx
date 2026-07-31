@@ -50,7 +50,12 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         <div className="min-w-0 flex-1 space-y-1">
           <p className="font-medium">{title}</p>
           <p className="text-sm text-muted-foreground">{message}</p>
-          <p className="text-xs text-muted-foreground/80">{reason}</p>
+          {/*
+            Sin bajar la opacidad: `/80` dejaba el contraste en 3,28 sobre el
+            tema claro, por debajo del 4,5 que exige WCAG AA. El motivo ya se
+            distingue del mensaje por el tamaño.
+          */}
+          <p className="text-xs text-muted-foreground">{reason}</p>
         </div>
       </CardContent>
     </Card>
