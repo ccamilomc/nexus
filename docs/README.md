@@ -1,6 +1,6 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–10 terminados (Workout, Nutrition, Habits, Study y Sleep completos), más el Plan del día. Siguiente: Sprint 11 (Health).
+> **Estado:** Sprints 0–11 terminados (los seis dominios completos y conectados al dashboard), más el Plan del día. Siguiente: Sprint 12 (Analytics).
 > **Versión del diseño:** 1.0
 > **Fecha:** 2026-07-31
 
