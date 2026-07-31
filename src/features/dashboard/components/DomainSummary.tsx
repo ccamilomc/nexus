@@ -4,6 +4,7 @@ import { ROUTES } from '@/app/router/routes'
 
 import { SUMMARY_ITEMS, type SummaryItem } from '../constants/dashboard-items'
 import { HabitsSummaryCard } from './HabitsSummaryCard'
+import { HealthSummaryCard } from './HealthSummaryCard'
 import { NutritionSummaryCard } from './NutritionSummaryCard'
 import { SleepSummaryCard } from './SleepSummaryCard'
 import { StudySummaryCard } from './StudySummaryCard'
@@ -22,6 +23,7 @@ const CONNECTED_CARDS: Readonly<Record<string, ComponentType<SummaryItem>>> = {
   [ROUTES.habits]: HabitsSummaryCard,
   [ROUTES.study]: StudySummaryCard,
   [ROUTES.sleep]: SleepSummaryCard,
+  [ROUTES.health]: HealthSummaryCard,
 }
 
 /** Resumen por dominio: el estado del día de un vistazo. */

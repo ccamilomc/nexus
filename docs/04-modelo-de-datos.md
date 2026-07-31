@@ -391,6 +391,32 @@ ningún día concreto.
 - **body_metrics**: medición corporal normalizada
   (`metric_type`, `value`, `unit`, `measured_at`). El **IMC** se calcula (peso +
   `height_cm` del perfil), no se almacena.
+
+### Una tabla para todas las medidas
+
+Peso, grasa, cintura, brazo… todas viven en `body_metrics` con su `metric_type`,
+en lugar de una columna por medida. Añadir «antebrazo» mañana es un valor nuevo
+en el enum, no una migración de esquema.
+
+La **unidad se guarda en la fila** además de estar en las constantes: una
+medición vieja conserva la unidad con la que se tomó aunque mañana cambie la
+convención.
+
+### El IMC se calcula, y se dice lo que es
+
+Sale del último peso y de `height_cm` del perfil. **Sin altura no se muestra**:
+inventar un IMC sería peor que no darlo. Y va siempre acompañado de su límite —
+«una referencia general, no un diagnóstico: no distingue músculo de grasa»—
+porque una cifra suelta invita a leerse como un veredicto.
+
+### El cambio de una medida se muestra sin juicio
+
+`+0,4 kg` se muestra en gris, **sin flechas ni colores**: subir o bajar de peso
+no es bueno ni malo sin saber qué persigue quien lo mide, y pintar de rojo una
+cifra sería la aplicación opinando sobre el cuerpo de alguien. Por la misma
+razón **no hay ninguna regla del motor sobre el peso**: el sistema muestra el
+dato y calla.
+
 - **progress_photos**: foto de progreso (`storage_path`, `angle`, `taken_at`,
   `weight_kg` snapshot). El binario va a Storage, no a la BD.
 - **health_goals**: objetivos (`target_weight_kg`, `target_body_fat_pct`…).
