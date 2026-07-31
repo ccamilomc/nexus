@@ -1,6 +1,5 @@
 import { Progress } from '@/shared/components/ui/progress'
-
-import type { GoalProgress } from '../types/nutrition.types'
+import type { GoalProgress } from '@/shared/utils'
 
 interface GoalProgressRowProps {
   readonly label: string

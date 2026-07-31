@@ -1,11 +1,12 @@
 import { createAppError, toAppError } from '@/core/error'
-import { dayRange } from '@/shared/utils'
+import { dayRange, weekRange } from '@/shared/utils'
 
 import { studyRepository } from '../repositories/study.repository'
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
-import type { DayStudy, StudySessionWithSubject, Subject } from '../types/study.types'
+import type { DayStudy, StudySessionWithSubject, Subject, WeekStudy } from '../types/study.types'
 import { buildDayStudy } from '../utils/day-study'
 import { elapsedMinutes } from '../utils/elapsed-minutes'
+import { buildWeekStudy } from '../utils/week-study'
 
 const MS_PER_MINUTE = 60_000
 
@@ -56,6 +57,27 @@ export const studyService = {
   async deleteSubject(subjectId: string): Promise<void> {
     try {
       await studyRepository.updateSubject(subjectId, { deleted_at: new Date().toISOString() })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * La semana de estudio (de lunes a domingo), con el avance por materia.
+   *
+   * Necesita las materias además de las sesiones: una materia con objetivo que
+   * no se ha tocado en toda la semana tiene que salir a cero, y en las sesiones
+   * no aparece.
+   */
+  async getWeekStudy(userId: string, date: Date): Promise<WeekStudy> {
+    try {
+      const { fromIso, toIso } = weekRange(date)
+      const [subjects, sessions] = await Promise.all([
+        studyRepository.listSubjects(userId),
+        studyRepository.listSessionsBetween(userId, fromIso, toIso),
+      ])
+
+      return buildWeekStudy(subjects, sessions)
     } catch (error) {
       throw toAppError(error)
     }

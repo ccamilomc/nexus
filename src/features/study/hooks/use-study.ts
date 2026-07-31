@@ -6,7 +6,7 @@ import { type AppError, createAppError } from '@/core/error'
 
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
 import { studyService } from '../services/study.service'
-import type { DayStudy, StudySessionWithSubject, Subject } from '../types/study.types'
+import type { DayStudy, StudySessionWithSubject, Subject, WeekStudy } from '../types/study.types'
 import { studyKeys } from './study.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -39,6 +39,17 @@ export function useDayStudy(date: Date) {
   return useQuery<DayStudy | null, AppError>({
     queryKey: studyKeys.day(userId, toDayKey(date)),
     queryFn: () => (userId ? studyService.getDayStudy(userId, date) : null),
+  })
+}
+
+/** La semana de estudio, con el avance hacia los objetivos. */
+export function useWeekStudy(date: Date) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<WeekStudy | null, AppError>({
+    queryKey: studyKeys.week(userId, toDayKey(date)),
+    queryFn: () => (userId ? studyService.getWeekStudy(userId, date) : null),
   })
 }
 

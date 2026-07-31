@@ -10,13 +10,15 @@ import { DayStudyCard } from '../components/DayStudyCard'
 import { StudyLogForm } from '../components/StudyLogForm'
 import { StudySessionList } from '../components/StudySessionList'
 import { StudyTimerCard } from '../components/StudyTimerCard'
-import { useActiveStudySession, useDayStudy, useSubjects } from '../hooks/use-study'
+import { WeekStudyCard } from '../components/WeekStudyCard'
+import { useActiveStudySession, useDayStudy, useSubjects, useWeekStudy } from '../hooks/use-study'
 
 /** Lo estudiado hoy, el cronómetro y el registro de nuevas sesiones. */
 export function TodayStudyPage() {
   const today = useToday()
   const subjects = useSubjects()
   const day = useDayStudy(today)
+  const week = useWeekStudy(today)
   const active = useActiveStudySession()
 
   if (subjects.isPending || day.isPending) {
@@ -51,6 +53,7 @@ export function TodayStudyPage() {
   return (
     <div className="space-y-4">
       <DayStudyCard day={day.data} isPending={false} />
+      <WeekStudyCard week={week.data ?? null} isPending={week.isPending} />
       <StudyTimerCard subjects={subjects.data} active={active.data ?? null} />
       <StudyLogForm subjects={subjects.data} />
       <StudySessionList sessions={day.data?.sessions ?? []} />
