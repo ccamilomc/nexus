@@ -4,7 +4,7 @@ import { useQuickWater } from '@/features/nutrition'
 import { FormAlert } from '@/shared/components/feedback'
 
 import { QUICK_ACTIONS } from '../constants/dashboard-items'
-import { QuickActionButton, QuickActionLink } from './QuickActionTile'
+import { QuickActionButton, QuickActionLink } from './QuickAction'
 
 /**
  * Accesos directos a los registros más frecuentes del día.

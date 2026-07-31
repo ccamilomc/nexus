@@ -1,6 +1,7 @@
 import { cn } from '@/shared/lib/utils'
 
 import type { HabitDay } from '../types/habits.types'
+import { formatDayAndMonth, parseDateKey, weekdayInitial } from '../utils/format'
 
 interface HabitWeekProps {
   readonly days: readonly HabitDay[]
@@ -8,45 +9,6 @@ interface HabitWeekProps {
   readonly habitName: string
   readonly disabled: boolean
   readonly onToggle: (day: HabitDay) => void
-}
-
-/** Inicial del día de la semana, a partir de la clave `YYYY-MM-DD`. */
-const WEEKDAY_INITIALS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
-
-const MONTHS = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-]
-
-/**
- * Fecha local a partir de la clave.
- *
- * Se parte a mano: `new Date('2026-07-29')` la interpretaría en UTC y en
- * Colombia mostraría el día anterior.
- */
-function parseDateKey(dateKey: string): Date {
-  const [year, month, day] = dateKey.split('-').map(Number)
-
-  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
-}
-
-function initialFor(date: Date): string {
-  return WEEKDAY_INITIALS[date.getDay()] ?? '?'
-}
-
-/** «29 de julio», para que el lector de pantalla no deletree la clave. */
-function describeDate(date: Date): string {
-  return `${date.getDate()} de ${MONTHS[date.getMonth()] ?? ''}`
 }
 
 /**
@@ -72,7 +34,7 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
               aria-checked={isDone}
               // El contenido visible es una sola letra: el nombre accesible se
               // da aparte para que se anuncie el hábito y el día completos.
-              aria-label={`${habitName}: ${describeDate(date)}, ${isDone ? 'cumplido' : 'sin cumplir'}`}
+              aria-label={`${habitName}: ${formatDayAndMonth(date)}, ${isDone ? 'cumplido' : 'sin cumplir'}`}
               // 36 px: por debajo de los 44 recomendados, pero son siete
               // controles seguidos y no caben más grandes en 320 px. Con la
               // separación entre ellos se cumple igualmente el mínimo táctil.
@@ -85,7 +47,7 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
               disabled={disabled || !isEditable}
               onClick={() => onToggle(day)}
             >
-              <span aria-hidden>{initialFor(date)}</span>
+              <span aria-hidden>{weekdayInitial(date)}</span>
             </button>
           </li>
         )
