@@ -114,6 +114,12 @@ responde «¿qué me falta hoy?».
 | `workout-gap@1`          | 3+ días desde el último entrenamiento.           | Alta a partir de una semana.      |
 | `workout-open-session@1` | Un entrenamiento lleva 6+ horas sin cerrar.      | Media.                            |
 | `study-behind@1`         | El estudio va por debajo del ritmo de la semana. | Alta el último día.               |
+| `sleep-short@1`          | Se durmió menos de 6 h.                          | Alta por debajo de 5 h.           |
+
+`sleep-short` es la primera regla que **cruza dos dominios**: mira el sueño para
+hablar del entrenamiento («si hoy entrenas, plantéate bajar el volumen»). Ahí
+empieza a haber criterio y no sólo recordatorios. Sugiere sin afirmar: da el dato
+y propone, sin prometer resultados ni dar consejo médico.
 
 `workout-open-session` salió de **usar la app**: había una sesión vacía con el
 cronómetro en 108 horas mientras el plan decía «llevas 7 días sin entrenar». Las

@@ -1,6 +1,6 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–9 terminados (Workout, Nutrition, Habits y Study completos). Siguiente: Sprint 10 (Sleep).
+> **Estado:** Sprints 0–10 terminados (Workout, Nutrition, Habits, Study y Sleep completos), más el Plan del día. Siguiente: Sprint 11 (Health).
 > **Versión del diseño:** 1.0
 > **Fecha:** 2026-07-31
 

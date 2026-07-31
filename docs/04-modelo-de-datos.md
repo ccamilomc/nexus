@@ -363,6 +363,29 @@ erDiagram
 - **sleep_goals**: objetivo de sueño (`target_minutes`, `target_bedtime`,
   `target_wake_time`).
 
+### La noche se guarda con la fecha en que uno despierta
+
+Una noche cruza dos días, así que hay que elegir cuál la nombra: se usa el del
+**despertar**. Al abrir la aplicación por la mañana, «anoche» es el registro de
+hoy, que es como se habla de ello.
+
+Y **una noche sólo se duerme una vez**: volver a la pantalla y guardar corrige el
+registro existente en lugar de crear otro.
+
+### `bedtime` y `wake_time` son instantes, no horas sueltas
+
+Son `timestamptz` y no `time`: el esquema quiere saber **cuándo** se durmió, no
+sólo qué marcaba el reloj. La interfaz pide horas (`23:30`) porque es lo que uno
+recuerda, y el servicio reconstruye la fecha: se despierta el día del registro y
+se acostó **el día anterior** si la hora de acostarse es posterior a la de
+despertar.
+
+La **duración se calcula** de esas dos horas —nadie sabe cuántos minutos
+durmió— y se almacena, como en estudio, porque es el dato que se consulta.
+
+Los objetivos, en cambio, sí son `time`: «acostarse a las 23:00» no pertenece a
+ningún día concreto.
+
 ## Health
 
 - **body_metrics**: medición corporal normalizada

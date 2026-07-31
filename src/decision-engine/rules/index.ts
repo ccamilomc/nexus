@@ -1,5 +1,6 @@
 import type { Rule } from '../contracts/rule.types'
 import { habitsPendingRule } from './habits-pending'
+import { sleepShortRule } from './sleep-short'
 import { studyBehindRule } from './study-behind'
 import { waterPendingRule } from './water-pending'
 import { workoutGapRule } from './workout-gap'
@@ -19,4 +20,5 @@ export const rules: readonly Rule[] = [
   workoutGapRule,
   workoutOpenSessionRule,
   studyBehindRule,
+  sleepShortRule,
 ]

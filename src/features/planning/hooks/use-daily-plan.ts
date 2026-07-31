@@ -3,6 +3,7 @@ import type { DailyContext, Recommendation } from '@/decision-engine'
 import { evaluate } from '@/decision-engine'
 import { useHabitsContext } from '@/features/habits'
 import { useNutritionContext } from '@/features/nutrition'
+import { useSleepContext } from '@/features/sleep'
 import { useStudyContext } from '@/features/study'
 import { useWorkoutContext } from '@/features/workout'
 
@@ -39,8 +40,14 @@ export function useDailyPlan(): DailyPlan {
   const habits = useHabitsContext()
   const study = useStudyContext()
   const workout = useWorkoutContext()
+  const sleep = useSleepContext()
 
-  const isPending = nutrition.isPending || habits.isPending || study.isPending || workout.isPending
+  const isPending =
+    nutrition.isPending ||
+    habits.isPending ||
+    study.isPending ||
+    workout.isPending ||
+    sleep.isPending
 
   if (isPending) return { isPending: true, recommendations: [], isClear: false }
 
@@ -60,7 +67,7 @@ export function useDailyPlan(): DailyPlan {
     nutrition: nutrition.nutrition,
     study: study.study,
     habits: habits.habits,
-    sleep: {},
+    sleep: sleep.sleep,
     constraints: {},
   }
 

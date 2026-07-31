@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { DailyContext } from '../contracts/context.types'
 import { habitsPendingRule } from './habits-pending'
+import { sleepShortRule } from './sleep-short'
 import { studyBehindRule } from './study-behind'
 import { waterPendingRule } from './water-pending'
 import { workoutGapRule } from './workout-gap'
@@ -151,6 +152,44 @@ describe('workoutGapRule', () => {
     }
 
     expect(workoutGapRule.evaluate(context)[0]?.data).toMatchObject({ days: 3 })
+  })
+})
+
+describe('sleepShortRule', () => {
+  const withSleep = (lastNightMinutes: number): DailyContext => ({
+    ...EMPTY,
+    sleep: { lastNightMinutes },
+  })
+
+  it('no aplica sin registro de sueño', () => {
+    // Callar es mejor que suponer que se durmió mal.
+    expect(sleepShortRule.appliesTo(EMPTY)).toBe(false)
+  })
+
+  it('no aplica con una noche normal', () => {
+    expect(sleepShortRule.appliesTo(withSleep(7 * 60))).toBe(false)
+    expect(sleepShortRule.appliesTo(withSleep(6 * 60))).toBe(false)
+  })
+
+  it('avisa por debajo de seis horas y cruza al entrenamiento', () => {
+    // Primera regla que mira un dominio para hablar de otro.
+    const [recommendation] = sleepShortRule.evaluate(withSleep(5 * 60 + 20))
+
+    expect(recommendation?.domain).toBe('sleep')
+    expect(recommendation?.message).toContain('entrenas')
+    expect(recommendation?.reason).toContain('5 h 20 min')
+  })
+
+  it('por debajo de cinco horas sube la prioridad', () => {
+    expect(sleepShortRule.evaluate(withSleep(5 * 60 + 30))[0]?.priority).toBe('medium')
+    expect(sleepShortRule.evaluate(withSleep(4 * 60 + 30))[0]?.priority).toBe('high')
+  })
+
+  it('sugiere sin prometer resultados ni dar consejo médico', () => {
+    const [recommendation] = sleepShortRule.evaluate(withSleep(5 * 60))
+
+    expect(recommendation?.message).toMatch(/plantéate|considera/i)
+    expect(recommendation?.message).not.toMatch(/debes|tienes que|necesitas/i)
   })
 })
 
