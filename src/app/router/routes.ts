@@ -20,6 +20,7 @@ export const ROUTES = {
   nutritionGoals: '/nutricion/objetivos',
   habits: '/habitos',
   study: '/estudio',
+  studySubjects: '/estudio/materias',
   sleep: '/sueno',
   health: '/salud',
   analytics: '/analiticas',

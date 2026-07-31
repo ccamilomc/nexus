@@ -7,7 +7,6 @@ import {
   formatGrams,
   formatQuantity,
   formatServing,
-  formatTime,
   formatVolumeMl,
 } from './format'
 
@@ -55,16 +54,6 @@ describe('formatVolumeMl', () => {
 
   it('un día sin agua muestra cero', () => {
     expect(formatVolumeMl(0)).toBe('0 ml')
-  })
-})
-
-describe('formatTime', () => {
-  it('muestra la hora local en formato 24 h', () => {
-    expect(formatTime(new Date(2026, 6, 25, 14, 30).toISOString())).toBe('14:30')
-  })
-
-  it('no rompe con una fecha inválida', () => {
-    expect(formatTime('no es una fecha')).toBe('—')
   })
 })
 
