@@ -1,3 +1,5 @@
+export type { StudyContext } from './hooks/use-study-context'
+export { useStudyContext } from './hooks/use-study-context'
 export type { StudySummary } from './hooks/use-study-summary'
 export { useStudySummary } from './hooks/use-study-summary'
 export { StudyLayout } from './pages/StudyLayout'
