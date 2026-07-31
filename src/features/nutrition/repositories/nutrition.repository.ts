@@ -79,6 +79,32 @@ export const nutritionRepository = {
     return data ?? []
   },
 
+  /**
+   * Comidas de días anteriores, de la más reciente a la más antigua.
+   *
+   * Se piden **todos los tipos de una vez** (no una consulta por comida) porque
+   * la pantalla del día necesita saber qué puede repetir en las cuatro.
+   */
+  async listRecentMealLogs(
+    userId: string,
+    sinceIso: string,
+    beforeIso: string,
+    limit: number,
+  ): Promise<MealLog[]> {
+    const { data, error } = await supabase
+      .from('meal_logs')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .gte('logged_at', sinceIso)
+      .lt('logged_at', beforeIso)
+      .order('logged_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async insertMealLog(userId: string, mealType: MealType, loggedAtIso: string): Promise<MealLog> {
     const { data, error } = await supabase
       .from('meal_logs')

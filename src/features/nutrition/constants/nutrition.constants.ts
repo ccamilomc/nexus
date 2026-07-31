@@ -10,6 +10,19 @@ export const MEAL_TYPE_LABELS: Record<MealType, string> = {
 }
 
 /**
+ * Artículo de cada comida, para redactar frases naturales.
+ *
+ * «Repetir **el** cena» delata que la frase se armó pegando trozos; en un
+ * producto en español el género no es un detalle opcional.
+ */
+export const MEAL_TYPE_ARTICLES: Record<MealType, string> = {
+  breakfast: 'el',
+  lunch: 'el',
+  dinner: 'la',
+  snack: 'el',
+}
+
+/**
  * Orden en que se muestran las comidas: el del día, no el del enum.
  *
  * Se valida contra `Constants` para que añadir un tipo en la base obligue a

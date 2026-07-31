@@ -277,6 +277,19 @@ usuario para que marcar a las 23:50 cuente en el día que está viviendo.
   `duration_minutes`, `focus_rating`, técnica). Soporta las **horas variables**:
   el motor compara horas reales vs objetivo semanal y ajusta el plan.
 
+### Repetir una comida copia por valor
+
+Registrar lo que uno come a diario es el paso más caro de la aplicación: abrir,
+buscar entre decenas de alimentos, poner cantidad, y otra vez por cada cosa del
+plato. Como casi todo el mundo repite comidas, cada comida vacía ofrece
+**repetir la última vez que se registró** (mirando sólo dos semanas atrás: más
+allá no es «lo de siempre»).
+
+Copia los alimentos y sus porciones **por valor**, no por referencia: la comida
+de hoy es suya y editar la de ayer no la toca. Y se dice **qué** se va a copiar
+y **de cuándo** («Repetir del sábado · Gaseosa»): repetir a ciegas algo que uno
+no recuerda daría menos confianza que teclearlo.
+
 ### La duración se almacena; los totales se calculan
 
 `duration_minutes` es la **excepción** a la regla de calcular en vez de

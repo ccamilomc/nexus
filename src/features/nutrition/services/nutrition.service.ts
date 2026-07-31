@@ -10,6 +10,7 @@ import type {
   Food,
   MealType,
   NutritionGoal,
+  RepeatableMeal,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
@@ -18,6 +19,41 @@ import { sumWaterMl } from '../utils/water'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'
+
+const MS_PER_DAY = 86_400_000
+
+/**
+ * Hasta dónde se busca una comida para repetir.
+ *
+ * Dos semanas cubren lo que uno come habitualmente; más atrás ya no es «lo de
+ * siempre», es arqueología.
+ */
+const REPEAT_WINDOW_DAYS = 14
+
+/**
+ * Comidas recientes que se traen para buscar plantillas.
+ *
+ * Con cuatro comidas al día, veinte cubren los últimos cinco días, de sobra
+ * para encontrar la última de cada tipo.
+ */
+const REPEAT_CANDIDATES = 20
+
+/**
+ * La comida del día, creándola si es la primera vez.
+ *
+ * El usuario piensa «añado pollo al almuerzo», no «creo un almuerzo y luego le
+ * añado pollo». Se reutiliza la del día para no partirla en varios registros.
+ */
+async function ensureMealLog(userId: string, date: Date, mealType: MealType) {
+  const { fromIso, toIso } = dayRange(date)
+  const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
+  const existing = logs.find((log) => log.meal_type === mealType)
+
+  return (
+    existing ??
+    (await nutritionRepository.insertMealLog(userId, mealType, new Date().toISOString()))
+  )
+}
 
 /**
  * Traduce el formulario a la fila de la base.
@@ -120,19 +156,84 @@ export const nutritionService = {
    */
   async addFoodToMeal({ userId, date, mealType, foodId, servings }: AddFoodInput): Promise<void> {
     try {
-      const { fromIso, toIso } = dayRange(date)
-      const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
-      const existing = logs.find((log) => log.meal_type === mealType)
-
-      const mealLog =
-        existing ??
-        (await nutritionRepository.insertMealLog(userId, mealType, new Date().toISOString()))
+      const mealLog = await ensureMealLog(userId, date, mealType)
 
       await nutritionRepository.insertMealLogItem({
         meal_log_id: mealLog.id,
         food_id: foodId,
         servings,
       })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Lo que se puede repetir en cada comida del día.
+   *
+   * Una sola consulta para las cuatro: la pantalla las muestra juntas, así que
+   * preguntarlo comida por comida serían cuatro viajes para lo mismo. Sólo mira
+   * las dos últimas semanas: lo que se comió hace tres meses no es «lo de
+   * siempre», y ofrecerlo sería ruido.
+   */
+  async getRepeatableMeals(
+    userId: string,
+    date: Date,
+  ): Promise<ReadonlyMap<MealType, RepeatableMeal>> {
+    try {
+      const { fromIso } = dayRange(date)
+      const since = new Date(new Date(fromIso).getTime() - REPEAT_WINDOW_DAYS * MS_PER_DAY)
+
+      const logs = await nutritionRepository.listRecentMealLogs(
+        userId,
+        since.toISOString(),
+        fromIso,
+        REPEAT_CANDIDATES,
+      )
+      if (logs.length === 0) return new Map()
+
+      const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
+
+      const byType = new Map<MealType, RepeatableMeal>()
+      // Los registros llegan del más reciente al más antiguo, así que la primera
+      // vez que aparece un tipo es la última que se comió. Una comida que quedó
+      // vacía —se borró lo que tenía— se salta: repetir la nada no sirve.
+      for (const log of logs) {
+        if (byType.has(log.meal_type)) continue
+
+        const logItems = items.filter((item) => item.meal_log_id === log.id)
+        if (logItems.length > 0)
+          byType.set(log.meal_type, { loggedAt: log.logged_at, items: logItems })
+      }
+
+      return byType
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Repite en el día una comida ya registrada antes.
+   *
+   * Copia los alimentos y sus porciones **por valor**: si luego se cambia uno,
+   * el de hoy no se toca. Registrar lo que se come a diario era el paso más
+   * caro de la aplicación; esto lo deja en un toque.
+   */
+  async repeatMeal(userId: string, date: Date, mealType: MealType): Promise<void> {
+    try {
+      const template = (await this.getRepeatableMeals(userId, date)).get(mealType)
+      if (!template)
+        throw createAppError('not_found', 'No hay ninguna comida anterior que repetir.')
+
+      const mealLog = await ensureMealLog(userId, date, mealType)
+
+      for (const item of template.items) {
+        await nutritionRepository.insertMealLogItem({
+          meal_log_id: mealLog.id,
+          food_id: item.food_id,
+          servings: item.servings,
+        })
+      }
     } catch (error) {
       throw toAppError(error)
     }

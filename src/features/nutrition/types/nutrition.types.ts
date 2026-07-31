@@ -62,6 +62,17 @@ export interface DayNutrition {
   readonly totals: Macros
 }
 
+/**
+ * Una comida anterior que puede repetirse tal cual.
+ *
+ * Se guarda cuándo fue para poder decirlo («el almuerzo del martes»): repetir a
+ * ciegas lo que uno no recuerda haber comido daría menos confianza que teclearlo.
+ */
+export interface RepeatableMeal {
+  readonly loggedAt: string
+  readonly items: readonly MealLogItemWithFood[]
+}
+
 /** La hidratación de un día: cada registro y el total. */
 export interface DayWater {
   readonly logs: readonly WaterLog[]
