@@ -40,9 +40,16 @@ interface DailyContext {
     weightKg?: number
   }
   plan: PlanItemSnapshot[] // ítems del día y su estado
-  workout: { recentSessions: SessionSnapshot[]; fatigueSignals: FatigueSignal[] }
-  nutrition: { todayIntake: MacroTotals; todaySpend: number; pantry?: FoodRef[] }
+  workout: { recentSessions: SessionSnapshot[]; activeSessionStartedAt?: string }
+  nutrition: {
+    todayIntake: MacroTotals
+    todaySpend: number
+    todayWaterMl: number
+    todayFoods: LoggedFoodSnapshot[] // lo comido hoy, alimento a alimento
+    pantry: FoodSnapshot[] // el catálogo, para poder proponer alternativas
+  }
   study: { weekMinutes: number }
+  habits: { total: number; done: number }
   sleep: { lastNightMinutes?: number; quality?: number }
   constraints: {
     // límites del día real
@@ -57,6 +64,7 @@ interface DailyContext {
 
 ```ts
 interface Recommendation {
+  key: string // identidad estable entre evaluaciones, para poder descartarla
   type: RecommendationType // day_recalculation | meal_swap | alternative_routine | alert | insight
   domain?: PlanItemDomain
   priority: Priority // low | medium | high | critical
@@ -126,6 +134,108 @@ cronómetro en 108 horas mientras el plan decía «llevas 7 días sin entrenar»
 dos cosas eran ciertas —una sesión sin terminar no cuenta como entrenamiento—
 pero juntas el sistema se contradecía. La regla saca el enganche a la luz en vez
 de cerrarlo por su cuenta: el motor **sugiere**, no ejecuta.
+
+### Reglas insignia (Sprint 13)
+
+Las anteriores **recuerdan lo pendiente**. Éstas **proponen una decisión mejor**,
+que es lo que separa a Nexus de un cuaderno de registros.
+
+| Regla                   | Cuándo habla                                                       | Prioridad                          |
+| ----------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| `meal-swap@1`           | Algo de lo comido hoy tiene alternativa más barata igual de buena. | Alta si el ahorro pasa de $10.000. |
+| `alternative-routine@1` | Pasadas las 19 h sin entrenar, habiendo rutina que acortar.        | Media.                             |
+| `day-recalculation@1`   | Lo que queda del plan ya no cabe en lo que queda de día.           | Alta.                              |
+
+**`meal-swap@1`** es la regla de la **nutrición económica**, el diferencial del
+producto. Cuatro decisiones la hacen honesta:
+
+- **Mira hacia adelante.** El alimento ya se comió y eso no tiene vuelta; la
+  sugerencia es «la próxima vez», y el «repetir comida» de la app la vuelve
+  accionable de un toque.
+- **No abarata a costa de comer peor.** Sólo propone alternativas que aportan al
+  menos las mismas calorías **y** la misma proteína. Recortar no es aconsejar.
+- **Nada de raciones absurdas.** Tope de 4 porciones: seis de arroz igualan una
+  hamburguesa en la hoja de cálculo y son incomibles.
+- **Una sola sugerencia, la de mayor ahorro.** Un plan que abre con seis
+  propuestas de comida no se lee. Y calla por debajo de $2.000: nadie cambia lo
+  que come por calderilla, y avisar por eso entrena a ignorar los avisos.
+
+Para poder compararlos, el `DailyContext` incorpora en `nutrition` los alimentos
+**registrados hoy** (`todayFoods`, con su coste) y el **catálogo del usuario**
+(`pantry`). Sin despensa no hay swap posible: decir «come otra cosa» sin decir
+cuál no ayuda a decidir nada.
+
+**`alternative-routine@1`** rebaja el listón a algo que todavía cabe, que es
+justo el momento en que la gente lo deja. La dispara **el reloj y no el sueño**:
+`sleep-short@1` ya habla de bajar volumen cuando se ha dormido mal, y dos reglas
+contando lo mismo con distintas palabras son ruido. Ésta responde a otra
+pregunta —«se me acaba el día»— y por eso puede convivir con aquélla.
+
+Elige el día de rutina que lleva **más tiempo sin tocarse** (el que toca por
+rotación) y se queda con la cabeza de su lista, porque por convención los
+primeros ejercicios de un día son los básicos. Sólo acorta días de **cuatro
+ejercicios o más**: recortar uno de tres no es una alternativa, es quitar uno.
+
+Para eso el `DailyContext` gana `workout.routineDays` —lo que se planea
+entrenar— y `routineDayId` en cada sesión, de donde sale la rotación.
+
+Dos detalles de redacción que salieron de verla con datos reales: el día se
+nombra **sin adjetivarlo** (el nombre lo pone el usuario y «Pierna entero» no
+concuerda), y la hora se da como «pasadas las 20:00», porque a las 20:30 decir
+«son las 20:00» es falso y una cifra inventada resta credibilidad a todo lo demás.
+
+### Descartar una recomendación
+
+Decidir incluye decir que no. Cada tarjeta del plan se puede **descartar hasta
+mañana**: una sugerencia que reaparece después de rechazarla deja de ser un
+consejo y pasa a ser una insistencia.
+
+Cómo se sostiene sin ensuciar el motor:
+
+- Cada `Recommendation` lleva una **clave estable** (`key`). El motor se ejecuta
+  en cada visita, así que la misma sugerencia nace una y otra vez; sin una clave
+  que la reconozca no hay forma de recordar que ya se rechazó. Lleva la versión
+  de la regla y, cuando ésta puede hablar de cosas distintas, de qué habla:
+  `meal-swap@1:<idDelAlimento>`. **Cambiar la versión invalida los descartes**,
+  que es lo correcto: si el criterio cambió, merece otra oportunidad.
+- El motor **no sabe nada de esto**. Sigue siendo puro: evalúa entero y es el
+  hook de `planning` quien filtra lo descartado después.
+- **No se persisten las recomendaciones**, sólo los descartes. Las primeras se
+  recalculan de lo registrado —que es lo que las mantiene ciertas—; un descarte
+  es una decisión del usuario y no se puede deducir de ningún dato.
+- Caduca a **medianoche** (`valid_until`), no para siempre. El descarte dice «hoy
+  no»; mañana el contexto es otro. Silenciar algo indefinidamente habría que
+  preguntarlo, y no se ha preguntado.
+
+### El plan que se pone el usuario, y `day-recalculation@1`
+
+La pantalla `/plan` tiene **dos capas que no se mezclan**: arriba lo que el
+usuario se propuso (`daily_plans` + `plan_items`, su agenda), abajo lo que el
+motor sugiere a la vista de lo registrado. Juntarlas haría que las sugerencias
+parecieran obligaciones, y Nexus recomienda: quien decide es él.
+
+`day-recalculation@1` es la única regla que mira **el plan**, no lo registrado.
+Suma lo que queda por hacer, lo compara con las horas que quedan de día y, si no
+cabe, lo dice. Que lo diga en vez de callar es el punto: un plan que se acumula
+sin avisar termina abandonado entero; uno que reconoce a tiempo que sobra una
+cosa se puede salvar. **No reprograma nada**: propone mover, y mover lo decide el
+usuario.
+
+Cuatro decisiones que la hacen fiable:
+
+- **El día útil acaba a las 23:00**, no a medianoche. Prometer la última hora
+  haría que el aviso llegara siempre tarde.
+- **Media hora de margen** antes de dar algo por atrasado. Empezar diez minutos
+  tarde no es un plan roto, es la vida.
+- **La hora es opcional al planificar.** Hay cosas que uno se propone «hoy» sin
+  decidir cuándo; obligar a inventarse una hora produce horas falsas que la
+  regla se tomaría en serio. A lo que no la tiene se le calculan 30 min.
+- **Marcar algo como hecho recalcula solo.** Si con ello el resto ya cabe, el
+  aviso desaparece sin que nadie lo cierre.
+
+Queda fuera de esta versión enlazar un ítem con la entidad que representa
+(`reference_id`: este día de rutina, esta materia). Con él, el plan podría darse
+por cumplido al registrar la actividad en vez de a mano.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 

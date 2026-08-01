@@ -46,6 +46,7 @@ export const workoutOpenSessionRule: Rule = {
 
     return [
       {
+        key: 'workout-open-session@1',
         type: 'alert',
         domain: 'workout',
         priority: 'medium',

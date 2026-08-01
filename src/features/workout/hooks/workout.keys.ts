@@ -14,5 +14,7 @@ export const workoutKeys = {
   series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
     [...workoutKeys.sessions(), 'series', userId, rangeKey, previousKey] as const,
   routines: (userId: string | undefined) => [...workoutKeys.all, 'routines', userId] as const,
+  routineDays: (userId: string | undefined) =>
+    [...workoutKeys.all, 'routines', 'days', userId] as const,
   routine: (routineId: string) => [...workoutKeys.all, 'routines', 'detail', routineId] as const,
 }

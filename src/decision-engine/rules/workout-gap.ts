@@ -42,6 +42,7 @@ export const workoutGapRule: Rule = {
 
     return [
       {
+        key: 'workout-gap@1',
         type: 'alert',
         domain: 'workout',
         priority: days >= LONG_GAP_DAYS ? 'high' : 'medium',

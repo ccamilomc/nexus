@@ -1,6 +1,6 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–12 terminados (los seis dominios completos, conectados al dashboard y con analíticas), más el Plan del día. Siguiente: Sprint 13 (Decision Engine).
+> **Estado:** Sprints 0–13 terminados: los seis dominios completos, con analíticas, y el Decision Engine con sus tres reglas insignia y el plan del día. Pendiente del 13: la capa `assistant` (IA). Siguiente: Sprint 14 (offline-first).
 > **Versión del diseño:** 1.0
 > **Fecha:** 2026-08-01
 

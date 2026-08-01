@@ -9,11 +9,13 @@ const CONTEXT: DailyContext = {
   profile: { sex: 'unspecified' },
   goals: {},
   plan: [],
-  workout: { recentSessions: [] },
+  workout: { recentSessions: [], routineDays: [] },
   nutrition: {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     todaySpend: 0,
     todayWaterMl: 0,
+    todayFoods: [],
+    pantry: [],
   },
   study: { weekMinutes: 0 },
   habits: { total: 0, done: 0 },
@@ -23,6 +25,7 @@ const CONTEXT: DailyContext = {
 
 function makeRecommendation(title: string, priority: Priority): Recommendation {
   return {
+    key: `regla:${title}`,
     type: 'insight',
     priority,
     title,

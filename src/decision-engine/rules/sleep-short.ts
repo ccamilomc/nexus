@@ -1,20 +1,13 @@
 import type { DailyContext } from '../contracts/context.types'
 import type { Recommendation } from '../contracts/recommendation.types'
 import type { Rule } from '../contracts/rule.types'
+import { formatMinutes } from './format'
 
 /** Por debajo de seis horas, casi nadie rinde igual. */
 const SHORT_SLEEP_MINUTES = 6 * 60
 
 /** Por debajo de cinco, el aviso deja de ser un matiz. */
 const VERY_SHORT_SLEEP_MINUTES = 5 * 60
-
-function formatMinutes(minutes: number): string {
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-
-  if (hours === 0) return `${rest} min`
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
-}
 
 /**
  * Ajusta el día cuando se ha dormido poco.
@@ -40,6 +33,7 @@ export const sleepShortRule: Rule = {
 
     return [
       {
+        key: 'sleep-short@1',
         type: 'insight',
         domain: 'sleep',
         priority: minutes < VERY_SHORT_SLEEP_MINUTES ? 'high' : 'medium',

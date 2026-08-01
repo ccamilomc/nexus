@@ -26,6 +26,7 @@ export const habitsPendingRule: Rule = {
 
     return [
       {
+        key: 'habits-pending@1',
         type: 'alert',
         domain: 'habit',
         priority: isLate ? 'high' : 'medium',
