@@ -7,8 +7,9 @@ import { formatMinutes } from '@/shared/utils'
 
 import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
+import { hourAxis } from '../utils/axis'
 import { compareValues } from '../utils/comparison'
-import { formatCount } from '../utils/format'
+import { formatCount, formatDecimal } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'
 import { TrendChart } from './TrendChart'
@@ -29,6 +30,8 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
     window.days,
     window.previousDays,
   )
+
+  const sleepAxis = data ? hourAxis(data.points) : null
 
   return (
     <AnalyticsSection
@@ -67,7 +70,9 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
             />
             <KpiCard
               label="Calidad media"
-              value={data.averageQuality === null ? '—' : `${data.averageQuality} / 5`}
+              value={
+                data.averageQuality === null ? '—' : `${formatDecimal(data.averageQuality)} / 5`
+              }
               comparison={null}
               hint={data.averageQuality === null ? 'Ninguna noche valorada' : 'Sobre las valoradas'}
             />
@@ -86,6 +91,7 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
               colorIndex={4}
               formatValue={formatMinutes}
               formatAxisValue={(minutes) => `${Math.round(minutes / 60)} h`}
+              {...(sleepAxis ? { verticalAxis: sleepAxis } : {})}
             />
           )}
         </div>

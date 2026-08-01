@@ -4,6 +4,8 @@ const dayMonthFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', mon
 
 const kilogramFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 })
 
+const decimalFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 })
+
 /**
  * Fecha corta para el eje y las tablas: «27 jul».
  *
@@ -20,6 +22,16 @@ export function formatChartDate(dateKey: string): string {
 /** Volumen levantado: «12.400 kg». Sin decimales, que en kilos no aportan. */
 export function formatVolumeKg(kilograms: number): string {
   return `${kilogramFormatter.format(Math.round(kilograms))} kg`
+}
+
+/**
+ * Un decimal, con coma: «4,2».
+ *
+ * En español el separador decimal es la coma. Interpolar el número sin más
+ * dejaría un «4.2» que se lee como inglés en una pantalla que no lo es.
+ */
+export function formatDecimal(value: number): string {
+  return decimalFormatter.format(value)
 }
 
 /** Recuento con su palabra: «3 entrenamientos», «1 entrenamiento». */

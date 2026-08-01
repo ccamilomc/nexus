@@ -12,6 +12,7 @@ import {
 
 import type { SeriesPoint } from '@/shared/utils'
 
+import type { VerticalAxis } from '../utils/axis'
 import { formatChartDate } from '../utils/format'
 
 interface TrendChartProps {
@@ -27,6 +28,11 @@ interface TrendChartProps {
   readonly formatValue: (value: number) => string
   /** Versión corta para el eje; por defecto, la misma. */
   readonly formatAxisValue?: (value: number) => string
+  /**
+   * Escala vertical a medida. Sin esto el eje arranca en cero, que es lo
+   * correcto para las barras pero aplasta una línea (ver `hourAxis`).
+   */
+  readonly verticalAxis?: VerticalAxis
   /** Índice del color de gráfica (`--chart-N`). */
   readonly colorIndex?: 1 | 2 | 3 | 4 | 5
 }
@@ -50,6 +56,7 @@ export function TrendChart({
   variant,
   formatValue,
   formatAxisValue,
+  verticalAxis,
   colorIndex = 1,
 }: TrendChartProps) {
   const color = `hsl(var(--chart-${colorIndex}))`
@@ -73,6 +80,12 @@ export function TrendChart({
         tickLine={false}
         axisLine={false}
         tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }}
+        {...(verticalAxis
+          ? {
+              domain: [verticalAxis.domain[0], verticalAxis.domain[1]],
+              ticks: [...verticalAxis.ticks],
+            }
+          : {})}
       />
       <Tooltip
         cursor={{ fill: 'hsl(var(--muted))', stroke: 'hsl(var(--muted))' }}
@@ -83,7 +96,9 @@ export function TrendChart({
 
   return (
     <figure className="m-0">
-      <div className="h-56 w-full" aria-hidden>
+      {/* `min-w-0` para que la caja pueda encoger dentro de un grid o flex, y
+          `overflow-hidden` para que un SVG aún sin remedir no empuje la página. */}
+      <div className="h-56 w-full min-w-0 overflow-hidden" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
           {variant === 'line' ? (
             <LineChart data={[...points]} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
@@ -146,25 +161,34 @@ interface ChartDataTableProps {
   readonly formatValue: (value: number) => string
 }
 
-/** Los mismos datos en tabla, para lectores de pantalla. */
+/**
+ * Los mismos datos en tabla, para lectores de pantalla.
+ *
+ * El `sr-only` va en un `div` y no en la `table`: una tabla no se encoge por
+ * debajo del ancho de su contenido y no la recorta el `overflow: hidden`, así
+ * que con `sr-only` encima seguía empujando la página y aparecía scroll
+ * horizontal en móvil. Invisible no es lo mismo que sin ocupar sitio.
+ */
 function ChartDataTable({ label, points, formatValue }: ChartDataTableProps) {
   return (
-    <table className="sr-only">
-      <caption>{label}</caption>
-      <thead>
-        <tr>
-          <th scope="col">Día</th>
-          <th scope="col">Valor</th>
-        </tr>
-      </thead>
-      <tbody>
-        {points.map(({ dateKey, value }) => (
-          <tr key={dateKey}>
-            <th scope="row">{formatChartDate(dateKey)}</th>
-            <td>{value === null ? 'Sin registro' : formatValue(value)}</td>
+    <div className="sr-only">
+      <table>
+        <caption>{label}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Día</th>
+            <th scope="col">Valor</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {points.map(({ dateKey, value }) => (
+            <tr key={dateKey}>
+              <th scope="row">{formatChartDate(dateKey)}</th>
+              <td>{value === null ? 'Sin registro' : formatValue(value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   )
 }

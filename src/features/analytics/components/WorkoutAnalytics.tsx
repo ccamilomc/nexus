@@ -8,7 +8,7 @@ import { formatMinutes } from '@/shared/utils'
 import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { compareValues } from '../utils/comparison'
-import { formatCount, formatVolumeKg } from '../utils/format'
+import { formatCount, formatDecimal, formatVolumeKg } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'
 import { TrendChart } from './TrendChart'
@@ -98,7 +98,9 @@ export function WorkoutAnalytics({ window }: WorkoutAnalyticsProps) {
               formatValue={formatVolumeKg}
               formatAxisValue={(kilograms) =>
                 kilograms >= KILOGRAMS_IN_THOUSAND
-                  ? `${Math.round(kilograms / KILOGRAMS_IN_THOUSAND)}k`
+                  ? // Con un decimal: redondear 2.500 a «3k» junto a 5.000 «5k»
+                    // dibuja una escala que parece irregular sin serlo.
+                    `${formatDecimal(kilograms / KILOGRAMS_IN_THOUSAND)}k`
                   : String(Math.round(kilograms))
               }
             />
