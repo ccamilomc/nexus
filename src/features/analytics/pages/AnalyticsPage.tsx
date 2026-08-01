@@ -1,6 +1,7 @@
 import { PageHeader } from '@/shared/components/layout'
 
 import { HabitsAnalytics } from '../components/HabitsAnalytics'
+import { HealthAnalytics } from '../components/HealthAnalytics'
 import { NutritionAnalytics } from '../components/NutritionAnalytics'
 import { PeriodSelector } from '../components/PeriodSelector'
 import { SleepAnalytics } from '../components/SleepAnalytics'
@@ -26,12 +27,14 @@ export function AnalyticsPage() {
         <PeriodSelector value={periodId} onChange={setPeriodId} />
 
         {/* El mismo orden que la navegación, para que la página no obligue a
-            buscar: entrenamiento, nutrición, hábitos, estudio y sueño. */}
+            buscar. Salud va al final: es la única sección que no compara ni
+            opina, y cierra sin arrastrar ese tono a las demás. */}
         <WorkoutAnalytics window={window} />
         <NutritionAnalytics window={window} />
         <HabitsAnalytics window={window} />
         <StudyAnalytics window={window} />
         <SleepAnalytics window={window} />
+        <HealthAnalytics window={window} />
       </div>
     </>
   )

@@ -14,6 +14,8 @@ export const healthKeys = {
   overview: (userId: string | undefined) => [...healthKeys.all, 'overview', userId] as const,
   history: (userId: string | undefined, metricType: string) =>
     [...healthKeys.all, 'history', userId, metricType] as const,
+  weightSeries: (userId: string | undefined, rangeKey: string) =>
+    [...healthKeys.all, 'weight-series', userId, rangeKey] as const,
 }
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */

@@ -111,9 +111,17 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 
 ### Sprint 12 — Fase 12 · Analytics · **M**
 
-- Vistas/agregados, KPIs por dominio, gráficas (Recharts), comparativas.
+- KPIs por dominio, gráficas (Recharts) y comparativas contra el tramo anterior.
+- **Sin vistas SQL:** la agregación ocurre en el cliente y cada dominio expone su
+  serie en su barrel (`useXSeries`). Razonado en
+  [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
 - `daily_summaries` **sólo si** el rendimiento lo exige (con evidencia).
 - **DoD:** analytics con datos reales de las features, responsive y accesible.
+
+> **Terminado.** Los seis dominios con sus indicadores y su gráfica. Las cifras
+> callan cuando no se sostienen: no se dibuja tendencia por debajo de tres días
+> de datos, y empezar de cero no se presenta como «un 100 % más». Cada dominio
+> decide si un día sin registro es un hueco o un cero, y Salud no compara.
 
 ### Sprint 13 — Fase 13 · Decision Engine · **L**
 

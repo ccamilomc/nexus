@@ -33,8 +33,11 @@ interface TrendChartProps {
    * correcto para las barras pero aplasta una línea (ver `hourAxis`).
    */
   readonly verticalAxis?: VerticalAxis
-  /** Índice del color de gráfica (`--chart-N`). */
-  readonly colorIndex?: 1 | 2 | 3 | 4 | 5
+  /**
+   * Color de la serie: un índice de `--chart-N`, o `neutral` para el gris
+   * apagado del tema. Salud usa `neutral` a propósito, porque no opina.
+   */
+  readonly colorIndex?: 1 | 2 | 3 | 4 | 5 | 'neutral'
 }
 
 /** Cuántas marcas caben en el eje sin amontonarse en un móvil de 320 px. */
@@ -59,7 +62,8 @@ export function TrendChart({
   verticalAxis,
   colorIndex = 1,
 }: TrendChartProps) {
-  const color = `hsl(var(--chart-${colorIndex}))`
+  const color =
+    colorIndex === 'neutral' ? 'hsl(var(--muted-foreground))' : `hsl(var(--chart-${colorIndex}))`
   const formatTick = formatAxisValue ?? formatValue
   const tickInterval = Math.max(0, Math.ceil(points.length / MAX_AXIS_TICKS) - 1)
 

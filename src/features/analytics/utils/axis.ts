@@ -12,18 +12,18 @@ const MINUTES_PER_HOUR = 60
 const MAX_TICKS = 5
 
 /**
- * Eje en horas para una serie de minutos.
+ * Eje ajustado a los datos, con las marcas cuadradas a múltiplos de `unit`.
  *
- * Recharts arranca en cero por defecto, y con el sueño eso deja la línea
- * aplastada en una franja del 20 % de la altura: entre seis y ocho horas no se
- * distingue nada dentro de una escala de cero a diez. Aquí el eje se ajusta a
- * las horas enteras que rodean a los datos, y las marcas caen justo en ellas
- * para que no salgan etiquetas como «3 h» donde en realidad hay 2 h 30.
+ * Recharts arranca en cero por defecto, y eso aplasta cualquier magnitud que no
+ * viva cerca del cero: entre seis y ocho horas de sueño no se distingue nada en
+ * una escala de cero a diez, y setenta y cinco kilos en una de cero a ochenta,
+ * tampoco. Cuadrar las marcas evita además etiquetas como «3 h» donde en
+ * realidad hay 2 h 30.
  *
- * Se ajusta sólo en gráficas de **línea**. En las de barra la longitud codifica
- * la magnitud, así que ahí el cero no se toca.
+ * Se usa sólo en gráficas de **línea**. En las de barra la longitud codifica la
+ * magnitud, así que ahí el cero no se toca: recortarlo exageraría diferencias.
  */
-export function hourAxis(points: readonly SeriesPoint[]): VerticalAxis | null {
+export function fittedAxis(points: readonly SeriesPoint[], unit: number): VerticalAxis | null {
   const values = points.reduce<number[]>((collected, { value }) => {
     if (value !== null) collected.push(value)
 
@@ -32,19 +32,24 @@ export function hourAxis(points: readonly SeriesPoint[]): VerticalAxis | null {
 
   if (values.length === 0) return null
 
-  const lowestHour = Math.floor(Math.min(...values) / MINUTES_PER_HOUR)
-  // Al menos una hora de margen arriba: si el máximo cae justo en una hora en
-  // punto, el pico quedaría pegado al borde superior.
-  const highestHour = Math.floor(Math.max(...values) / MINUTES_PER_HOUR) + 1
+  const lowest = Math.floor(Math.min(...values) / unit)
+  // Al menos una unidad de margen arriba: si el máximo cae justo en una marca,
+  // el pico quedaría pegado al borde superior.
+  const highest = Math.floor(Math.max(...values) / unit) + 1
 
-  const from = Math.max(0, lowestHour)
-  const span = Math.max(1, highestHour - from)
+  const from = Math.max(0, lowest)
+  const span = Math.max(1, highest - from)
   const step = Math.max(1, Math.ceil(span / MAX_TICKS))
 
   const ticks: number[] = []
-  for (let hour = from; hour <= from + span; hour += step) {
-    ticks.push(hour * MINUTES_PER_HOUR)
+  for (let mark = from; mark <= from + span; mark += step) {
+    ticks.push(mark * unit)
   }
 
-  return { domain: [from * MINUTES_PER_HOUR, (from + span) * MINUTES_PER_HOUR], ticks }
+  return { domain: [from * unit, (from + span) * unit], ticks }
+}
+
+/** Eje en horas enteras para una serie de minutos (el sueño). */
+export function hourAxis(points: readonly SeriesPoint[]): VerticalAxis | null {
+  return fittedAxis(points, MINUTES_PER_HOUR)
 }

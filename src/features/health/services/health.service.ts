@@ -1,11 +1,19 @@
 import { toAppError } from '@/core/error'
+import type { DayRange } from '@/shared/utils'
 
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
 import type { LogMetricValues } from '../schemas/health.schema'
-import type { Bmi, BodyMetric, BodyMetricType, MetricSummary } from '../types/health.types'
+import type {
+  Bmi,
+  BodyMetric,
+  BodyMetricType,
+  MetricSummary,
+  WeightPeriodSeries,
+} from '../types/health.types'
 import { calculateBmi } from '../utils/bmi'
 import { buildMetricSummaries } from '../utils/metric-summary'
+import { buildWeightSeries } from '../utils/weight-series'
 
 /**
  * Mediciones que se traen para componer el resumen.
@@ -58,6 +66,35 @@ export const healthService = {
   async getHistory(userId: string, metricType: BodyMetricType): Promise<BodyMetric[]> {
     try {
       return await healthRepository.listMetricHistory(userId, metricType, HISTORY_LIMIT)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * El peso de un periodo, para Analytics.
+   *
+   * Sólo el peso: es la única medida que se registra con frecuencia suficiente
+   * para dibujar una línea. Las de cinta métrica se toman de mes en mes y una
+   * gráfica de tres puntos aparentaría una tendencia que no existe.
+   *
+   * No lleva tramo anterior. En el resto de dominios la comparación empuja a
+   * mejorar; aquí sería una nota sobre el cuerpo de alguien, y Salud no opina.
+   */
+  async getWeightSeries(
+    userId: string,
+    range: DayRange,
+    days: readonly Date[],
+  ): Promise<WeightPeriodSeries> {
+    try {
+      const metrics = await healthRepository.listMetricsBetween(
+        userId,
+        'weight',
+        range.fromIso,
+        range.toIso,
+      )
+
+      return buildWeightSeries(metrics, days)
     } catch (error) {
       throw toAppError(error)
     }

@@ -37,6 +37,27 @@ export const healthRepository = {
     return data ?? []
   },
 
+  /** Las mediciones de una medida dentro de un rango, de la más antigua a la más nueva. */
+  async listMetricsBetween(
+    userId: string,
+    metricType: BodyMetricType,
+    fromIso: string,
+    toIso: string,
+  ): Promise<BodyMetric[]> {
+    const { data, error } = await supabase
+      .from('body_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('metric_type', metricType)
+      .is('deleted_at', null)
+      .gte('measured_at', fromIso)
+      .lt('measured_at', toIso)
+      .order('measured_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async insertMetric(input: TablesInsert<'body_metrics'>): Promise<BodyMetric> {
     const { data, error } = await supabase.from('body_metrics').insert(input).select('*').single()
 
