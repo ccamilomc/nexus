@@ -9,7 +9,7 @@ const CONTEXT: DailyContext = {
   profile: { sex: 'unspecified' },
   goals: {},
   plan: [],
-  workout: { recentSessions: [] },
+  workout: { recentSessions: [], routineDays: [] },
   nutrition: {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     todaySpend: 0,

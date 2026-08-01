@@ -81,6 +81,28 @@ export interface WorkoutSessionSnapshot {
   readonly date: string
   readonly durationMinutes: number
   readonly perceivedEffort?: number
+  /** Día de rutina que la originó; `undefined` si se entrenó libre. */
+  readonly routineDayId?: string
+}
+
+/** Un ejercicio prescrito dentro de un día de rutina. */
+export interface PrescribedExerciseSnapshot {
+  readonly name: string
+  readonly sets: number
+}
+
+/**
+ * Un día de rutina: lo que se **planea** entrenar, no lo que se entrenó.
+ *
+ * Los ejercicios llegan en el orden de la rutina. Ese orden importa: por
+ * convención los primeros son los básicos, y es lo que permite proponer una
+ * versión corta quedándose con la cabeza de la lista en vez de elegir al azar.
+ */
+export interface RoutineDaySnapshot {
+  readonly id: string
+  readonly routineName: string
+  readonly dayName: string
+  readonly exercises: readonly PrescribedExerciseSnapshot[]
 }
 
 export interface DailyContext {
@@ -104,6 +126,8 @@ export interface DailyContext {
     readonly recentSessions: readonly WorkoutSessionSnapshot[]
     /** Inicio del entrenamiento en curso (ISO), si hay alguno sin terminar. */
     readonly activeSessionStartedAt?: string
+    /** Días de rutina disponibles, para poder proponer una versión más corta. */
+    readonly routineDays: readonly RoutineDaySnapshot[]
   }
   readonly nutrition: {
     readonly todayIntake: MacroTotals

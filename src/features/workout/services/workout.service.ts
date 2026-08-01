@@ -1,4 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
+import type { RoutineDaySnapshot } from '@/decision-engine'
 import type { DayRange } from '@/shared/utils'
 
 import { workoutRepository } from '../repositories/workout.repository'
@@ -19,6 +20,7 @@ import type {
   WorkoutSetWithExercise,
 } from '../types/workout.types'
 import { buildRoutineDetail } from '../utils/routine-detail'
+import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 import { buildWorkoutSeries } from '../utils/workout-series'
 
@@ -295,6 +297,28 @@ export const workoutService = {
   },
 
   /** Rutina con sus días y ejercicios prescritos, o `null` si no existe. */
+  /**
+   * Todos los días de rutina del usuario, con sus ejercicios prescritos.
+   *
+   * Lo consume el Decision Engine para poder proponer una versión corta: sin
+   * saber qué se planea entrenar, sugerir «haz media sesión» no dice nada.
+   */
+  async getRoutineDays(userId: string): Promise<readonly RoutineDaySnapshot[]> {
+    try {
+      const routines = await workoutRepository.listRoutines(userId)
+      if (routines.length === 0) return []
+
+      const days = await workoutRepository.listDaysByRoutines(routines.map(({ id }) => id))
+      if (days.length === 0) return []
+
+      const exercises = await workoutRepository.listExercisesByDays(days.map(({ id }) => id))
+
+      return buildRoutineDaySnapshots(routines, days, exercises)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
   async getRoutineDetail(routineId: string): Promise<RoutineDetail | null> {
     try {
       const routine = await workoutRepository.findRoutine(routineId)

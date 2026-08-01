@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { DailyContext } from '../contracts/context.types'
+import { alternativeRoutineRule } from './alternative-routine'
 import { habitsPendingRule } from './habits-pending'
 import { mealSwapRule } from './meal-swap'
 import { sleepShortRule } from './sleep-short'
@@ -16,7 +17,7 @@ const EMPTY: DailyContext = {
   profile: { sex: 'unspecified' },
   goals: {},
   plan: [],
-  workout: { recentSessions: [] },
+  workout: { recentSessions: [], routineDays: [] },
   nutrition: {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     todaySpend: 0,
@@ -112,7 +113,7 @@ describe('habitsPendingRule', () => {
 describe('workoutGapRule', () => {
   const withLastSession = (date: string): DailyContext => ({
     ...EMPTY,
-    workout: { recentSessions: [{ id: 's1', date, durationMinutes: 45 }] },
+    workout: { recentSessions: [{ id: 's1', date, durationMinutes: 45 }], routineDays: [] },
   })
 
   it('no dice nada a quien todavía no ha empezado', () => {
@@ -151,6 +152,7 @@ describe('workoutGapRule', () => {
           { id: 'viejo', date: '2026-07-10', durationMinutes: 45 },
           { id: 'nuevo', date: '2026-07-27', durationMinutes: 45 },
         ],
+        routineDays: [],
       },
     }
 
@@ -200,7 +202,7 @@ describe('workoutOpenSessionRule', () => {
   const withOpenSession = (startedAt: string, now = at(20)): DailyContext => ({
     ...EMPTY,
     now,
-    workout: { recentSessions: [], activeSessionStartedAt: startedAt },
+    workout: { recentSessions: [], activeSessionStartedAt: startedAt, routineDays: [] },
   })
 
   it('no aplica si no hay ninguna sesión abierta', () => {
@@ -404,5 +406,123 @@ describe('mealSwapRule', () => {
     const [medio] = mealSwapRule.evaluate(withNutrition([gaseosa], [leche]))
 
     expect(medio?.priority).toBe('medium')
+  })
+})
+
+describe('alternativeRoutineRule', () => {
+  const PIERNA = {
+    id: 'pierna',
+    routineName: 'Push Pull Legs',
+    dayName: 'Pierna',
+    exercises: [
+      { name: 'Sentadilla', sets: 4 },
+      { name: 'Peso muerto', sets: 4 },
+      { name: 'Zancadas', sets: 3 },
+      { name: 'Curl femoral', sets: 3 },
+      { name: 'Gemelos', sets: 3 },
+    ],
+  }
+
+  const withRoutine = (
+    routineDays: DailyContext['workout']['routineDays'],
+    now = at(20),
+    recentSessions: DailyContext['workout']['recentSessions'] = [],
+  ): DailyContext => ({
+    ...EMPTY,
+    now,
+    workout: { recentSessions, routineDays },
+  })
+
+  it('no habla de día: aún queda tarde para la sesión entera', () => {
+    expect(alternativeRoutineRule.appliesTo(withRoutine([PIERNA], at(11)))).toBe(false)
+  })
+
+  it('no habla sin rutinas que acortar', () => {
+    expect(alternativeRoutineRule.appliesTo(withRoutine([]))).toBe(false)
+  })
+
+  it('no molesta a quien ya entrenó hoy', () => {
+    const hoy = [{ id: 's1', date: EMPTY.date, durationMinutes: 50 }]
+
+    expect(alternativeRoutineRule.appliesTo(withRoutine([PIERNA], at(20), hoy))).toBe(false)
+  })
+
+  it('no interrumpe a quien está entrenando ahora mismo', () => {
+    const context: DailyContext = {
+      ...withRoutine([PIERNA]),
+      workout: { recentSessions: [], routineDays: [PIERNA], activeSessionStartedAt: at(19) },
+    }
+
+    expect(alternativeRoutineRule.appliesTo(context)).toBe(false)
+  })
+
+  it('propone la cabeza de la lista, que son los básicos', () => {
+    const [recommendation] = alternativeRoutineRule.evaluate(withRoutine([PIERNA]))
+
+    expect(recommendation?.type).toBe('alternative_routine')
+    expect(recommendation?.message).toContain('Sentadilla, Peso muerto y Zancadas')
+    expect(recommendation?.message).not.toContain('Gemelos')
+  })
+
+  it('compara la versión corta con la entera', () => {
+    const [recommendation] = alternativeRoutineRule.evaluate(withRoutine([PIERNA]))
+
+    // 17 series ≈ 60 min enteras; 11 series ≈ 40 min la corta.
+    expect(recommendation?.message).toContain('los 5 ejercicios de Pierna')
+    expect(recommendation?.data.estimatedMinutes).toBe(40)
+  })
+
+  it('explica el porqué sin recriminar', () => {
+    const [recommendation] = alternativeRoutineRule.evaluate(withRoutine([PIERNA]))
+
+    expect(recommendation?.reason).toContain('aún no has entrenado')
+    expect(recommendation?.reason).not.toMatch(/fall|deberías|tarde ya/i)
+  })
+
+  it('elige el día que lleva más tiempo sin tocarse', () => {
+    const empuje = { ...PIERNA, id: 'empuje', dayName: 'Empuje' }
+    const sessions = [
+      { id: 's1', date: '2026-07-29', durationMinutes: 50, routineDayId: 'pierna' },
+      { id: 's2', date: '2026-07-20', durationMinutes: 50, routineDayId: 'empuje' },
+    ]
+
+    const [recommendation] = alternativeRoutineRule.evaluate(
+      withRoutine([PIERNA, empuje], at(20), sessions),
+    )
+
+    expect(recommendation?.data.routineDayId).toBe('empuje')
+  })
+
+  it('prefiere un día nunca entrenado', () => {
+    const nuevo = { ...PIERNA, id: 'nuevo', dayName: 'Espalda' }
+    const sessions = [{ id: 's1', date: '2026-07-29', durationMinutes: 50, routineDayId: 'pierna' }]
+
+    const [recommendation] = alternativeRoutineRule.evaluate(
+      withRoutine([PIERNA, nuevo], at(20), sessions),
+    )
+
+    expect(recommendation?.data.routineDayId).toBe('nuevo')
+  })
+
+  it('nombra el día sin adjetivarlo: el nombre lo pone el usuario', () => {
+    // «Pierna entero» no concuerda, y el día puede llamarse como sea.
+    const [recommendation] = alternativeRoutineRule.evaluate(withRoutine([PIERNA]))
+
+    expect(recommendation?.message).not.toMatch(/Pierna (entero|completo)/)
+  })
+
+  it('no finge la hora exacta', () => {
+    // A las 20:30, decir «son las 20:00» es falso; «pasadas las 20:00», no.
+    const [recommendation] = alternativeRoutineRule.evaluate(
+      withRoutine([PIERNA], new Date(2026, 6, 30, 20, 30).toISOString()),
+    )
+
+    expect(recommendation?.reason).toContain('Pasadas las 20:00')
+  })
+
+  it('calla si el día ya es corto: no hay nada que recortar', () => {
+    const corto = { ...PIERNA, exercises: PIERNA.exercises.slice(0, 3) }
+
+    expect(alternativeRoutineRule.evaluate(withRoutine([corto]))).toEqual([])
   })
 })

@@ -2,6 +2,7 @@ import type { DailyContext } from '@/decision-engine'
 import { toDateKeyFromIso } from '@/shared/utils'
 
 import { useActiveSession } from './use-active-session'
+import { useRoutineDays } from './use-routine-days'
 import { useSessionHistory } from './use-session-history'
 
 /** Parte del contexto diario que aporta entrenamiento. */
@@ -20,20 +21,25 @@ export interface WorkoutContext {
 export function useWorkoutContext(): WorkoutContext {
   const { data, isPending } = useSessionHistory()
   const active = useActiveSession()
+  const routineDays = useRoutineDays()
 
   return {
-    isPending: isPending || active.isPending,
+    isPending: isPending || active.isPending || routineDays.isPending,
     workout: {
       recentSessions: (data ?? []).map(({ session, stats }) => ({
         id: session.id,
         date: toDateKeyFromIso(session.started_at),
         durationMinutes: stats.durationMinutes ?? 0,
         ...(session.perceived_effort === null ? {} : { perceivedEffort: session.perceived_effort }),
+        // De aquí sale qué día de rutina toca por rotación: sin él, el motor no
+        // sabe cuál se entrenó hace más tiempo.
+        ...(session.routine_day_id === null ? {} : { routineDayId: session.routine_day_id }),
       })),
       // Una sesión sin terminar no cuenta como entrenamiento, pero el motor
       // necesita saber que existe: si no, diría «llevas días sin entrenar»
       // mientras la pantalla muestra un cronómetro corriendo.
       ...(active.data ? { activeSessionStartedAt: active.data.session.started_at } : {}),
+      routineDays: routineDays.data ?? [],
     },
   }
 }

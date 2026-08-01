@@ -294,6 +294,25 @@ export const workoutRepository = {
     return data ?? []
   },
 
+  /**
+   * Los días de varias rutinas de una vez.
+   *
+   * El motor necesita **todos** los días para saber cuál toca por rotación, y
+   * pedirlos rutina a rutina sería una consulta por cada una.
+   */
+  async listDaysByRoutines(routineIds: readonly string[]): Promise<RoutineDay[]> {
+    if (routineIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('routine_days')
+      .select('*')
+      .in('routine_id', routineIds)
+      .order('order_index', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async listExercisesByDays(dayIds: readonly string[]): Promise<RoutineExerciseWithExercise[]> {
     if (dayIds.length === 0) return []
 

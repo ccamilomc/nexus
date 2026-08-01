@@ -139,9 +139,10 @@ de cerrarlo por su cuenta: el motor **sugiere**, no ejecuta.
 Las anteriores **recuerdan lo pendiente**. Éstas **proponen una decisión mejor**,
 que es lo que separa a Nexus de un cuaderno de registros.
 
-| Regla         | Cuándo habla                                                       | Prioridad                          |
-| ------------- | ------------------------------------------------------------------ | ---------------------------------- |
-| `meal-swap@1` | Algo de lo comido hoy tiene alternativa más barata igual de buena. | Alta si el ahorro pasa de $10.000. |
+| Regla                   | Cuándo habla                                                       | Prioridad                          |
+| ----------------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| `meal-swap@1`           | Algo de lo comido hoy tiene alternativa más barata igual de buena. | Alta si el ahorro pasa de $10.000. |
+| `alternative-routine@1` | Pasadas las 19 h sin entrenar, habiendo rutina que acortar.        | Media.                             |
 
 **`meal-swap@1`** es la regla de la **nutrición económica**, el diferencial del
 producto. Cuatro decisiones la hacen honesta:
@@ -162,7 +163,26 @@ Para poder compararlos, el `DailyContext` incorpora en `nutrition` los alimentos
 (`pantry`). Sin despensa no hay swap posible: decir «come otra cosa» sin decir
 cuál no ayuda a decidir nada.
 
-Pendientes del sprint: `day_recalculation` y `alternative_routine`.
+**`alternative-routine@1`** rebaja el listón a algo que todavía cabe, que es
+justo el momento en que la gente lo deja. La dispara **el reloj y no el sueño**:
+`sleep-short@1` ya habla de bajar volumen cuando se ha dormido mal, y dos reglas
+contando lo mismo con distintas palabras son ruido. Ésta responde a otra
+pregunta —«se me acaba el día»— y por eso puede convivir con aquélla.
+
+Elige el día de rutina que lleva **más tiempo sin tocarse** (el que toca por
+rotación) y se queda con la cabeza de su lista, porque por convención los
+primeros ejercicios de un día son los básicos. Sólo acorta días de **cuatro
+ejercicios o más**: recortar uno de tres no es una alternativa, es quitar uno.
+
+Para eso el `DailyContext` gana `workout.routineDays` —lo que se planea
+entrenar— y `routineDayId` en cada sesión, de donde sale la rotación.
+
+Dos detalles de redacción que salieron de verla con datos reales: el día se
+nombra **sin adjetivarlo** (el nombre lo pone el usuario y «Pierna entero» no
+concuerda), y la hora se da como «pasadas las 20:00», porque a las 20:30 decir
+«son las 20:00» es falso y una cifra inventada resta credibilidad a todo lo demás.
+
+Pendiente del sprint: `day_recalculation`.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 

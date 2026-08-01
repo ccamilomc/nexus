@@ -10,7 +10,9 @@ export type {
   PlanItemDomain,
   PlanItemSnapshot,
   PlanItemStatus,
+  PrescribedExerciseSnapshot,
   Priority,
+  RoutineDaySnapshot,
   Sex,
   WorkoutSessionSnapshot,
 } from './context.types'

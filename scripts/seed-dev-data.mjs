@@ -264,6 +264,110 @@ async function ensureHabits() {
   return all
 }
 
+/**
+ * Una rutina Push Pull Legs con sus tres días y sus ejercicios.
+ *
+ * Hacía falta: había decenas de entrenamientos sembrados y ninguna rutina que
+ * los explicara. Además el motor no puede proponer una versión corta de algo
+ * que no existe (`alternative-routine`).
+ *
+ * Los ejercicios van **en orden**, con los básicos delante: de ese orden
+ * depende que la versión corta se quede con lo que importa.
+ */
+const SPLIT = [
+  ['Empuje', ['Press de banca', 'Press militar', 'Flexiones', 'Extensión de tríceps', 'Plancha']],
+  [
+    'Tirón',
+    ['Dominadas', 'Remo con barra', 'Face pull', 'Curl de bíceps', 'Curl concentrado (unilateral)'],
+  ],
+  ['Pierna', ['Sentadilla', 'Peso muerto', 'Zancadas', 'Hip thrust', 'Plancha']],
+]
+
+async function ensureRoutine() {
+  const { data: exercises } = await supabase.from('exercises').select('id, name')
+  const byName = new Map(exercises.map((e) => [e.name.toLowerCase(), e.id]))
+
+  const { data: routines } = await supabase
+    .from('routines')
+    .select('id, name')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  let routine = routines.find((r) => r.name === 'Push Pull Legs')
+  if (!routine) {
+    const { data, error } = await supabase
+      .from('routines')
+      .insert({ user_id: userId, name: 'Push Pull Legs', goal: 'hypertrophy' })
+      .select('id, name')
+      .single()
+    if (error) throw error
+    routine = data
+  }
+
+  const { data: existingDays } = await supabase
+    .from('routine_days')
+    .select('id, name, order_index')
+    .eq('routine_id', routine.id)
+
+  // El índice se continúa desde el último ocupado: la rutina puede traer días
+  // de antes y `order_index` es único dentro de ella.
+  let nextIndex = existingDays.reduce((max, d) => Math.max(max, d.order_index + 1), 0)
+  const dayIds = []
+  let created = 0
+
+  for (const [dayName, exerciseNames] of SPLIT) {
+    let day = existingDays.find((d) => d.name.toLowerCase() === dayName.toLowerCase())
+    if (!day) {
+      const { data, error } = await supabase
+        .from('routine_days')
+        .insert({ routine_id: routine.id, name: dayName, order_index: nextIndex })
+        .select('id, name')
+        .single()
+      if (error) throw error
+      day = data
+      nextIndex += 1
+      created += 1
+    }
+    dayIds.push(day.id)
+
+    // Sólo se añade lo que falta: nunca se borra un ejercicio que el usuario
+    // haya prescrito por su cuenta.
+    const { data: prescribed } = await supabase
+      .from('routine_exercises')
+      .select('exercise_id, order_index')
+      .eq('routine_day_id', day.id)
+
+    const already = new Set(prescribed.map(({ exercise_id }) => exercise_id))
+    let order = prescribed.reduce((max, e) => Math.max(max, e.order_index + 1), 0)
+
+    const rows = exerciseNames
+      .map((name) => byName.get(name.toLowerCase()))
+      .filter((id) => id !== undefined && !already.has(id))
+      .map((id) => {
+        const isMain = order === 0
+        const row = {
+          routine_day_id: day.id,
+          exercise_id: id,
+          order_index: order,
+          target_sets: isMain ? 4 : 3,
+          target_reps: isMain ? 6 : 10,
+          rest_seconds: isMain ? 180 : 90,
+        }
+        order += 1
+        return row
+      })
+
+    if (rows.length > 0) {
+      const { error } = await supabase.from('routine_exercises').insert(rows)
+      if (error) throw error
+    }
+  }
+
+  if (created > 0) console.log(`Rutina: ${created} días con sus ejercicios.`)
+
+  return dayIds
+}
+
 async function ensureSubjects() {
   const { data: existing } = await supabase
     .from('subjects')
@@ -388,7 +492,7 @@ async function seedSleep(story) {
   console.log(`Sueño: ${rows.length} noches.`)
 }
 
-async function seedWorkouts(story) {
+async function seedWorkouts(story, routineDayIds) {
   const { data: exercises } = await supabase
     .from('exercises')
     .select('id, name, muscle_group')
@@ -425,6 +529,11 @@ async function seedWorkouts(story) {
         ended_at: new Date(started.getTime() + minutes * 60_000).toISOString(),
         status: 'completed',
         perceived_effort: Math.max(1, Math.min(10, Math.round(between(5, 9) * intensity + 1))),
+        // Rotando por los días de la rutina: así el historial dice qué se
+        // entrenó y el motor sabe cuál toca por rotación.
+        ...(routineDayIds.length > 0
+          ? { routine_day_id: routineDayIds[sessions % routineDayIds.length] }
+          : {}),
       })
       .select('id')
       .single()
@@ -690,12 +799,13 @@ async function seedWeight(story) {
 console.log('Sesión iniciada (la RLS sigue activa).\n')
 
 const pantry = await ensurePantry()
+const routineDayIds = await ensureRoutine()
 const habits = await ensureHabits()
 const subjects = await ensureSubjects()
 const story = buildStory()
 
 await seedSleep(story)
-await seedWorkouts(story)
+await seedWorkouts(story, routineDayIds)
 await seedNutrition(story, pantry)
 await seedStudy(story, subjects)
 await seedHabits(story, habits)

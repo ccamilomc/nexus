@@ -1,4 +1,5 @@
 import type { Rule } from '../contracts/rule.types'
+import { alternativeRoutineRule } from './alternative-routine'
 import { habitsPendingRule } from './habits-pending'
 import { mealSwapRule } from './meal-swap'
 import { sleepShortRule } from './sleep-short'
@@ -11,10 +12,11 @@ import { workoutOpenSessionRule } from './workout-open-session'
  * Registro de reglas del motor. Cada regla vive en su propio archivo.
  *
  * Las primeras miran lo que **ya se registra** y responden «¿qué me falta hoy?».
- * `meal-swap` es la primera **insignia** del Sprint 13: no recuerda algo
- * pendiente, propone una decisión mejor. Faltan `day_recalculation` y
- * `alternative_routine`, que se añaden aquí sin tocar nada más — el orden de la
- * lista no importa, el motor ordena por prioridad.
+ * Las **insignia** del Sprint 13 no recuerdan lo pendiente: proponen una
+ * decisión mejor (`meal-swap`) o rebajan el listón a algo que todavía cabe
+ * (`alternative-routine`). Falta `day_recalculation`, que se añadirá aquí sin
+ * tocar nada más — el orden de la lista no importa, el motor ordena por
+ * prioridad.
  */
 export const rules: readonly Rule[] = [
   waterPendingRule,
@@ -24,4 +26,5 @@ export const rules: readonly Rule[] = [
   studyBehindRule,
   sleepShortRule,
   mealSwapRule,
+  alternativeRoutineRule,
 ]
