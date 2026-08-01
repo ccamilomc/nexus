@@ -1,5 +1,7 @@
 export type { NutritionContext } from './hooks/use-nutrition-context'
 export { useNutritionContext } from './hooks/use-nutrition-context'
+export type { NutritionSeries } from './hooks/use-nutrition-series'
+export { useNutritionSeries } from './hooks/use-nutrition-series'
 export type { NutritionSummary } from './hooks/use-nutrition-summary'
 export { useNutritionSummary } from './hooks/use-nutrition-summary'
 export type { QuickWater } from './hooks/use-quick-water'
@@ -8,3 +10,6 @@ export { FoodsPage } from './pages/FoodsPage'
 export { GoalsPage } from './pages/GoalsPage'
 export { NutritionLayout } from './pages/NutritionLayout'
 export { TodayPage } from './pages/TodayPage'
+// Las cifras de nutrición las formatea nutrición, aquí y en Analytics: dos
+// criterios distintos para los mismos pesos o calorías se notarían en pantalla.
+export { formatCalories, formatCop, formatVolumeMl } from './utils/format'

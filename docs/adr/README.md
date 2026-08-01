@@ -19,3 +19,4 @@ decisión tomada, sus consecuencias y las alternativas descartadas.
 | [0003](./0003-ia-como-capa-de-interpretacion.md) | La IA es una capa de interpretación, no de ejecución | Aceptado |
 | [0004](./0004-estrategia-offline-first.md)       | Estrategia offline-first con cola y LWW              | Aceptado |
 | [0005](./0005-multiusuario-desde-el-diseno.md)   | Multiusuario desde el diseño (RLS + user_id)         | Aceptado |
+| [0006](./0006-analytics-agrega-en-el-cliente.md) | Analytics agrega en el cliente, no en vistas SQL     | Aceptado |

@@ -1,9 +1,10 @@
 import { toAppError } from '@/core/error'
+import { minusDays, previousDay, toDateKey } from '@/shared/utils'
 
 import { habitsRepository } from '../repositories/habits.repository'
 import type { CreateHabitValues } from '../schemas/habits.schema'
-import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
-import { minusDays, previousDay, toDateKey } from '../utils/date-key'
+import type { Habit, HabitLog, HabitsPeriodSeries, HabitToday } from '../types/habits.types'
+import { buildHabitsSeries } from '../utils/habits-series'
 import { buildHabitsToday } from '../utils/habits-today'
 import { hasCompletedOn } from '../utils/streak'
 
@@ -80,6 +81,34 @@ export const habitsService = {
       const logs = await loadHistory(userId, today)
 
       return buildHabitsToday(habits, logs, today, RECENT_DAYS, CONSISTENCY_DAYS)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Los hábitos de un periodo y los del tramo anterior, para Analytics.
+   *
+   * Hacen falta los hábitos además de los registros: uno creado hace meses y
+   * nunca cumplido no aparece en ningún log, y aun así cuenta como incumplido
+   * (ver `buildHabitsSeries`).
+   */
+  async getSeries(
+    userId: string,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<HabitsPeriodSeries> {
+    try {
+      const first = previousDays[0] ?? days[0]
+      const last = days[days.length - 1]
+      if (!first || !last) return buildHabitsSeries([], [], days, previousDays)
+
+      const [habits, logs] = await Promise.all([
+        habitsRepository.listHabits(userId),
+        habitsRepository.listLogsBetween(userId, toDateKey(first), toDateKey(last)),
+      ])
+
+      return buildHabitsSeries(habits, logs, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }

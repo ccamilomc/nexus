@@ -249,12 +249,37 @@ create policy "workout_sets_own" on public.workout_sets
 Analytics **no** define tablas de datos primarios (ver
 [04](./04-modelo-de-datos.md#analytics)):
 
-- Se sirve con **vistas** SQL (`create view`) que agregan datos por día/dominio a
-  partir de las tablas existentes. Las vistas heredan la RLS de sus tablas base.
-- **`daily_summaries`** (tabla de _rollup_ por día y dominio) es **opcional** y se
-  define en su sprint **sólo si** el rendimiento lo exige (evidencia primero,
-  evitar optimización prematura). Si se crea, se recalcula de forma **idempotente**
-  y lleva `user_id` + RLS como cualquier otra tabla de usuario.
+- **No usa vistas.** Se evaluaron en el Sprint 12 y se descartaron: obligarían a
+  reimplementar en SQL reglas que ya están probadas en TypeScript. La agregación
+  se hace en el cliente sobre consultas por rango con `select()` acotado, y cada
+  dominio expone la suya (`useXSeries`). Ver
+  [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
+- **`daily_summaries`** (tabla de _rollup_ por día y dominio) sigue **abierta** y
+  se definiría **sólo si** el rendimiento lo exige (evidencia primero, evitar
+  optimización prematura). Si se crea, se recalcula de forma **idempotente** y
+  lleva `user_id` + RLS como cualquier otra tabla de usuario. Entraría por detrás
+  de `useXSeries`, sin que Analytics se entere.
+
+### Coste medido de Analytics
+
+Medido en el navegador sobre la cuenta de desarrollo con ~10 semanas de historia
+(`scripts/seed-dev-data.mjs`), en el **peor caso: periodo de 90 días y caché
+fría**. Es la referencia con la que comparar antes de plantear vistas o rollups:
+
+| Periodo | Peticiones | Transferido | Consulta más lenta |
+| ------- | ---------- | ----------- | ------------------ |
+| 7 días  | 10         | 109 KB      | ~650 ms            |
+| 90 días | 10         | **316 KB**  | ~710 ms            |
+
+Las diez consultas salen en paralelo y TanStack Query las cachea 60 s, así que
+el coste se paga una vez por periodo. La primera medición dio **654 KB**: la
+mitad se iba en `meal_log_items`, que reutilizaba la consulta de la pantalla del
+día y bajaba el alimento entero por join. Acotar el `select` a las columnas que
+se agregan (`listItemsForSeries`, `listMealLogsForSeries`, `listWaterForSeries`)
+lo dejó en 316 KB **sin cambiar ninguna cifra en pantalla**.
+
+Es la lección que conviene recordar antes de sospechar de la arquitectura: el
+problema no era agregar en el cliente, era traer columnas que nadie suma.
 
 ## Migraciones
 

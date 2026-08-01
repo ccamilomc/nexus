@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isAppError } from '@/core/error'
+import { minusDays, toDateKey } from '@/shared/utils'
 
 import { habitsRepository } from '../repositories/habits.repository'
 import type { Habit, HabitLog } from '../types/habits.types'
-import { minusDays, toDateKey } from '../utils/date-key'
 import { habitsService } from './habits.service'
 
 /**

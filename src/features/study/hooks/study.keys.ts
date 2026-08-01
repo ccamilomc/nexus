@@ -13,4 +13,6 @@ export const studyKeys = {
     [...studyKeys.days(), userId, dayKey] as const,
   week: (userId: string | undefined, dayKey: string) =>
     [...studyKeys.days(), 'week', userId, dayKey] as const,
+  series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
+    [...studyKeys.days(), 'series', userId, rangeKey, previousKey] as const,
 }

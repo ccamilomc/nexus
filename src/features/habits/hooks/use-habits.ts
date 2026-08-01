@@ -3,17 +3,19 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import type { CreateHabitValues } from '../schemas/habits.schema'
 import { habitsService } from '../services/habits.service'
 import type { Habit, HabitToday } from '../types/habits.types'
-import { toDateKey } from '../utils/date-key'
 
 export const habitsKeys = {
   all: ['habits'] as const,
   today: (userId: string | undefined, dateKey: string) =>
     [...habitsKeys.all, 'today', userId, dateKey] as const,
   archived: (userId: string | undefined) => [...habitsKeys.all, 'archived', userId] as const,
+  series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
+    [...habitsKeys.all, 'series', userId, rangeKey, previousKey] as const,
 }
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */

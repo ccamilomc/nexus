@@ -1,5 +1,5 @@
 import { useToday } from '@/core/time'
-import { formatMinutes } from '@/shared/utils'
+import { formatMinutes, toDateKey, toDateKeyFromIso } from '@/shared/utils'
 
 import { useSessionHistory } from './use-session-history'
 
@@ -17,22 +17,13 @@ export interface WorkoutSummary {
   readonly lines: readonly string[]
 }
 
-/** Clave de día local (`YYYY-MM-DD`) de un instante ISO. */
-function toDateKey(iso: string): string {
-  const date = new Date(iso)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${date.getFullYear()}-${month}-${day}`
-}
-
 export function useWorkoutSummary(): WorkoutSummary {
   const today = useToday()
   const { data, isPending } = useSessionHistory()
 
-  const todayKey = toDateKey(today.toISOString())
+  const todayKey = toDateKey(today)
   const todaySessions = (data ?? []).filter(
-    ({ session }) => toDateKey(session.started_at) === todayKey,
+    ({ session }) => toDateKeyFromIso(session.started_at) === todayKey,
   )
 
   const setCount = todaySessions.reduce((total, { stats }) => total + stats.setCount, 0)

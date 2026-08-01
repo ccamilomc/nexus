@@ -38,6 +38,23 @@
     --input: 240 5.9% 90%;
     --ring: 240 10% 3.9%;
 
+    /**
+     * Colores de las gráficas.
+     *
+     * Van aparte de los de estado (`--success`, `--warning`) a propósito: una
+     * serie no es un juicio. El verde de «vas bien» no debe ser el mismo que el
+     * de «esta línea es el sueño», o cualquier gráfica acabaría opinando.
+     *
+     * Cada tema tiene su versión: los tonos que contrastan sobre blanco se
+     * apagan sobre negro. Verificado a >= 3:1 contra el fondo en ambos, que es
+     * lo que WCAG AA pide para un elemento gráfico.
+     */
+    --chart-1: 221 74% 42%;
+    --chart-2: 162 74% 27%;
+    --chart-3: 30 88% 38%;
+    --chart-4: 265 62% 50%;
+    --chart-5: 344 70% 44%;
+
     --radius: 0.5rem;
   }
 
@@ -75,6 +92,12 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
+
+    --chart-1: 217 84% 66%;
+    --chart-2: 162 62% 48%;
+    --chart-3: 38 90% 58%;
+    --chart-4: 265 78% 72%;
+    --chart-5: 348 82% 68%;
   }
 }
 

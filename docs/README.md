@@ -1,8 +1,8 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–11 terminados (los seis dominios completos y conectados al dashboard), más el Plan del día. Siguiente: Sprint 12 (Analytics).
+> **Estado:** Sprints 0–12 terminados (los seis dominios completos, conectados al dashboard y con analíticas), más el Plan del día. Siguiente: Sprint 13 (Decision Engine).
 > **Versión del diseño:** 1.0
-> **Fecha:** 2026-07-31
+> **Fecha:** 2026-08-01
 
 Esta carpeta es la **fuente de verdad** de la arquitectura de Nexus. La regla es
 absoluta: **la documentación existe antes que el código** y nunca puede quedar

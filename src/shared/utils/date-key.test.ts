@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { lastDays, previousDay, toDateKey } from './date-key'
+import { lastDays, previousDay, toDateKey, toDateKeyFromIso } from './date-key'
 
 describe('toDateKey', () => {
   it('usa el formato que entiende Postgres', () => {
@@ -43,6 +43,22 @@ describe('previousDay', () => {
     previousDay(original)
 
     expect(toDateKey(original)).toBe('2026-07-29')
+  })
+})
+
+describe('toDateKeyFromIso', () => {
+  it('agrupa por el día local del instante', () => {
+    const morning = new Date(2026, 6, 29, 9, 15)
+
+    expect(toDateKeyFromIso(morning.toISOString())).toBe('2026-07-29')
+  })
+
+  it('un entrenamiento de la noche pertenece a su día, no al siguiente', () => {
+    // En Colombia (UTC-5) las 22:30 del 29 son las 03:30 UTC del 30. Agrupar
+    // por UTC movería ese entrenamiento al día siguiente.
+    const lateSession = new Date(2026, 6, 29, 22, 30)
+
+    expect(toDateKeyFromIso(lateSession.toISOString())).toBe('2026-07-29')
   })
 })
 

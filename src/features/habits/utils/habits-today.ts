@@ -1,6 +1,7 @@
+import { lastDays, toDateKey } from '@/shared/utils'
+
 import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
 import { calculateConsistency } from './consistency'
-import { lastDays, toDateKey } from './date-key'
 import { calculateStreak } from './streak'
 
 /**

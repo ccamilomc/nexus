@@ -1,5 +1,5 @@
 import type { Tables } from '@/core/supabase'
-import type { GoalProgress } from '@/shared/utils'
+import type { GoalProgress, SeriesPoint } from '@/shared/utils'
 
 /**
  * Tipos del dominio de estudio.
@@ -58,4 +58,24 @@ export interface WeekStudy {
   readonly targetMinutes: number | null
   readonly progress: GoalProgress | null
   readonly bySubject: readonly SubjectWeek[]
+}
+
+/**
+ * El estudio de un periodo, tal y como lo consume Analytics.
+ *
+ * Un día sin sesión vale **cero**, no es un hueco (ver `buildStudySeries`).
+ */
+export interface StudyPeriodSeries {
+  /** Minutos estudiados cada día del periodo. */
+  readonly points: readonly SeriesPoint[]
+  readonly totalMinutes: number
+  readonly previousTotalMinutes: number
+  /** Días con al menos una sesión. */
+  readonly daysStudied: number
+  readonly previousDaysStudied: number
+  /** Media de los **días estudiados**; `null` si no hubo ninguno. */
+  readonly averageMinutesPerStudiedDay: number | null
+  readonly previousAverageMinutesPerStudiedDay: number | null
+  /** La materia con más tiempo en el periodo; `null` si no se estudió nada. */
+  readonly topSubject: { readonly name: string; readonly minutes: number } | null
 }

@@ -1,4 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
+import type { DayRange } from '@/shared/utils'
 
 import { workoutRepository } from '../repositories/workout.repository'
 import type {
@@ -13,11 +14,13 @@ import type {
   RoutineDayDetail,
   RoutineDetail,
   SessionDetail,
+  WorkoutPeriodSeries,
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
+import { buildWorkoutSeries } from '../utils/workout-series'
 
 /** Músculos secundarios sin el primario: un grupo no es secundario de sí mismo. */
 function secondaryMuscles(values: CreateExerciseValues) {
@@ -236,6 +239,34 @@ export const workoutService = {
       return sessions.map((session) =>
         toSessionDetail(session, setsBySession.get(session.id) ?? []),
       )
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * El entrenamiento de un periodo y el del tramo anterior, para Analytics.
+   *
+   * Dos consultas encadenadas y no más: las sesiones de los dos tramos (que son
+   * contiguos) y, con sus ids, las series que hacen falta para el volumen.
+   */
+  async getSeries(
+    userId: string,
+    range: DayRange,
+    previousRange: DayRange,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<WorkoutPeriodSeries> {
+    try {
+      const sessions = await workoutRepository.listCompletedSessionsBetween(
+        userId,
+        previousRange.fromIso,
+        range.toIso,
+      )
+
+      const sets = await workoutRepository.listSetsForVolume(sessions.map(({ id }) => id))
+
+      return buildWorkoutSeries(sessions, sets, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }

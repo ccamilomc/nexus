@@ -1,4 +1,16 @@
-import type { FoodRef, Macros, MealLogItemWithFood } from '../types/nutrition.types'
+import type { FoodRef, Macros } from '../types/nutrition.types'
+
+/**
+ * Lo que hace falta de un alimento para calcular sus macros.
+ *
+ * Se pide esto y no un `FoodRef` entero para que valgan tanto la fila completa
+ * de la pantalla del día como la reducida que trae Analytics: la regla de cómo
+ * se multiplican las porciones tiene que ser **una sola**.
+ */
+type MacroFood = Pick<FoodRef, 'calories' | 'protein_g' | 'carbs_g' | 'fat_g'>
+
+/** Un alimento registrado, en cualquiera de sus dos formas. */
+type MacroItem = { readonly servings: number; readonly food: MacroFood }
 
 /** Macros en cero: punto de partida de cualquier suma. */
 export const EMPTY_MACROS: Macros = { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 }
@@ -14,7 +26,7 @@ function round(value: number): number {
  * `servings` multiplica la **porción del alimento** (`serving_size` +
  * `serving_unit`), no gramos: 2 porciones de «Huevo (50 g)» son dos huevos.
  */
-export function macrosForServings(food: FoodRef, servings: number): Macros {
+export function macrosForServings(food: MacroFood, servings: number): Macros {
   return {
     calories: round(food.calories * servings),
     proteinG: round(food.protein_g * servings),
@@ -44,6 +56,6 @@ export function sumMacros(entries: readonly Macros[]): Macros {
 }
 
 /** Macros de los alimentos registrados en una comida. */
-export function macrosForItems(items: readonly MealLogItemWithFood[]): Macros {
+export function macrosForItems(items: readonly MacroItem[]): Macros {
   return sumMacros(items.map((item) => macrosForServings(item.food, item.servings)))
 }

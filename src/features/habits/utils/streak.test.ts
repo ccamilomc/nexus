@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { toDateKey } from '@/shared/utils'
+
 import type { HabitLog } from '../types/habits.types'
-import { toDateKey } from './date-key'
 import { calculateStreak, hasCompletedOn } from './streak'
 
 /** Conjunto de fechas cumplidas a partir de desplazamientos desde `today`. */

@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
 import { studyService } from '../services/study.service'
@@ -13,11 +14,6 @@ import { studyKeys } from './study.keys'
 function requireUserId(userId: string | undefined): string {
   if (!userId) throw createAppError('auth')
   return userId
-}
-
-/** Clave estable del día (local), para no depender de la hora. */
-function toDayKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
 /** Materias del usuario. */
@@ -37,7 +33,7 @@ export function useDayStudy(date: Date) {
   const userId = user?.id
 
   return useQuery<DayStudy | null, AppError>({
-    queryKey: studyKeys.day(userId, toDayKey(date)),
+    queryKey: studyKeys.day(userId, toDateKey(date)),
     queryFn: () => (userId ? studyService.getDayStudy(userId, date) : null),
   })
 }
@@ -48,7 +44,7 @@ export function useWeekStudy(date: Date) {
   const userId = user?.id
 
   return useQuery<WeekStudy | null, AppError>({
-    queryKey: studyKeys.week(userId, toDayKey(date)),
+    queryKey: studyKeys.week(userId, toDateKey(date)),
     queryFn: () => (userId ? studyService.getWeekStudy(userId, date) : null),
   })
 }

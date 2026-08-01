@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { dayRange, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -10,10 +10,12 @@ import type {
   Food,
   MealType,
   NutritionGoal,
+  NutritionPeriodSeries,
   RepeatableMeal,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
+import { buildNutritionSeries } from '../utils/nutrition-series'
 import { calculateSpend } from '../utils/spend'
 import { sumWaterMl } from '../utils/water'
 
@@ -283,6 +285,33 @@ export const nutritionService = {
       const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
 
       return calculateSpend(items)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * La nutrición de un periodo y la del tramo anterior, para Analytics.
+   *
+   * Tres consultas: las comidas de los dos tramos (contiguos, así que van
+   * juntas), sus alimentos, y el agua del mismo rango.
+   */
+  async getSeries(
+    userId: string,
+    range: DayRange,
+    previousRange: DayRange,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<NutritionPeriodSeries> {
+    try {
+      const [mealLogs, waterLogs] = await Promise.all([
+        nutritionRepository.listMealLogsForSeries(userId, previousRange.fromIso, range.toIso),
+        nutritionRepository.listWaterForSeries(userId, previousRange.fromIso, range.toIso),
+      ])
+
+      const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
+
+      return buildNutritionSeries(mealLogs, items, waterLogs, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }

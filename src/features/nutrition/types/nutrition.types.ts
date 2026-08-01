@@ -1,4 +1,5 @@
 import type { Enums, Tables } from '@/core/supabase'
+import type { SeriesPoint } from '@/shared/utils'
 
 /**
  * Tipos del dominio de nutrición.
@@ -32,6 +33,21 @@ export type FoodRef = Pick<
 
 /** Alimento registrado dentro de una comida, con el alimento al que referencia. */
 export type MealLogItemWithFood = MealLogItem & { readonly food: FoodRef }
+
+/**
+ * Lo mínimo de una comida y de sus alimentos para agregar un periodo.
+ *
+ * Analytics recorre meses, no un día: aquí sólo bajan las columnas que se
+ * suman. Los cálculos (`macrosForServings`, `calculateSpend`) aceptan esta
+ * forma reducida además de la completa, así que la regla sigue siendo una.
+ */
+export type MealLogSample = Pick<MealLog, 'id' | 'logged_at'>
+
+export type MealItemSample = Pick<MealLogItem, 'meal_log_id' | 'servings'> & {
+  readonly food: Pick<Food, 'calories' | 'protein_g' | 'carbs_g' | 'fat_g' | 'cost_per_serving'>
+}
+
+export type WaterSample = Pick<WaterLog, 'amount_ml' | 'logged_at'>
 
 /**
  * Macros de un conjunto de alimentos.
@@ -89,4 +105,26 @@ export interface WeeklySpend {
   readonly totalCop: number
   readonly itemsWithPrice: number
   readonly itemsWithoutPrice: number
+}
+
+/**
+ * La nutrición de un periodo, tal y como la consume Analytics.
+ *
+ * Los días sin registro son **huecos**, no ceros: nadie come cero calorías
+ * (ver `buildNutritionSeries`).
+ */
+export interface NutritionPeriodSeries {
+  /** Calorías de cada día; hueco donde no se registró nada. */
+  readonly caloriePoints: readonly SeriesPoint[]
+  /** Media de los días registrados; `null` si no hay ninguno. */
+  readonly averageCalories: number | null
+  readonly previousAverageCalories: number | null
+  /** Días con al menos una comida con alimentos. */
+  readonly daysLogged: number
+  /** Media de agua de los días con registro; `null` si no hay ninguno. */
+  readonly averageWaterMl: number | null
+  readonly previousAverageWaterMl: number | null
+  /** Gasto del periodo, con cuántos alimentos van sin precio. */
+  readonly spend: WeeklySpend
+  readonly previousSpendCop: number
 }

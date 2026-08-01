@@ -1,4 +1,5 @@
 import type { Tables } from '@/core/supabase'
+import type { SeriesPoint } from '@/shared/utils'
 
 /**
  * Tipos del dominio de entrenamiento.
@@ -15,6 +16,15 @@ export type WorkoutSet = Tables<'workout_sets'>
 export type Routine = Tables<'routines'>
 export type RoutineDay = Tables<'routine_days'>
 export type RoutineExercise = Tables<'routine_exercises'>
+
+/** Lo mínimo de una sesión para situarla en el tiempo y medir su duración. */
+export type SessionSample = Pick<WorkoutSession, 'id' | 'started_at' | 'ended_at'>
+
+/** Lo mínimo de una serie para sumar volumen, con la sesión a la que pertenece. */
+export type VolumeSetSample = Pick<
+  WorkoutSet,
+  'session_id' | 'reps' | 'weight' | 'is_warmup' | 'completed'
+>
 
 /** Datos del ejercicio que acompañan a una serie (llegan por join). */
 export type ExerciseRef = Pick<Exercise, 'id' | 'name' | 'muscle_group' | 'equipment'>
@@ -55,6 +65,29 @@ export interface SessionDetail {
    * así el plan sigue ahí aunque se recargue la página a mitad del gimnasio.
    */
   readonly plan: RoutineDayDetail | null
+}
+
+/**
+ * El entrenamiento de un periodo, tal y como lo consume Analytics.
+ *
+ * A diferencia del sueño, aquí **un día sin registro es un cero, no un hueco**:
+ * un entrenamiento se apunta mientras se hace, así que no haberlo apuntado
+ * significa no haber entrenado. El sueño se anota a posteriori y sí admite
+ * olvidos, por eso allí el hueco se respeta.
+ */
+export interface WorkoutPeriodSeries {
+  /** Volumen (kg) de cada día del periodo. */
+  readonly volumePoints: readonly SeriesPoint[]
+  readonly sessionCount: number
+  readonly previousSessionCount: number
+  readonly totalVolumeKg: number
+  readonly previousTotalVolumeKg: number
+  readonly setCount: number
+  /** Días con al menos un entrenamiento. */
+  readonly daysTrained: number
+  /** Duración media **por entrenamiento**; `null` si no hubo ninguno. */
+  readonly averageDurationMinutes: number | null
+  readonly previousAverageDurationMinutes: number | null
 }
 
 /** Datos necesarios para registrar una serie. */

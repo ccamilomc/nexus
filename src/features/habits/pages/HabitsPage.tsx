@@ -5,12 +5,12 @@ import { useToday } from '@/core/time'
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
 import { Button } from '@/shared/components/ui/button'
+import { toDateKey } from '@/shared/utils'
 
 import { ArchivedHabits } from '../components/ArchivedHabits'
 import { HabitCard } from '../components/HabitCard'
 import { HabitForm } from '../components/HabitForm'
 import { useHabitsToday } from '../hooks/use-habits'
-import { toDateKey } from '../utils/date-key'
 
 /** Los hábitos de hoy: marcarlos, ver la racha y crear nuevos. */
 export function HabitsPage() {

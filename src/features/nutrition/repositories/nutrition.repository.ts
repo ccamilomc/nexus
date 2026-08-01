@@ -2,12 +2,15 @@ import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Food,
+  MealItemSample,
   MealLog,
   MealLogItem,
   MealLogItemWithFood,
+  MealLogSample,
   MealType,
   NutritionGoal,
   WaterLog,
+  WaterSample,
 } from '../types/nutrition.types'
 
 /** Alimento con lo que la interfaz necesita para calcular y mostrar macros. */
@@ -74,6 +77,66 @@ export const nutritionRepository = {
       .select(`*, food:foods(${FOOD_FIELDS})`)
       .in('meal_log_id', mealLogIds)
       .order('created_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Las mismas comidas, pero sólo con lo que una serie necesita.
+   *
+   * Existe aparte de `listMealLogsBetween` porque los rangos de Analytics son
+   * de meses, no de un día: con `select('*')` viajaban 65 KB de notas, tipos y
+   * marcas de tiempo que la gráfica no dibuja.
+   */
+  async listMealLogsForSeries(
+    userId: string,
+    fromIso: string,
+    toIso: string,
+  ): Promise<MealLogSample[]> {
+    const { data, error } = await supabase
+      .from('meal_logs')
+      .select('id, logged_at')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .gte('logged_at', fromIso)
+      .lt('logged_at', toIso)
+      .order('logged_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Alimentos de varias comidas, con lo justo para sumar macros y gasto.
+   *
+   * Es la consulta más pesada de Analytics con diferencia: en 90 días son
+   * cientos de filas, y traer el alimento entero por join multiplicaba por
+   * cinco lo que viaja. Aquí bajan sólo las cinco columnas que se agregan.
+   */
+  async listItemsForSeries(mealLogIds: readonly string[]): Promise<MealItemSample[]> {
+    if (mealLogIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('meal_log_items')
+      .select(
+        'meal_log_id, servings, food:foods(calories, protein_g, carbs_g, fat_g, cost_per_serving)',
+      )
+      .in('meal_log_id', mealLogIds)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /** El agua de un rango, sólo con la cantidad y cuándo se bebió. */
+  async listWaterForSeries(userId: string, fromIso: string, toIso: string): Promise<WaterSample[]> {
+    const { data, error } = await supabase
+      .from('water_logs')
+      .select('amount_ml, logged_at')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .gte('logged_at', fromIso)
+      .lt('logged_at', toIso)
 
     if (error) throw error
     return data ?? []

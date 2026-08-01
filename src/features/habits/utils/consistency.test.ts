@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { toDateKey } from '@/shared/utils'
+
 import { calculateConsistency } from './consistency'
-import { toDateKey } from './date-key'
 
 const TODAY = new Date(2026, 6, 29)
 

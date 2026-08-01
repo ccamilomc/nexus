@@ -52,6 +52,17 @@ export default tseslint.config(
     },
   },
   {
+    // Utilidades de desarrollo que se ejecutan con Node, no en el navegador
+    // (`scripts/seed-dev-data.mjs`). No entran en el bundle, pero se revisan
+    // igual: un script que escribe en la base de datos merece el mismo lint.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: { ...globals.node },
+    },
+  },
+  {
     // Los primitivos de shadcn/ui exportan variantes (cva) junto al componente,
     // por convención del generador. No es un problema real de fast-refresh.
     files: ['src/shared/components/ui/**/*.tsx'],

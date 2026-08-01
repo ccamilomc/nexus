@@ -1,11 +1,18 @@
 import { createAppError, toAppError } from '@/core/error'
-import { dayRange, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, weekRange } from '@/shared/utils'
 
 import { studyRepository } from '../repositories/study.repository'
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
-import type { DayStudy, StudySessionWithSubject, Subject, WeekStudy } from '../types/study.types'
+import type {
+  DayStudy,
+  StudyPeriodSeries,
+  StudySessionWithSubject,
+  Subject,
+  WeekStudy,
+} from '../types/study.types'
 import { buildDayStudy } from '../utils/day-study'
 import { elapsedMinutes } from '../utils/elapsed-minutes'
+import { buildStudySeries } from '../utils/study-series'
 import { buildWeekStudy } from '../utils/week-study'
 
 const MS_PER_MINUTE = 60_000
@@ -57,6 +64,32 @@ export const studyService = {
   async deleteSubject(subjectId: string): Promise<void> {
     try {
       await studyRepository.updateSubject(subjectId, { deleted_at: new Date().toISOString() })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * El estudio de un periodo y el del tramo anterior, para Analytics.
+   *
+   * Una sola consulta: los dos tramos son contiguos, así que se piden juntos y
+   * se reparten después por fecha.
+   */
+  async getSeries(
+    userId: string,
+    range: DayRange,
+    previousRange: DayRange,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<StudyPeriodSeries> {
+    try {
+      const sessions = await studyRepository.listSessionsBetween(
+        userId,
+        previousRange.fromIso,
+        range.toIso,
+      )
+
+      return buildStudySeries(sessions, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }
