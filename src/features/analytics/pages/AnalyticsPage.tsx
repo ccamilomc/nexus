@@ -1,7 +1,10 @@
 import { PageHeader } from '@/shared/components/layout'
 
+import { HabitsAnalytics } from '../components/HabitsAnalytics'
+import { NutritionAnalytics } from '../components/NutritionAnalytics'
 import { PeriodSelector } from '../components/PeriodSelector'
 import { SleepAnalytics } from '../components/SleepAnalytics'
+import { StudyAnalytics } from '../components/StudyAnalytics'
 import { WorkoutAnalytics } from '../components/WorkoutAnalytics'
 import { useAnalyticsPeriod } from '../hooks/use-analytics-period'
 
@@ -22,7 +25,12 @@ export function AnalyticsPage() {
       <div className="space-y-6">
         <PeriodSelector value={periodId} onChange={setPeriodId} />
 
+        {/* El mismo orden que la navegación, para que la página no obligue a
+            buscar: entrenamiento, nutrición, hábitos, estudio y sueño. */}
         <WorkoutAnalytics window={window} />
+        <NutritionAnalytics window={window} />
+        <HabitsAnalytics window={window} />
+        <StudyAnalytics window={window} />
         <SleepAnalytics window={window} />
       </div>
     </>

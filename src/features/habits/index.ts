@@ -1,5 +1,7 @@
 export type { HabitsContext } from './hooks/use-habits-context'
 export { useHabitsContext } from './hooks/use-habits-context'
+export type { HabitsSeries } from './hooks/use-habits-series'
+export { useHabitsSeries } from './hooks/use-habits-series'
 export type { HabitsSummary } from './hooks/use-habits-summary'
 export { useHabitsSummary } from './hooks/use-habits-summary'
 export { HabitsPage } from './pages/HabitsPage'

@@ -1,4 +1,5 @@
 import type { Enums, Tables } from '@/core/supabase'
+import type { SeriesPoint } from '@/shared/utils'
 
 /**
  * Tipos del dominio de nutrición.
@@ -89,4 +90,26 @@ export interface WeeklySpend {
   readonly totalCop: number
   readonly itemsWithPrice: number
   readonly itemsWithoutPrice: number
+}
+
+/**
+ * La nutrición de un periodo, tal y como la consume Analytics.
+ *
+ * Los días sin registro son **huecos**, no ceros: nadie come cero calorías
+ * (ver `buildNutritionSeries`).
+ */
+export interface NutritionPeriodSeries {
+  /** Calorías de cada día; hueco donde no se registró nada. */
+  readonly caloriePoints: readonly SeriesPoint[]
+  /** Media de los días registrados; `null` si no hay ninguno. */
+  readonly averageCalories: number | null
+  readonly previousAverageCalories: number | null
+  /** Días con al menos una comida con alimentos. */
+  readonly daysLogged: number
+  /** Media de agua de los días con registro; `null` si no hay ninguno. */
+  readonly averageWaterMl: number | null
+  readonly previousAverageWaterMl: number | null
+  /** Gasto del periodo, con cuántos alimentos van sin precio. */
+  readonly spend: WeeklySpend
+  readonly previousSpendCop: number
 }

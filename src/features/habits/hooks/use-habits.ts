@@ -14,6 +14,8 @@ export const habitsKeys = {
   today: (userId: string | undefined, dateKey: string) =>
     [...habitsKeys.all, 'today', userId, dateKey] as const,
   archived: (userId: string | undefined) => [...habitsKeys.all, 'archived', userId] as const,
+  series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
+    [...habitsKeys.all, 'series', userId, rangeKey, previousKey] as const,
 }
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */

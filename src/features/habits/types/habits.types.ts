@@ -1,4 +1,5 @@
 import type { Enums, Tables } from '@/core/supabase'
+import type { SeriesPoint } from '@/shared/utils'
 
 /** Tipos del dominio de hábitos. Las filas se usan tal cual las da Supabase. */
 
@@ -45,4 +46,24 @@ export interface HabitConsistency {
   readonly doneDays: number
   readonly totalDays: number
   readonly percent: number
+}
+
+/**
+ * Los hábitos de un periodo, tal y como los consume Analytics.
+ *
+ * Se mide en **porcentaje cumplido**, no en cuenta absoluta: proponerse más
+ * hábitos no puede parecer un empeoramiento (ver `buildHabitsSeries`).
+ */
+export interface HabitsPeriodSeries {
+  /** Porcentaje cumplido cada día; hueco si ese día no había hábitos vigentes. */
+  readonly points: readonly SeriesPoint[]
+  /** Cumplimiento del periodo entero; `null` si no había ningún hábito. */
+  readonly completionPercent: number | null
+  readonly previousCompletionPercent: number | null
+  /** Días en los que se cumplió todo lo que tocaba. */
+  readonly perfectDays: number
+  readonly previousPerfectDays: number
+  readonly trackedHabits: number
+  /** La mejor racha viva al final del periodo. */
+  readonly bestStreak: number
 }
