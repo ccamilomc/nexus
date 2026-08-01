@@ -1,5 +1,6 @@
+import { previousDay, toDateKey } from '@/shared/utils'
+
 import type { HabitLog } from '../types/habits.types'
-import { previousDay, toDateKey } from './date-key'
 
 /**
  * Racha actual: días consecutivos cumplidos que llegan hasta hoy.

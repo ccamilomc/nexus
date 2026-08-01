@@ -1,5 +1,6 @@
+import { lastDays, toDateKey } from '@/shared/utils'
+
 import type { HabitConsistency } from '../types/habits.types'
-import { lastDays, toDateKey } from './date-key'
 
 /**
  * Constancia de un hábito: cuántos de los últimos días se cumplió.

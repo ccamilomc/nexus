@@ -1,4 +1,5 @@
 import { createAppError, toAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import { sleepRepository } from '../repositories/sleep.repository'
 import type { LogSleepValues } from '../schemas/sleep.schema'
@@ -8,14 +9,6 @@ import { sleepInstants, sleepMinutes } from '../utils/sleep-time'
 
 /** Noches que se traen para el historial y su media. */
 export const HISTORY_NIGHTS = 7
-
-/** Fecha local en `YYYY-MM-DD`, que es lo que guarda la columna `date`. */
-function toDateKey(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${date.getFullYear()}-${month}-${day}`
-}
 
 /** Reglas de negocio de sueño. Traduce errores técnicos a `AppError`. */
 export const sleepService = {

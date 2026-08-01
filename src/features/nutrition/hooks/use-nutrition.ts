@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
 import type { AddFoodInput } from '../services/nutrition.service'
@@ -22,11 +23,6 @@ import { nutritionKeys } from './nutrition.keys'
 function requireUserId(userId: string | undefined): string {
   if (!userId) throw createAppError('auth')
   return userId
-}
-
-/** Clave estable del día (local), para no depender de la hora. */
-function toDayKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
 }
 
 /** Catálogo de alimentos (globales + propios). */
@@ -90,7 +86,7 @@ export function useDayNutrition(date: Date) {
   const userId = user?.id
 
   return useQuery<DayNutrition | null, AppError>({
-    queryKey: nutritionKeys.day(userId, toDayKey(date)),
+    queryKey: nutritionKeys.day(userId, toDateKey(date)),
     queryFn: () => (userId ? nutritionService.getDayNutrition(userId, date) : null),
   })
 }
@@ -157,7 +153,7 @@ export function useWeekSpend(date: Date) {
   const userId = user?.id
 
   return useQuery<WeeklySpend | null, AppError>({
-    queryKey: nutritionKeys.weekSpend(userId, toDayKey(date)),
+    queryKey: nutritionKeys.weekSpend(userId, toDateKey(date)),
     queryFn: () => (userId ? nutritionService.getWeekSpend(userId, date) : null),
   })
 }
@@ -168,7 +164,7 @@ export function useDayWater(date: Date) {
   const userId = user?.id
 
   return useQuery<DayWater | null, AppError>({
-    queryKey: nutritionKeys.water(userId, toDayKey(date)),
+    queryKey: nutritionKeys.water(userId, toDateKey(date)),
     queryFn: () => (userId ? nutritionService.getDayWater(userId, date) : null),
   })
 }
@@ -179,7 +175,7 @@ export function useRepeatableMeals(date: Date) {
   const userId = user?.id
 
   return useQuery<ReadonlyMap<MealType, RepeatableMeal>, AppError>({
-    queryKey: nutritionKeys.repeatable(userId, toDayKey(date)),
+    queryKey: nutritionKeys.repeatable(userId, toDateKey(date)),
     queryFn: () => (userId ? nutritionService.getRepeatableMeals(userId, date) : new Map()),
   })
 }

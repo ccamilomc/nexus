@@ -1,9 +1,13 @@
 /**
- * Claves de fecha para los hábitos.
+ * Claves de fecha locales, en `YYYY-MM-DD`.
  *
- * `habit_logs.date` es una columna `date` (no `timestamptz`): un hábito se
- * cumple «el martes», no «a las 21:04 del martes». Se usa la fecha **local**
- * para que marcar a las 23:50 cuente en el día que el usuario está viviendo.
+ * Hay columnas que son `date` y no `timestamptz` (`habit_logs.date`,
+ * `sleep_logs.date`): un hábito se cumple «el martes», no «a las 21:04 del
+ * martes». Se usa la fecha **local** para que marcar a las 23:50 cuente en el
+ * día que el usuario está viviendo, y no en el siguiente por culpa de UTC.
+ *
+ * Sirven además para agrupar por día registros que sí son `timestamptz`
+ * (entrenamientos, comidas) y para las claves de caché de TanStack Query.
  */
 
 /** Fecha local en formato `YYYY-MM-DD`, el que entiende Postgres. */
@@ -13,6 +17,16 @@ export function toDateKey(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0')
 
   return `${year}-${month}-${day}`
+}
+
+/**
+ * Clave de día local de un instante ISO (`timestamptz`).
+ *
+ * Es la forma de agrupar por día lo que se guarda con hora: un entrenamiento
+ * de las 22:30 pertenece a ese día, no al siguiente.
+ */
+export function toDateKeyFromIso(iso: string): string {
+  return toDateKey(new Date(iso))
 }
 
 /** La fecha `days` días antes de `date`, sin tocar el original. */

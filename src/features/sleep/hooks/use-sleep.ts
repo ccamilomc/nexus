@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import type { LogSleepValues } from '../schemas/sleep.schema'
 import { sleepService } from '../services/sleep.service'
@@ -21,18 +22,13 @@ function requireUserId(userId: string | undefined): string {
   return userId
 }
 
-/** Clave estable del día (local), para no depender de la hora. */
-function toDayKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
-}
-
 /** Lo dormido anoche. */
 export function useLastNight(today: Date) {
   const { user } = useAuth()
   const userId = user?.id
 
   return useQuery<SleepLog | null, AppError>({
-    queryKey: sleepKeys.lastNight(userId, toDayKey(today)),
+    queryKey: sleepKeys.lastNight(userId, toDateKey(today)),
     queryFn: () => (userId ? sleepService.getLastNight(userId, today) : null),
   })
 }

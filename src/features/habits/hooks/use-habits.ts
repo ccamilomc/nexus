@@ -3,11 +3,11 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import type { CreateHabitValues } from '../schemas/habits.schema'
 import { habitsService } from '../services/habits.service'
 import type { Habit, HabitToday } from '../types/habits.types'
-import { toDateKey } from '../utils/date-key'
 
 export const habitsKeys = {
   all: ['habits'] as const,

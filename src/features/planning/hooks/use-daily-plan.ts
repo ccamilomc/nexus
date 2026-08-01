@@ -6,6 +6,7 @@ import { useNutritionContext } from '@/features/nutrition'
 import { useSleepContext } from '@/features/sleep'
 import { useStudyContext } from '@/features/study'
 import { useWorkoutContext } from '@/features/workout'
+import { toDateKey } from '@/shared/utils'
 
 export interface DailyPlan {
   readonly isPending: boolean
@@ -13,14 +14,6 @@ export interface DailyPlan {
   readonly recommendations: readonly Recommendation[]
   /** El día está al día: no hay nada pendiente. */
   readonly isClear: boolean
-}
-
-/** Clave de día local (`YYYY-MM-DD`). */
-function toDateKey(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${date.getFullYear()}-${month}-${day}`
 }
 
 /**

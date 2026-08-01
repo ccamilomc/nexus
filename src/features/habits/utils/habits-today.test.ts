@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
+import { toDateKey } from '@/shared/utils'
+
 import type { Habit, HabitLog } from '../types/habits.types'
-import { toDateKey } from './date-key'
 import { buildHabitsToday } from './habits-today'
 
 const TODAY = new Date(2026, 6, 29)

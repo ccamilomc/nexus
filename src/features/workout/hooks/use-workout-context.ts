@@ -1,4 +1,5 @@
 import type { DailyContext } from '@/decision-engine'
+import { toDateKeyFromIso } from '@/shared/utils'
 
 import { useActiveSession } from './use-active-session'
 import { useSessionHistory } from './use-session-history'
@@ -7,15 +8,6 @@ import { useSessionHistory } from './use-session-history'
 export interface WorkoutContext {
   readonly isPending: boolean
   readonly workout: DailyContext['workout']
-}
-
-/** Clave de día local (`YYYY-MM-DD`) de un instante ISO. */
-function toDateKey(iso: string): string {
-  const date = new Date(iso)
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-
-  return `${date.getFullYear()}-${month}-${day}`
 }
 
 /**
@@ -34,7 +26,7 @@ export function useWorkoutContext(): WorkoutContext {
     workout: {
       recentSessions: (data ?? []).map(({ session, stats }) => ({
         id: session.id,
-        date: toDateKey(session.started_at),
+        date: toDateKeyFromIso(session.started_at),
         durationMinutes: stats.durationMinutes ?? 0,
         ...(session.perceived_effort === null ? {} : { perceivedEffort: session.perceived_effort }),
       })),

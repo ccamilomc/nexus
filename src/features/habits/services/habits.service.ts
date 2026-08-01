@@ -1,9 +1,9 @@
 import { toAppError } from '@/core/error'
+import { minusDays, previousDay, toDateKey } from '@/shared/utils'
 
 import { habitsRepository } from '../repositories/habits.repository'
 import type { CreateHabitValues } from '../schemas/habits.schema'
 import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
-import { minusDays, previousDay, toDateKey } from '../utils/date-key'
 import { buildHabitsToday } from '../utils/habits-today'
 import { hasCompletedOn } from '../utils/streak'
 
