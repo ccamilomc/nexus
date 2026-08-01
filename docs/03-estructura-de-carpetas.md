@@ -60,11 +60,12 @@ nexus/
 │   │   │   ├── form/              # Campos de formulario (FormField)
 │   │   │   └── feedback/          # Estados de UI: EmptyState, Skeleton,
 │   │   │                          # LoadFailure, FormAlert
-│   │   ├── hooks/                 # Hooks genéricos (useDebounce, useMediaQuery…)
+│   │   ├── hooks/                 # Hooks genéricos (useElapsedSeconds,
+│   │   │                          # useSeriesQuery)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
-│   │   ├── utils/                 # Funciones puras genéricas
-│   │   ├── types/                 # Tipos globales compartidos
-│   │   └── constants/             # Constantes transversales
+│   │   ├── utils/                 # Funciones puras genéricas (fechas, series,
+│   │   │                          # formatos) con sus tipos al lado
+│   │   └── constants/             # Constantes transversales (aún sin usar)
 │   │
 │   └── styles/                    # CSS global, Tailwind base, tokens
 │
