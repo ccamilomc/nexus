@@ -6,6 +6,8 @@ import type {
   RoutineDay,
   RoutineExercise,
   RoutineExerciseWithExercise,
+  SessionSample,
+  VolumeSetSample,
   WorkoutSession,
   WorkoutSet,
   WorkoutSetWithExercise,
@@ -133,6 +135,50 @@ export const workoutRepository = {
       .is('deleted_at', null)
       .order('started_at', { ascending: false })
       .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Entrenamientos terminados dentro de un rango, del más antiguo al más nuevo.
+   *
+   * Se acota por instante (no por fecha) porque `started_at` es `timestamptz`:
+   * el rango ya viene calculado en hora local (ver `dayRange`).
+   */
+  async listCompletedSessionsBetween(
+    userId: string,
+    fromIso: string,
+    toIso: string,
+  ): Promise<SessionSample[]> {
+    const { data, error } = await supabase
+      .from('workout_sessions')
+      .select('id, started_at, ended_at')
+      .eq('user_id', userId)
+      .eq('status', 'completed')
+      .is('deleted_at', null)
+      .gte('started_at', fromIso)
+      .lt('started_at', toIso)
+      .order('started_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Las series de varias sesiones, sólo con lo que hace falta para el volumen.
+   *
+   * Sin el join del ejercicio ni las columnas que no se agregan: en 90 días
+   * son miles de filas y el nombre del ejercicio no se dibuja en la serie.
+   */
+  async listSetsForVolume(sessionIds: readonly string[]): Promise<VolumeSetSample[]> {
+    if (sessionIds.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .select('session_id, reps, weight, is_warmup, completed')
+      .in('session_id', sessionIds)
+      .is('deleted_at', null)
 
     if (error) throw error
     return data ?? []

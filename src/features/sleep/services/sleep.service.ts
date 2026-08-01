@@ -3,8 +3,9 @@ import { toDateKey } from '@/shared/utils'
 
 import { sleepRepository } from '../repositories/sleep.repository'
 import type { LogSleepValues } from '../schemas/sleep.schema'
-import type { SleepHistory, SleepLog } from '../types/sleep.types'
+import type { SleepHistory, SleepLog, SleepPeriodSeries } from '../types/sleep.types'
 import { buildSleepHistory } from '../utils/sleep-history'
+import { buildSleepSeries } from '../utils/sleep-series'
 import { sleepInstants, sleepMinutes } from '../utils/sleep-time'
 
 /** Noches que se traen para el historial y su media. */
@@ -32,6 +33,34 @@ export const sleepService = {
       const logs = await sleepRepository.listRecentLogs(userId, HISTORY_NIGHTS)
 
       return buildSleepHistory(logs)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * El sueño de un periodo y el del tramo anterior, para Analytics.
+   *
+   * Los dos tramos son contiguos, así que se piden en **una sola consulta** que
+   * los cubre enteros y se reparten después por fecha.
+   */
+  async getSeries(
+    userId: string,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<SleepPeriodSeries> {
+    try {
+      const first = previousDays[0] ?? days[0]
+      const last = days[days.length - 1]
+      if (!first || !last) return buildSleepSeries([], days, previousDays)
+
+      const samples = await sleepRepository.listLogsBetween(
+        userId,
+        toDateKey(first),
+        toDateKey(last),
+      )
+
+      return buildSleepSeries(samples, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }

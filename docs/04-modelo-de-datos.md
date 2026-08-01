@@ -440,10 +440,16 @@ erDiagram
 
 ## Analytics
 
-Analytics **no** introduce tablas nuevas de datos primarios: se implementa con
-**vistas** y, cuando el rendimiento lo exija, una tabla de _rollup_
-**daily_summaries** (agregados por día y dominio) que se recalcula de forma
-idempotente. Se decide en su sprint con evidencia (evitar optimización prematura).
+Analytics **no** introduce tablas nuevas de datos primarios. Tampoco vistas: la
+agregación ocurre en el cliente, en TypeScript, porque las reglas de cálculo
+(volumen, rachas, macros, IMC) ya viven probadas ahí y duplicarlas en SQL crearía
+dos fuentes de verdad. Cada dominio expone su serie por rango en su barrel
+(`useXSeries`) y Analytics compone. Ver
+[ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
+
+La tabla de _rollup_ **daily_summaries** (agregados por día y dominio, recalculada
+de forma idempotente) sigue siendo la salida prevista **si** el rendimiento lo
+exige, con evidencia primero (evitar optimización prematura).
 
 ## Integridad y borrado
 

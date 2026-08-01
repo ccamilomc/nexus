@@ -1,6 +1,6 @@
 import { supabase, type TablesInsert } from '@/core/supabase'
 
-import type { SleepLog } from '../types/sleep.types'
+import type { SleepDaySample, SleepLog } from '../types/sleep.types'
 
 /** Acceso a datos de sueño. Sólo habla con Supabase; sin reglas de negocio. */
 export const sleepRepository = {
@@ -13,6 +13,30 @@ export const sleepRepository = {
       .is('deleted_at', null)
       .order('date', { ascending: false })
       .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Las noches de un tramo de fechas, de la más antigua a la más reciente.
+   *
+   * Trae sólo las tres columnas que la serie necesita: el resto (notas, horas
+   * exactas) no se dibuja y viajaría por nada.
+   */
+  async listLogsBetween(
+    userId: string,
+    fromDateKey: string,
+    toDateKey: string,
+  ): Promise<SleepDaySample[]> {
+    const { data, error } = await supabase
+      .from('sleep_logs')
+      .select('date, duration_minutes, quality_rating')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .gte('date', fromDateKey)
+      .lte('date', toDateKey)
+      .order('date', { ascending: true })
 
     if (error) throw error
     return data ?? []

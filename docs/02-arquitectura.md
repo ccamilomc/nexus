@@ -91,12 +91,28 @@ debajo. El `Component` no importa el `Repository`; el `Service` no importa React
 
 ```mermaid
 flowchart LR
-    W["workout"] -->|index.ts| APP["capa app / planning"]
+    W["workout"] -->|index.ts| APP["capa app / planning / analytics"]
     N["nutrition"] -->|index.ts| APP
     S["study"] -->|index.ts| APP
     APP --> E["decision-engine (contratos)"]
     W -.->|❌ prohibido| N
 ```
+
+### Los tres hooks que expone un dominio
+
+Cada dominio publica lo suyo en tres formas, según quién lo consuma. La regla
+común: **el dominio decide cómo se cuenta lo suyo**, y quien lo consume no
+recalcula nada.
+
+| Hook            | Devuelve                     | Lo consume      |
+| --------------- | ---------------------------- | --------------- |
+| `useXSummary()` | frases ya formadas           | dashboard       |
+| `useXContext()` | datos del día, sin formatear | Decision Engine |
+| `useXSeries()`  | serie diaria de un rango     | Analytics       |
+
+Las features que **componen** (`planning`, `analytics`) no tienen repositorio
+propio: si lo tuvieran, conocerían las tablas de los seis dominios y romperían
+este aislamiento. Ver [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
 
 ## El Decision Engine
 

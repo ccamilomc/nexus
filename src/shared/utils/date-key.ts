@@ -42,6 +42,19 @@ export function previousDay(date: Date): Date {
   return minusDays(date, 1)
 }
 
+/**
+ * Identifica un tramo de días por sus extremos, para claves de caché.
+ *
+ * Los días de un tramo son consecutivos, así que el primero y el último lo
+ * determinan por completo; meter los del medio sólo alargaría la clave.
+ */
+export function dateRangeKey(days: readonly Date[]): string {
+  const first = days[0]
+  const last = days[days.length - 1]
+
+  return first && last ? `${toDateKey(first)}_${toDateKey(last)}` : 'empty'
+}
+
 /** Los últimos `days` días, del más antiguo al más reciente (incluye hoy). */
 export function lastDays(today: Date, days: number): readonly Date[] {
   const result: Date[] = []

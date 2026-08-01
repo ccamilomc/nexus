@@ -35,15 +35,32 @@ export function groupSetsByExercise(
   return [...byExercise.values()]
 }
 
+/** Lo que hace falta de una serie para saber cuánto trabajo representa. */
+export type VolumeSet = Pick<WorkoutSet, 'reps' | 'weight' | 'is_warmup' | 'completed'>
+
 /**
  * Volumen de una serie: repeticiones × peso.
  *
  * Las series de calentamiento y las no completadas no suman: no representan
  * trabajo efectivo y distorsionarían la comparación entre entrenamientos.
  */
-function setVolume(set: WorkoutSet): number {
+function setVolume(set: VolumeSet): number {
   if (set.is_warmup || !set.completed) return 0
   return (set.reps ?? 0) * (set.weight ?? 0)
+}
+
+/**
+ * Volumen total de un conjunto de series, en kg.
+ *
+ * Es **la** definición de volumen del proyecto: la usan tanto el resumen de una
+ * sesión como las series de Analytics. Si algún día cambia qué cuenta como
+ * trabajo efectivo, cambia aquí y en ningún otro sitio.
+ */
+export function sumVolume(sets: readonly VolumeSet[]): number {
+  const total = sets.reduce((volume, set) => volume + setVolume(set), 0)
+
+  // Redondeo a dos decimales para evitar el ruido de la coma flotante.
+  return Math.round(total * 100) / 100
 }
 
 /** Resumen calculado de una sesión: ejercicios, series, volumen y duración. */
@@ -51,25 +68,18 @@ export function calculateSessionStats(
   session: Pick<WorkoutSession, 'started_at' | 'ended_at'>,
   exercises: readonly SessionExercise[],
 ): SessionStats {
-  let setCount = 0
-  let volume = 0
-
-  for (const { sets } of exercises) {
-    setCount += sets.length
-    for (const set of sets) volume += setVolume(set)
-  }
+  const allSets = exercises.flatMap(({ sets }) => sets)
 
   return {
     exerciseCount: exercises.length,
-    setCount,
-    // Redondeo a dos decimales para evitar el ruido de la coma flotante.
-    totalVolumeKg: Math.round(volume * 100) / 100,
-    durationMinutes: calculateDurationMinutes(session),
+    setCount: allSets.length,
+    totalVolumeKg: sumVolume(allSets),
+    durationMinutes: sessionDurationMinutes(session),
   }
 }
 
 /** Duración en minutos entre el inicio y el fin; `null` si sigue en curso. */
-function calculateDurationMinutes({
+export function sessionDurationMinutes({
   started_at,
   ended_at,
 }: Pick<WorkoutSession, 'started_at' | 'ended_at'>): number | null {

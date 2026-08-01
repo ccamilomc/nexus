@@ -14,6 +14,8 @@ export const sleepKeys = {
   lastNight: (userId: string | undefined, dayKey: string) =>
     [...sleepKeys.all, 'last-night', userId, dayKey] as const,
   history: (userId: string | undefined) => [...sleepKeys.all, 'history', userId] as const,
+  series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
+    [...sleepKeys.all, 'series', userId, rangeKey, previousKey] as const,
 }
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
