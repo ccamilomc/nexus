@@ -84,6 +84,9 @@ export const mealSwapRule: Rule = {
 
     return [
       {
+        // Por alimento: descartar el cambio de la hamburguesa no debe silenciar
+        // también el de la gaseosa.
+        key: `meal-swap@1:${logged.foodId}`,
         type: 'meal_swap',
         domain: 'nutrition',
         priority: savingCop >= NOTABLE_SAVING_COP ? 'high' : 'medium',

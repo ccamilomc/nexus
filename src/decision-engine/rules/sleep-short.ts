@@ -33,6 +33,7 @@ export const sleepShortRule: Rule = {
 
     return [
       {
+        key: 'sleep-short@1',
         type: 'insight',
         domain: 'sleep',
         priority: minutes < VERY_SHORT_SLEEP_MINUTES ? 'high' : 'medium',

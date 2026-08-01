@@ -25,6 +25,7 @@ const CONTEXT: DailyContext = {
 
 function makeRecommendation(title: string, priority: Priority): Recommendation {
   return {
+    key: `regla:${title}`,
     type: 'insight',
     priority,
     title,

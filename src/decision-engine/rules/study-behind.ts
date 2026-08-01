@@ -46,6 +46,7 @@ export const studyBehindRule: Rule = {
 
     return [
       {
+        key: 'study-behind@1',
         type: 'alert',
         domain: 'study',
         priority: day >= LAST_DAY ? 'high' : 'medium',

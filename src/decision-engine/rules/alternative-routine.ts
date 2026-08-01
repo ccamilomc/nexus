@@ -71,6 +71,8 @@ export const alternativeRoutineRule: Rule = {
 
     return [
       {
+        // Por día de rutina: rechazar acortar Pierna no dice nada sobre Empuje.
+        key: `alternative-routine@1:${day.id}`,
         type: 'alternative_routine',
         domain: 'workout',
         priority: 'medium',

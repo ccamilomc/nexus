@@ -38,6 +38,7 @@ export const waterPendingRule: Rule = {
 
     return [
       {
+        key: 'water-pending@1',
         type: 'alert',
         domain: 'nutrition',
         priority: isLate ? 'high' : 'medium',

@@ -182,7 +182,39 @@ nombra **sin adjetivarlo** (el nombre lo pone el usuario y «Pierna entero» no
 concuerda), y la hora se da como «pasadas las 20:00», porque a las 20:30 decir
 «son las 20:00» es falso y una cifra inventada resta credibilidad a todo lo demás.
 
-Pendiente del sprint: `day_recalculation`.
+### Descartar una recomendación
+
+Decidir incluye decir que no. Cada tarjeta del plan se puede **descartar hasta
+mañana**: una sugerencia que reaparece después de rechazarla deja de ser un
+consejo y pasa a ser una insistencia.
+
+Cómo se sostiene sin ensuciar el motor:
+
+- Cada `Recommendation` lleva una **clave estable** (`key`). El motor se ejecuta
+  en cada visita, así que la misma sugerencia nace una y otra vez; sin una clave
+  que la reconozca no hay forma de recordar que ya se rechazó. Lleva la versión
+  de la regla y, cuando ésta puede hablar de cosas distintas, de qué habla:
+  `meal-swap@1:<idDelAlimento>`. **Cambiar la versión invalida los descartes**,
+  que es lo correcto: si el criterio cambió, merece otra oportunidad.
+- El motor **no sabe nada de esto**. Sigue siendo puro: evalúa entero y es el
+  hook de `planning` quien filtra lo descartado después.
+- **No se persisten las recomendaciones**, sólo los descartes. Las primeras se
+  recalculan de lo registrado —que es lo que las mantiene ciertas—; un descarte
+  es una decisión del usuario y no se puede deducir de ningún dato.
+- Caduca a **medianoche** (`valid_until`), no para siempre. El descarte dice «hoy
+  no»; mañana el contexto es otro. Silenciar algo indefinidamente habría que
+  preguntarlo, y no se ha preguntado.
+
+### Por qué falta `day_recalculation`
+
+Es la tercera insignia y **no se ha implementado a propósito**. Su cometido es
+reprogramar los ítems del día, y para eso hacen falta ítems programados:
+`plan_items` existe como tabla pero ninguna pantalla la usa todavía.
+
+Sin ellos, lo único que podría hacer la regla es resumir lo que las otras cuatro
+ya dicen —«tienes agua, hábitos, estudio y entrenamiento pendientes»—, y una
+quinta tarjeta repitiendo las cuatro anteriores es ruido, no criterio. Entra
+cuando exista el plan diario con ítems y horas, que es un incremento propio.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 
