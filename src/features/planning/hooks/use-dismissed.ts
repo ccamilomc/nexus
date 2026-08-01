@@ -12,6 +12,8 @@ export const planningKeys = {
   all: ['planning'] as const,
   dismissed: (userId: string | undefined, dateKey: string) =>
     [...planningKeys.all, 'dismissed', userId, dateKey] as const,
+  plan: (userId: string | undefined, dateKey: string) =>
+    [...planningKeys.all, 'plan', userId, dateKey] as const,
 }
 
 /**

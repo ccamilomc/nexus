@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { DailyContext } from '../contracts/context.types'
 import { alternativeRoutineRule } from './alternative-routine'
+import { dayRecalculationRule } from './day-recalculation'
 import { habitsPendingRule } from './habits-pending'
 import { mealSwapRule } from './meal-swap'
 import { sleepShortRule } from './sleep-short'
@@ -524,5 +525,108 @@ describe('alternativeRoutineRule', () => {
     const corto = { ...PIERNA, exercises: PIERNA.exercises.slice(0, 3) }
 
     expect(alternativeRoutineRule.evaluate(withRoutine([corto]))).toEqual([])
+  })
+})
+
+describe('dayRecalculationRule', () => {
+  /** Un elemento del plan a una hora, con la duración que se le calcula. */
+  const item = (
+    id: string,
+    hour: number,
+    minutes: number,
+    status: DailyContext['plan'][number]['status'] = 'pending',
+  ) => {
+    const start = new Date(2026, 6, 30, hour, 0)
+
+    return {
+      id,
+      domain: 'workout' as const,
+      status,
+      priority: 'medium' as const,
+      scheduledStart: start.toISOString(),
+      scheduledEnd: new Date(start.getTime() + minutes * 60_000).toISOString(),
+    }
+  }
+
+  const withPlan = (plan: DailyContext['plan'], now = at(21)): DailyContext => ({
+    ...EMPTY,
+    now,
+    plan,
+  })
+
+  it('no habla sin plan: no hay nada que recalcular', () => {
+    expect(dayRecalculationRule.appliesTo(withPlan([]))).toBe(false)
+  })
+
+  it('calla si lo que queda cabe en el día', () => {
+    // A las 21:00 quedan 120 min de día útil y el plan pide 60.
+    expect(dayRecalculationRule.evaluate(withPlan([item('a', 18, 60)]))).toEqual([])
+  })
+
+  it('avisa cuando lo pendiente no cabe, y dice cuánto sobra', () => {
+    // Quedan 120 min; el plan pide 180.
+    const [recommendation] = dayRecalculationRule.evaluate(
+      withPlan([item('a', 18, 90), item('b', 20, 90)]),
+    )
+
+    expect(recommendation?.type).toBe('day_recalculation')
+    expect(recommendation?.data.excessMinutes).toBe(60)
+    expect(recommendation?.message).toContain('1 h')
+  })
+
+  it('lo hecho no cuenta como pendiente', () => {
+    const plan = [item('a', 18, 90, 'done'), item('b', 20, 90)]
+
+    expect(dayRecalculationRule.evaluate(withPlan(plan))).toEqual([])
+  })
+
+  it('lo saltado tampoco', () => {
+    const plan = [item('a', 18, 90, 'skipped'), item('b', 20, 90)]
+
+    expect(dayRecalculationRule.evaluate(withPlan(plan))).toEqual([])
+  })
+
+  it('señala lo que ya pasó de su hora', () => {
+    const [recommendation] = dayRecalculationRule.evaluate(
+      withPlan([item('a', 18, 90), item('b', 20, 90)]),
+    )
+
+    expect(recommendation?.data.lateItemIds).toEqual(['a', 'b'])
+    expect(recommendation?.reason).toContain('ya pasaron de su hora')
+  })
+
+  it('media hora de retraso no es un plan roto', () => {
+    // Empezar diez minutos tarde es la vida, no una alarma.
+    const [recommendation] = dayRecalculationRule.evaluate(withPlan([item('a', 20, 200)], at(20)))
+
+    expect(recommendation?.data.lateItemIds).toEqual([])
+  })
+
+  it('a un elemento sin horas se le calcula media hora', () => {
+    const sinHoras = [
+      { id: 'x', domain: 'study' as const, status: 'pending' as const, priority: 'low' as const },
+    ]
+
+    // 30 min caben en los 120 que quedan: no hay aviso.
+    expect(dayRecalculationRule.evaluate(withPlan(sinHoras))).toEqual([])
+    expect(dayRecalculationRule.appliesTo(withPlan(sinHoras))).toBe(true)
+  })
+
+  it('no promete la última hora del día', () => {
+    // A las 22:30 sólo quedan 30 min útiles, no 90 hasta medianoche.
+    const [recommendation] = dayRecalculationRule.evaluate(
+      withPlan([item('a', 18, 60)], new Date(2026, 6, 30, 22, 30).toISOString()),
+    )
+
+    expect(recommendation?.data.availableMinutes).toBe(30)
+  })
+
+  it('propone mover, no reprograma por su cuenta', () => {
+    const [recommendation] = dayRecalculationRule.evaluate(
+      withPlan([item('a', 18, 90), item('b', 20, 90)]),
+    )
+
+    expect(recommendation?.message).toMatch(/Mueve/)
+    expect(recommendation?.message).not.toMatch(/he movido|se movió|reprogramado/i)
   })
 })

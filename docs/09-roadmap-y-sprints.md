@@ -125,7 +125,7 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 
 ### Sprint 13 — Fase 13 · Decision Engine · **L**
 
-- Reglas insignia: `day_recalculation`, `meal_swap`, `alternative_routine`, más
+- Reglas insignia: `day_recalculation`, `meal_swap` y `alternative_routine`, más
   alertas/insights. Feature `planning` (plan diario adaptativo) y bandeja de
   `recommendations`. Capa `assistant` (IA vía Edge Function) para explicación.
 - **DoD:** el motor recalcula el día, sugiere swaps dentro de presupuesto y
@@ -135,6 +135,13 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 > Nota: los **contratos** del motor (`DailyContext`, `Recommendation`) se definen
 > en Sprint 2 y cada feature (6–11) construye su parte del contexto al aterrizar;
 > aquí se ensamblan y se activan las reglas.
+
+> **Terminado salvo la IA.** Las tres reglas insignia funcionan, el plan tiene sus
+> dos capas —lo que el usuario se propone y lo que el motor sugiere— y toda
+> recomendación se puede descartar hasta mañana. La **capa `assistant`** queda
+> pendiente: necesita una Edge Function y la clave de un proveedor, y por
+> [ADR-0003](./adr/0003-ia-como-capa-de-interpretacion.md) la app funciona entera
+> sin ella.
 
 ### Sprint 14 — Fase 14 · Offline-first y sincronización · **L**
 

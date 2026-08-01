@@ -64,6 +64,7 @@ interface DailyContext {
 
 ```ts
 interface Recommendation {
+  key: string // identidad estable entre evaluaciones, para poder descartarla
   type: RecommendationType // day_recalculation | meal_swap | alternative_routine | alert | insight
   domain?: PlanItemDomain
   priority: Priority // low | medium | high | critical
@@ -143,6 +144,7 @@ que es lo que separa a Nexus de un cuaderno de registros.
 | ----------------------- | ------------------------------------------------------------------ | ---------------------------------- |
 | `meal-swap@1`           | Algo de lo comido hoy tiene alternativa más barata igual de buena. | Alta si el ahorro pasa de $10.000. |
 | `alternative-routine@1` | Pasadas las 19 h sin entrenar, habiendo rutina que acortar.        | Media.                             |
+| `day-recalculation@1`   | Lo que queda del plan ya no cabe en lo que queda de día.           | Alta.                              |
 
 **`meal-swap@1`** es la regla de la **nutrición económica**, el diferencial del
 producto. Cuatro decisiones la hacen honesta:
@@ -205,16 +207,35 @@ Cómo se sostiene sin ensuciar el motor:
   no»; mañana el contexto es otro. Silenciar algo indefinidamente habría que
   preguntarlo, y no se ha preguntado.
 
-### Por qué falta `day_recalculation`
+### El plan que se pone el usuario, y `day-recalculation@1`
 
-Es la tercera insignia y **no se ha implementado a propósito**. Su cometido es
-reprogramar los ítems del día, y para eso hacen falta ítems programados:
-`plan_items` existe como tabla pero ninguna pantalla la usa todavía.
+La pantalla `/plan` tiene **dos capas que no se mezclan**: arriba lo que el
+usuario se propuso (`daily_plans` + `plan_items`, su agenda), abajo lo que el
+motor sugiere a la vista de lo registrado. Juntarlas haría que las sugerencias
+parecieran obligaciones, y Nexus recomienda: quien decide es él.
 
-Sin ellos, lo único que podría hacer la regla es resumir lo que las otras cuatro
-ya dicen —«tienes agua, hábitos, estudio y entrenamiento pendientes»—, y una
-quinta tarjeta repitiendo las cuatro anteriores es ruido, no criterio. Entra
-cuando exista el plan diario con ítems y horas, que es un incremento propio.
+`day-recalculation@1` es la única regla que mira **el plan**, no lo registrado.
+Suma lo que queda por hacer, lo compara con las horas que quedan de día y, si no
+cabe, lo dice. Que lo diga en vez de callar es el punto: un plan que se acumula
+sin avisar termina abandonado entero; uno que reconoce a tiempo que sobra una
+cosa se puede salvar. **No reprograma nada**: propone mover, y mover lo decide el
+usuario.
+
+Cuatro decisiones que la hacen fiable:
+
+- **El día útil acaba a las 23:00**, no a medianoche. Prometer la última hora
+  haría que el aviso llegara siempre tarde.
+- **Media hora de margen** antes de dar algo por atrasado. Empezar diez minutos
+  tarde no es un plan roto, es la vida.
+- **La hora es opcional al planificar.** Hay cosas que uno se propone «hoy» sin
+  decidir cuándo; obligar a inventarse una hora produce horas falsas que la
+  regla se tomaría en serio. A lo que no la tiene se le calculan 30 min.
+- **Marcar algo como hecho recalcula solo.** Si con ello el resto ya cabe, el
+  aviso desaparece sin que nadie lo cierre.
+
+Queda fuera de esta versión enlazar un ítem con la entidad que representa
+(`reference_id`: este día de rutina, esta materia). Con él, el plan podría darse
+por cumplido al registrar la actividad en vez de a mano.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 

@@ -9,6 +9,7 @@ import { useWorkoutContext } from '@/features/workout'
 import { toDateKey } from '@/shared/utils'
 
 import { useDismissedKeys } from './use-dismissed'
+import { useTodayPlan } from './use-today-plan'
 
 export interface DailyPlan {
   readonly isPending: boolean
@@ -40,6 +41,7 @@ export function useDailyPlan(): DailyPlan {
   const workout = useWorkoutContext()
   const sleep = useSleepContext()
   const dismissed = useDismissedKeys(today)
+  const plan = useTodayPlan(today)
 
   const isPending =
     nutrition.isPending ||
@@ -47,7 +49,8 @@ export function useDailyPlan(): DailyPlan {
     study.isPending ||
     workout.isPending ||
     sleep.isPending ||
-    dismissed.isPending
+    dismissed.isPending ||
+    plan.isPending
 
   // Todos los hooks quedan por encima de esta salida: si alguno viviera debajo,
   // React vería un número distinto de hooks entre renders.
@@ -64,7 +67,14 @@ export function useDailyPlan(): DailyPlan {
         ? {}
         : { studyWeeklyMinutes: study.weeklyTargetMinutes }),
     },
-    plan: [],
+    plan: (plan.data?.items ?? []).map((item) => ({
+      id: item.id,
+      domain: item.domain,
+      status: item.status,
+      priority: item.priority,
+      ...(item.scheduled_start === null ? {} : { scheduledStart: item.scheduled_start }),
+      ...(item.scheduled_end === null ? {} : { scheduledEnd: item.scheduled_end }),
+    })),
     workout: workout.workout,
     nutrition: nutrition.nutrition,
     study: study.study,

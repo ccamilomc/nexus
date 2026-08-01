@@ -1,4 +1,4 @@
-import type { Json } from '@/core/supabase'
+import type { Json, Tables } from '@/core/supabase'
 
 /**
  * Tipos del plan del día.
@@ -13,4 +13,20 @@ import type { Json } from '@/core/supabase'
 export interface DismissedRow {
   readonly id: string
   readonly data: Json
+}
+
+export type DailyPlanRow = Tables<'daily_plans'>
+export type PlanItem = Tables<'plan_items'>
+
+/**
+ * El plan de hoy: la agenda que el usuario se ha puesto.
+ *
+ * Convive con las recomendaciones sin confundirse con ellas: **esto lo decidió
+ * el usuario**, aquéllas las propone el motor. Por eso el plan se guarda y las
+ * recomendaciones no.
+ */
+export interface TodayPlan {
+  readonly id: string
+  /** De la más temprana a la más tardía; las que no tienen hora, al final. */
+  readonly items: readonly PlanItem[]
 }
