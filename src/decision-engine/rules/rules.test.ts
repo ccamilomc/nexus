@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import type { DailyContext } from '../contracts/context.types'
 import { habitsPendingRule } from './habits-pending'
+import { mealSwapRule } from './meal-swap'
 import { sleepShortRule } from './sleep-short'
 import { studyBehindRule } from './study-behind'
 import { waterPendingRule } from './water-pending'
@@ -20,6 +21,8 @@ const EMPTY: DailyContext = {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
     todaySpend: 0,
     todayWaterMl: 0,
+    todayFoods: [],
+    pantry: [],
   },
   study: { weekMinutes: 0 },
   habits: { total: 0, done: 0 },
@@ -271,5 +274,135 @@ describe('studyBehindRule', () => {
 
     expect(recommendation?.reason).toContain('1 h 40 min de 11 h 40 min')
     expect(recommendation?.reason).toContain('6 h 40 min')
+  })
+})
+
+describe('mealSwapRule', () => {
+  const HAMBURGUESA = {
+    foodId: 'burger',
+    name: 'Hamburguesa sencilla',
+    mealType: 'lunch' as const,
+    servings: 1,
+    calories: 550,
+    proteinG: 25,
+    costCop: 18000,
+  }
+
+  const POLLO = {
+    id: 'pollo',
+    name: 'Pechuga de pollo',
+    calories: 248,
+    proteinG: 46,
+    costPerServing: 2400,
+  }
+
+  const withNutrition = (
+    todayFoods: DailyContext['nutrition']['todayFoods'],
+    pantry: DailyContext['nutrition']['pantry'],
+  ): DailyContext => ({
+    ...EMPTY,
+    nutrition: { ...EMPTY.nutrition, todayFoods, pantry },
+  })
+
+  it('no aplica sin nada registrado hoy', () => {
+    expect(mealSwapRule.appliesTo(withNutrition([], [POLLO]))).toBe(false)
+  })
+
+  it('no aplica sin despensa con precios', () => {
+    expect(mealSwapRule.appliesTo(withNutrition([HAMBURGUESA], []))).toBe(false)
+  })
+
+  it('no aplica si lo registrado no tiene precio', () => {
+    const { costCop: _costCop, ...sinPrecio } = HAMBURGUESA
+
+    expect(mealSwapRule.appliesTo(withNutrition([sinPrecio], [POLLO]))).toBe(false)
+  })
+
+  it('propone la alternativa y cifra el ahorro', () => {
+    const [recommendation] = mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [POLLO]))
+
+    // 550 kcal / 248 por porción = 2,22 → 2,25 porciones = $5.400.
+    expect(recommendation?.type).toBe('meal_swap')
+    expect(recommendation?.message).toContain('Pechuga de pollo')
+    expect(recommendation?.data.savingCop).toBe(12600)
+    expect(recommendation?.data.servings).toBe(2.25)
+  })
+
+  it('mira hacia adelante: lo comido ya no tiene vuelta', () => {
+    const [recommendation] = mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [POLLO]))
+
+    expect(recommendation?.message).toContain('La próxima vez')
+  })
+
+  it('explica siempre de dónde sale la cifra', () => {
+    const [recommendation] = mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [POLLO]))
+
+    expect(recommendation?.reason).toContain('550 kcal')
+    expect(recommendation?.reason).toContain('Hamburguesa sencilla')
+  })
+
+  it('calla si el ahorro es calderilla', () => {
+    const casiIgual = { ...POLLO, costPerServing: 7800 }
+
+    expect(mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [casiIgual]))).toEqual([])
+  })
+
+  it('no propone algo que empeore la proteína', () => {
+    // Barato y con calorías de sobra, pero aporta menos proteína: abaratar
+    // comiendo peor no es un consejo.
+    const arroz = { id: 'arroz', name: 'Arroz', calories: 195, proteinG: 4, costPerServing: 250 }
+
+    expect(mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [arroz]))).toEqual([])
+  })
+
+  it('no propone raciones incomibles', () => {
+    // Igualar 550 kcal exigiría más de 4 porciones.
+    const ensalada = {
+      id: 'ensalada',
+      name: 'Ensalada',
+      calories: 45,
+      proteinG: 40,
+      costPerServing: 100,
+    }
+
+    expect(mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [ensalada]))).toEqual([])
+  })
+
+  it('no se propone a sí mismo', () => {
+    const mismo = {
+      id: 'burger',
+      name: 'Hamburguesa sencilla',
+      calories: 550,
+      proteinG: 25,
+      costPerServing: 18000,
+    }
+
+    expect(mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [mismo]))).toEqual([])
+  })
+
+  it('elige el mayor ahorro cuando hay varias opciones', () => {
+    const atun = { id: 'atun', name: 'Atún', calories: 92, proteinG: 20, costPerServing: 4200 }
+    const [recommendation] = mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [atun, POLLO]))
+
+    expect(recommendation?.data.alternativeFoodId).toBe('pollo')
+  })
+
+  it('sube la prioridad cuando el ahorro es de los que se notan', () => {
+    const [alto] = mealSwapRule.evaluate(withNutrition([HAMBURGUESA], [POLLO]))
+    expect(alto?.priority).toBe('high')
+
+    const gaseosa = {
+      foodId: 'gaseosa',
+      name: 'Gaseosa',
+      mealType: 'snack' as const,
+      servings: 1,
+      calories: 150,
+      proteinG: 0,
+      costCop: 3500,
+    }
+    const leche = { id: 'leche', name: 'Leche', calories: 122, proteinG: 6.4, costPerServing: 1000 }
+    const [medio] = mealSwapRule.evaluate(withNutrition([gaseosa], [leche]))
+
+    expect(medio?.priority).toBe('medium')
   })
 })

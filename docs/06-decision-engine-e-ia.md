@@ -40,9 +40,16 @@ interface DailyContext {
     weightKg?: number
   }
   plan: PlanItemSnapshot[] // ítems del día y su estado
-  workout: { recentSessions: SessionSnapshot[]; fatigueSignals: FatigueSignal[] }
-  nutrition: { todayIntake: MacroTotals; todaySpend: number; pantry?: FoodRef[] }
+  workout: { recentSessions: SessionSnapshot[]; activeSessionStartedAt?: string }
+  nutrition: {
+    todayIntake: MacroTotals
+    todaySpend: number
+    todayWaterMl: number
+    todayFoods: LoggedFoodSnapshot[] // lo comido hoy, alimento a alimento
+    pantry: FoodSnapshot[] // el catálogo, para poder proponer alternativas
+  }
   study: { weekMinutes: number }
+  habits: { total: number; done: number }
   sleep: { lastNightMinutes?: number; quality?: number }
   constraints: {
     // límites del día real
@@ -126,6 +133,36 @@ cronómetro en 108 horas mientras el plan decía «llevas 7 días sin entrenar»
 dos cosas eran ciertas —una sesión sin terminar no cuenta como entrenamiento—
 pero juntas el sistema se contradecía. La regla saca el enganche a la luz en vez
 de cerrarlo por su cuenta: el motor **sugiere**, no ejecuta.
+
+### Reglas insignia (Sprint 13)
+
+Las anteriores **recuerdan lo pendiente**. Éstas **proponen una decisión mejor**,
+que es lo que separa a Nexus de un cuaderno de registros.
+
+| Regla         | Cuándo habla                                                       | Prioridad                          |
+| ------------- | ------------------------------------------------------------------ | ---------------------------------- |
+| `meal-swap@1` | Algo de lo comido hoy tiene alternativa más barata igual de buena. | Alta si el ahorro pasa de $10.000. |
+
+**`meal-swap@1`** es la regla de la **nutrición económica**, el diferencial del
+producto. Cuatro decisiones la hacen honesta:
+
+- **Mira hacia adelante.** El alimento ya se comió y eso no tiene vuelta; la
+  sugerencia es «la próxima vez», y el «repetir comida» de la app la vuelve
+  accionable de un toque.
+- **No abarata a costa de comer peor.** Sólo propone alternativas que aportan al
+  menos las mismas calorías **y** la misma proteína. Recortar no es aconsejar.
+- **Nada de raciones absurdas.** Tope de 4 porciones: seis de arroz igualan una
+  hamburguesa en la hoja de cálculo y son incomibles.
+- **Una sola sugerencia, la de mayor ahorro.** Un plan que abre con seis
+  propuestas de comida no se lee. Y calla por debajo de $2.000: nadie cambia lo
+  que come por calderilla, y avisar por eso entrena a ignorar los avisos.
+
+Para poder compararlos, el `DailyContext` incorpora en `nutrition` los alimentos
+**registrados hoy** (`todayFoods`, con su coste) y el **catálogo del usuario**
+(`pantry`). Sin despensa no hay swap posible: decir «come otra cosa» sin decir
+cuál no ayuda a decidir nada.
+
+Pendientes del sprint: `day_recalculation` y `alternative_routine`.
 
 Tres decisiones que las hacen útiles en vez de ruidosas:
 

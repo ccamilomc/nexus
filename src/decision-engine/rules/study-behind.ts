@@ -1,6 +1,7 @@
 import type { DailyContext } from '../contracts/context.types'
 import type { Recommendation } from '../contracts/recommendation.types'
 import type { Rule } from '../contracts/rule.types'
+import { formatMinutes } from './format'
 import { weekdayPosition } from './time'
 
 const DAYS_PER_WEEK = 7
@@ -13,14 +14,6 @@ const TOLERANCE = 0.8
 
 /** Desde el último día de la semana, el aviso ya es urgente. */
 const LAST_DAY = 7
-
-function formatMinutes(minutes: number): string {
-  if (minutes < 60) return `${minutes} min`
-
-  const hours = Math.floor(minutes / 60)
-  const rest = minutes % 60
-  return rest === 0 ? `${hours} h` : `${hours} h ${rest} min`
-}
 
 /**
  * Avisa cuando el estudio de la semana va por debajo del ritmo necesario.

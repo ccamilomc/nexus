@@ -32,6 +32,37 @@ export interface NutritionGoalSnapshot extends MacroTotals {
   readonly weeklyFoodBudget?: number
 }
 
+/**
+ * Un alimento del catálogo del usuario, con lo justo para compararlo con otro.
+ *
+ * El precio es opcional porque en la app lo es: un alimento sin precio no puede
+ * proponerse como alternativa más barata, y las reglas tienen que poder
+ * distinguir «no cuesta nada» de «no sé lo que cuesta».
+ */
+export interface FoodSnapshot {
+  readonly id: string
+  readonly name: string
+  /** Por porción. */
+  readonly calories: number
+  readonly proteinG: number
+  /** Precio por porción, en la moneda del usuario; `undefined` si no lo tiene. */
+  readonly costPerServing?: number
+}
+
+/** Un alimento ya registrado hoy, con lo que aportó y lo que costó. */
+export interface LoggedFoodSnapshot {
+  readonly foodId: string
+  readonly name: string
+  readonly mealType: MealType
+  readonly servings: number
+  /** Total del registro (porción × porciones), no por porción. */
+  readonly calories: number
+  readonly proteinG: number
+  readonly costCop?: number
+}
+
+export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 export interface PlanItemSnapshot {
   readonly id: string
   readonly domain: PlanItemDomain
@@ -79,6 +110,15 @@ export interface DailyContext {
     readonly todaySpend: number
     /** Agua bebida hoy, en mililitros. */
     readonly todayWaterMl: number
+    /** Lo comido hoy, alimento a alimento. Vacío si no se ha registrado nada. */
+    readonly todayFoods: readonly LoggedFoodSnapshot[]
+    /**
+     * El catálogo del usuario, para poder proponer alternativas.
+     *
+     * Sin despensa no hay swap posible: una regla que sugiere «come otra cosa»
+     * sin decir cuál no ayuda a decidir nada.
+     */
+    readonly pantry: readonly FoodSnapshot[]
   }
   readonly study: {
     readonly weekMinutes: number
