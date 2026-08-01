@@ -5,7 +5,7 @@ import { useSleepSeries } from '@/features/sleep'
 import { EmptyState } from '@/shared/components/feedback'
 import { formatMinutes } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { NO_PREVIOUS_PERIOD_HINT } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { hourAxis } from '../utils/axis'
 import { compareValues } from '../utils/comparison'
@@ -56,11 +56,7 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
               label="Media por noche"
               value={formatMinutes(data.averageMinutes)}
               comparison={compareValues(data.averageMinutes, data.previousAverageMinutes)}
-              hint={
-                data.previousAverageMinutes === null
-                  ? 'Sin periodo anterior con que comparar'
-                  : null
-              }
+              hint={data.previousAverageMinutes === null ? NO_PREVIOUS_PERIOD_HINT : null}
             />
             <KpiCard
               label="Noches apuntadas"
@@ -78,22 +74,16 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
             />
           </div>
 
-          {data.nightsLogged < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Con ${formatCount(data.nightsLogged, 'noche', 'noches')} sale una línea, no una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a verse la forma.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Sueño por noche ${window.period.description}`}
-              points={data.points}
-              variant="line"
-              colorIndex={4}
-              formatValue={formatMinutes}
-              formatAxisValue={(minutes) => `${Math.round(minutes / 60)} h`}
-              {...(sleepAxis ? { verticalAxis: sleepAxis } : {})}
-            />
-          )}
+          <TrendChart
+            label={`Sueño por noche ${window.period.description}`}
+            points={data.points}
+            recorded={{ count: data.nightsLogged, singular: 'noche', plural: 'noches' }}
+            variant="line"
+            colorIndex={4}
+            formatValue={formatMinutes}
+            formatAxisValue={(minutes) => `${Math.round(minutes / 60)} h`}
+            {...(sleepAxis ? { verticalAxis: sleepAxis } : {})}
+          />
         </div>
       )}
     </AnalyticsSection>

@@ -1,7 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
-
-import { useAuth } from '@/core/auth'
-import type { AppError } from '@/core/error'
+import { type SeriesQuery, useSeriesQuery } from '@/shared/hooks'
 import { dateRangeKey } from '@/shared/utils'
 
 import { habitsService } from '../services/habits.service'
@@ -9,13 +6,7 @@ import type { HabitsPeriodSeries } from '../types/habits.types'
 import { habitsKeys } from './use-habits'
 
 /** Lo que Analytics necesita saber de los hábitos en un periodo. */
-export interface HabitsSeries {
-  readonly isPending: boolean
-  readonly isError: boolean
-  readonly errorMessage: string | null
-  readonly retry: () => void
-  readonly data: HabitsPeriodSeries | null
-}
+export type HabitsSeries = SeriesQuery<HabitsPeriodSeries>
 
 /**
  * La serie de hábitos de un periodo.
@@ -27,19 +18,8 @@ export function useHabitsSeries(
   days: readonly Date[],
   previousDays: readonly Date[],
 ): HabitsSeries {
-  const { user } = useAuth()
-  const userId = user?.id
-
-  const query = useQuery<HabitsPeriodSeries | null, AppError>({
-    queryKey: habitsKeys.series(userId, dateRangeKey(days), dateRangeKey(previousDays)),
-    queryFn: () => (userId ? habitsService.getSeries(userId, days, previousDays) : null),
+  return useSeriesQuery({
+    queryKey: (userId) => habitsKeys.series(userId, dateRangeKey(days), dateRangeKey(previousDays)),
+    fetch: (userId) => habitsService.getSeries(userId, days, previousDays),
   })
-
-  return {
-    isPending: query.isPending,
-    isError: query.isError,
-    errorMessage: query.error?.message ?? null,
-    retry: () => void query.refetch(),
-    data: query.data ?? null,
-  }
 }

@@ -5,7 +5,7 @@ import { useHabitsSeries } from '@/features/habits'
 import { EmptyState } from '@/shared/components/feedback'
 import { countDaysWithData } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { NO_PREVIOUS_PERIOD_HINT } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount } from '../utils/format'
@@ -54,11 +54,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
               label="Constancia"
               value={`${data.completionPercent} %`}
               comparison={compareValues(data.completionPercent, data.previousCompletionPercent)}
-              hint={
-                data.previousCompletionPercent === null
-                  ? 'Sin periodo anterior con que comparar'
-                  : null
-              }
+              hint={data.previousCompletionPercent === null ? NO_PREVIOUS_PERIOD_HINT : null}
             />
             <KpiCard
               label="Días perfectos"
@@ -80,21 +76,19 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
             />
           </div>
 
-          {daysWithHabits < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Sólo ${formatCount(daysWithHabits, 'día', 'días')} con hábitos activos. Desde ${MIN_DAYS_FOR_TREND} empieza a verse la forma.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Porcentaje de hábitos cumplidos por día ${window.period.description}`}
-              points={data.points}
-              variant="bar"
-              colorIndex={5}
-              formatValue={(percent) => `${Math.round(percent)} %`}
-              formatAxisValue={(percent) => `${Math.round(percent)}`}
-            />
-          )}
+          <TrendChart
+            label={`Porcentaje de hábitos cumplidos por día ${window.period.description}`}
+            points={data.points}
+            recorded={{
+              count: daysWithHabits,
+              singular: 'día con hábitos',
+              plural: 'días con hábitos',
+            }}
+            variant="bar"
+            colorIndex={5}
+            formatValue={(percent) => `${Math.round(percent)} %`}
+            formatAxisValue={(percent) => `${Math.round(percent)}`}
+          />
         </div>
       )}
     </AnalyticsSection>

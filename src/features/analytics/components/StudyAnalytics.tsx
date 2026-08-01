@@ -5,10 +5,9 @@ import { useStudySeries } from '@/features/study'
 import { EmptyState } from '@/shared/components/feedback'
 import { formatMinutes } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { NO_PREVIOUS_PERIOD_HINT } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { compareValues } from '../utils/comparison'
-import { formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'
 import { TrendChart } from './TrendChart'
@@ -58,9 +57,7 @@ export function StudyAnalytics({ window }: StudyAnalyticsProps) {
               label="Tiempo total"
               value={formatMinutes(data.totalMinutes)}
               comparison={compareValues(data.totalMinutes, data.previousTotalMinutes)}
-              hint={
-                data.previousTotalMinutes === 0 ? 'Sin periodo anterior con que comparar' : null
-              }
+              hint={data.previousTotalMinutes === 0 ? NO_PREVIOUS_PERIOD_HINT : null}
             />
             <KpiCard
               label="Media por día"
@@ -85,25 +82,23 @@ export function StudyAnalytics({ window }: StudyAnalyticsProps) {
             />
           </div>
 
-          {data.daysStudied < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Con ${formatCount(data.daysStudied, 'día estudiado', 'días estudiados')} no se ve una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a notarse.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Tiempo estudiado por día ${window.period.description}`}
-              points={data.points}
-              variant="bar"
-              colorIndex={2}
-              formatValue={formatMinutes}
-              formatAxisValue={(minutes) =>
-                minutes >= MINUTES_PER_HOUR
-                  ? `${Math.round(minutes / MINUTES_PER_HOUR)} h`
-                  : `${Math.round(minutes)}`
-              }
-            />
-          )}
+          <TrendChart
+            label={`Tiempo estudiado por día ${window.period.description}`}
+            points={data.points}
+            recorded={{
+              count: data.daysStudied,
+              singular: 'día estudiado',
+              plural: 'días estudiados',
+            }}
+            variant="bar"
+            colorIndex={2}
+            formatValue={formatMinutes}
+            formatAxisValue={(minutes) =>
+              minutes >= MINUTES_PER_HOUR
+                ? `${Math.round(minutes / MINUTES_PER_HOUR)} h`
+                : `${Math.round(minutes)}`
+            }
+          />
         </div>
       )}
     </AnalyticsSection>

@@ -4,10 +4,8 @@ import { ROUTES } from '@/app/router/routes'
 import { formatChange, formatValue, useWeightSeries } from '@/features/health'
 import { EmptyState } from '@/shared/components/feedback'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { fittedAxis } from '../utils/axis'
-import { formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'
 import { TrendChart } from './TrendChart'
@@ -79,22 +77,16 @@ export function HealthAnalytics({ window }: HealthAnalyticsProps) {
             />
           </div>
 
-          {data.measurements < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Con ${formatCount(data.measurements, 'pesaje', 'pesajes')} no se ve una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a notarse.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Peso ${window.period.description}`}
-              points={data.points}
-              variant="line"
-              colorIndex="neutral"
-              formatValue={(kilograms) => formatValue(kilograms, data.unit)}
-              formatAxisValue={(kilograms) => String(Math.round(kilograms))}
-              {...(weightAxis ? { verticalAxis: weightAxis } : {})}
-            />
-          )}
+          <TrendChart
+            label={`Peso ${window.period.description}`}
+            points={data.points}
+            recorded={{ count: data.measurements, singular: 'pesaje', plural: 'pesajes' }}
+            variant="line"
+            colorIndex="neutral"
+            formatValue={(kilograms) => formatValue(kilograms, data.unit)}
+            formatAxisValue={(kilograms) => String(Math.round(kilograms))}
+            {...(weightAxis ? { verticalAxis: weightAxis } : {})}
+          />
         </div>
       )}
     </AnalyticsSection>

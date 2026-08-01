@@ -26,6 +26,16 @@ export const ANALYTICS_PERIOD_LIST: readonly AnalyticsPeriod[] = [
 export const DEFAULT_PERIOD_ID: AnalyticsPeriodId = '30d'
 
 /**
+ * Lo que se dice cuando el tramo anterior está vacío.
+ *
+ * Va aquí y no suelto en cada sección porque lo dicen cinco dominios: escrito
+ * cinco veces, acabarían divergiendo y la pantalla dejaría de sonar a una sola
+ * voz. La comparación calla en vez de inventar un porcentaje (ver
+ * `compareValues`).
+ */
+export const NO_PREVIOUS_PERIOD_HINT = 'Sin periodo anterior con que comparar'
+
+/**
  * Días con registro que hacen falta para dibujar una tendencia.
  *
  * Con dos puntos siempre sale una recta, y una recta parece una tendencia. Con

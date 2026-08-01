@@ -1,7 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
-
-import { useAuth } from '@/core/auth'
-import type { AppError } from '@/core/error'
+import { type SeriesQuery, useSeriesQuery } from '@/shared/hooks'
 import { dateRangeKey, type DayRange } from '@/shared/utils'
 
 import { workoutService } from '../services/workout.service'
@@ -9,13 +6,7 @@ import type { WorkoutPeriodSeries } from '../types/workout.types'
 import { workoutKeys } from './workout.keys'
 
 /** Lo que Analytics necesita saber del entrenamiento en un periodo. */
-export interface WorkoutSeries {
-  readonly isPending: boolean
-  readonly isError: boolean
-  readonly errorMessage: string | null
-  readonly retry: () => void
-  readonly data: WorkoutPeriodSeries | null
-}
+export type WorkoutSeries = SeriesQuery<WorkoutPeriodSeries>
 
 /**
  * La serie de entrenamiento de un periodo.
@@ -29,20 +20,9 @@ export function useWorkoutSeries(
   days: readonly Date[],
   previousDays: readonly Date[],
 ): WorkoutSeries {
-  const { user } = useAuth()
-  const userId = user?.id
-
-  const query = useQuery<WorkoutPeriodSeries | null, AppError>({
-    queryKey: workoutKeys.series(userId, dateRangeKey(days), dateRangeKey(previousDays)),
-    queryFn: () =>
-      userId ? workoutService.getSeries(userId, range, previousRange, days, previousDays) : null,
+  return useSeriesQuery({
+    queryKey: (userId) =>
+      workoutKeys.series(userId, dateRangeKey(days), dateRangeKey(previousDays)),
+    fetch: (userId) => workoutService.getSeries(userId, range, previousRange, days, previousDays),
   })
-
-  return {
-    isPending: query.isPending,
-    isError: query.isError,
-    errorMessage: query.error?.message ?? null,
-    retry: () => void query.refetch(),
-    data: query.data ?? null,
-  }
 }

@@ -4,7 +4,6 @@ import { ROUTES } from '@/app/router/routes'
 import { formatCalories, formatCop, formatVolumeMl, useNutritionSeries } from '@/features/nutrition'
 import { EmptyState } from '@/shared/components/feedback'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount } from '../utils/format'
@@ -83,25 +82,23 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
             />
           </div>
 
-          {data.daysLogged < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Con ${formatCount(data.daysLogged, 'día registrado', 'días registrados')} no se ve una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a notarse.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Calorías por día ${window.period.description}`}
-              points={data.caloriePoints}
-              variant="line"
-              colorIndex={3}
-              formatValue={formatCalories}
-              formatAxisValue={(calories) =>
-                calories >= CALORIES_IN_THOUSAND
-                  ? `${Math.round(calories / CALORIES_IN_THOUSAND)}k`
-                  : String(Math.round(calories))
-              }
-            />
-          )}
+          <TrendChart
+            label={`Calorías por día ${window.period.description}`}
+            points={data.caloriePoints}
+            recorded={{
+              count: data.daysLogged,
+              singular: 'día registrado',
+              plural: 'días registrados',
+            }}
+            variant="line"
+            colorIndex={3}
+            formatValue={formatCalories}
+            formatAxisValue={(calories) =>
+              calories >= CALORIES_IN_THOUSAND
+                ? `${Math.round(calories / CALORIES_IN_THOUSAND)}k`
+                : String(Math.round(calories))
+            }
+          />
         </div>
       )}
     </AnalyticsSection>

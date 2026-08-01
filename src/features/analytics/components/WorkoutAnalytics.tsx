@@ -5,7 +5,7 @@ import { useWorkoutSeries } from '@/features/workout'
 import { EmptyState } from '@/shared/components/feedback'
 import { formatMinutes } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { NO_PREVIOUS_PERIOD_HINT } from '../constants/analytics.constants'
 import type { PeriodWindow } from '../types/analytics.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount, formatDecimal, formatVolumeKg } from '../utils/format'
@@ -57,9 +57,7 @@ export function WorkoutAnalytics({ window }: WorkoutAnalyticsProps) {
               label="Entrenamientos"
               value={String(data.sessionCount)}
               comparison={compareValues(data.sessionCount, data.previousSessionCount)}
-              hint={
-                data.previousSessionCount === 0 ? 'Sin periodo anterior con que comparar' : null
-              }
+              hint={data.previousSessionCount === 0 ? NO_PREVIOUS_PERIOD_HINT : null}
             />
             <KpiCard
               label="Volumen total"
@@ -84,27 +82,25 @@ export function WorkoutAnalytics({ window }: WorkoutAnalyticsProps) {
             />
           </div>
 
-          {data.daysTrained < MIN_DAYS_FOR_TREND ? (
-            <EmptyState
-              title="Aún no hay tendencia que dibujar"
-              description={`Con ${formatCount(data.daysTrained, 'día entrenado', 'días entrenados')} no se ve una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a notarse.`}
-            />
-          ) : (
-            <TrendChart
-              label={`Volumen levantado por día ${window.period.description}`}
-              points={data.volumePoints}
-              variant="bar"
-              colorIndex={1}
-              formatValue={formatVolumeKg}
-              formatAxisValue={(kilograms) =>
-                kilograms >= KILOGRAMS_IN_THOUSAND
-                  ? // Con un decimal: redondear 2.500 a «3k» junto a 5.000 «5k»
-                    // dibuja una escala que parece irregular sin serlo.
-                    `${formatDecimal(kilograms / KILOGRAMS_IN_THOUSAND)}k`
-                  : String(Math.round(kilograms))
-              }
-            />
-          )}
+          <TrendChart
+            label={`Volumen levantado por día ${window.period.description}`}
+            points={data.volumePoints}
+            recorded={{
+              count: data.daysTrained,
+              singular: 'día entrenado',
+              plural: 'días entrenados',
+            }}
+            variant="bar"
+            colorIndex={1}
+            formatValue={formatVolumeKg}
+            formatAxisValue={(kilograms) =>
+              kilograms >= KILOGRAMS_IN_THOUSAND
+                ? // Con un decimal: redondear 2.500 a «3k» junto a 5.000 «5k»
+                  // dibuja una escala que parece irregular sin serlo.
+                  `${formatDecimal(kilograms / KILOGRAMS_IN_THOUSAND)}k`
+                : String(Math.round(kilograms))
+            }
+          />
         </div>
       )}
     </AnalyticsSection>

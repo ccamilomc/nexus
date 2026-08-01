@@ -10,15 +10,26 @@ import {
   YAxis,
 } from 'recharts'
 
+import { EmptyState } from '@/shared/components/feedback'
 import type { SeriesPoint } from '@/shared/utils'
 
+import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
 import type { VerticalAxis } from '../utils/axis'
-import { formatChartDate } from '../utils/format'
+import { formatChartDate, formatCount } from '../utils/format'
 
 interface TrendChartProps {
   /** Qué representa la serie; lo anuncian los lectores de pantalla. */
   readonly label: string
   readonly points: readonly SeriesPoint[]
+  /**
+   * Cuánto se ha registrado de verdad, con el nombre que le da su dominio
+   * («2 noches», «5 días entrenados»). De aquí sale la decisión de dibujar o no.
+   */
+  readonly recorded: {
+    readonly count: number
+    readonly singular: string
+    readonly plural: string
+  }
   /**
    * `line` para magnitudes continuas que admiten huecos (el sueño);
    * `bar` para lo que ocurre por episodios (el volumen de un entrenamiento).
@@ -44,7 +55,12 @@ interface TrendChartProps {
 const MAX_AXIS_TICKS = 5
 
 /**
- * Una serie diaria dibujada.
+ * Una serie diaria dibujada —o el motivo por el que todavía no se dibuja.
+ *
+ * **Se niega a dibujar con menos de `MIN_DAYS_FOR_TREND` registros.** La regla
+ * vive aquí y no en cada sección porque es parte de dibujar una serie con
+ * honestidad: con dos puntos siempre sale una recta, y una recta parece una
+ * tendencia. Teniéndola dentro, un dominio nuevo no puede olvidarla.
  *
  * Además del SVG rinde una **tabla equivalente** oculta a la vista: una gráfica
  * es inaccesible por definición para quien no la ve, y el `aria-label` de un
@@ -56,12 +72,22 @@ const MAX_AXIS_TICKS = 5
 export function TrendChart({
   label,
   points,
+  recorded,
   variant,
   formatValue,
   formatAxisValue,
   verticalAxis,
   colorIndex = 1,
 }: TrendChartProps) {
+  if (recorded.count < MIN_DAYS_FOR_TREND) {
+    return (
+      <EmptyState
+        title="Aún no hay tendencia que dibujar"
+        description={`Con ${formatCount(recorded.count, recorded.singular, recorded.plural)} no se ve una tendencia. Desde ${MIN_DAYS_FOR_TREND} empieza a notarse.`}
+      />
+    )
+  }
+
   const color =
     colorIndex === 'neutral' ? 'hsl(var(--muted-foreground))' : `hsl(var(--chart-${colorIndex}))`
   const formatTick = formatAxisValue ?? formatValue
