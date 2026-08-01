@@ -1,10 +1,10 @@
 import { seriesAverage, seriesTotal, toDateKey, toDateKeyFromIso } from '@/shared/utils'
 
 import type {
-  MealLog,
-  MealLogItemWithFood,
+  MealItemSample,
+  MealLogSample,
   NutritionPeriodSeries,
-  WaterLog,
+  WaterSample,
 } from '../types/nutrition.types'
 import { macrosForItems } from './macros'
 import { calculateSpend } from './spend'
@@ -19,9 +19,9 @@ import { calculateSpend } from './spend'
  * apuntado sí significa no haber entrenado.
  */
 export function buildNutritionSeries(
-  mealLogs: readonly MealLog[],
-  items: readonly MealLogItemWithFood[],
-  waterLogs: readonly WaterLog[],
+  mealLogs: readonly MealLogSample[],
+  items: readonly MealItemSample[],
+  waterLogs: readonly WaterSample[],
   days: readonly Date[],
   previousDays: readonly Date[],
 ): NutritionPeriodSeries {
@@ -42,10 +42,8 @@ export function buildNutritionSeries(
   }
 }
 
-function groupItemsByLog(
-  items: readonly MealLogItemWithFood[],
-): Map<string, MealLogItemWithFood[]> {
-  const byLog = new Map<string, MealLogItemWithFood[]>()
+function groupItemsByLog(items: readonly MealItemSample[]): Map<string, MealItemSample[]> {
+  const byLog = new Map<string, MealItemSample[]>()
 
   for (const item of items) {
     const current = byLog.get(item.meal_log_id)
@@ -57,15 +55,15 @@ function groupItemsByLog(
 }
 
 function summarize(
-  mealLogs: readonly MealLog[],
-  itemsByLog: ReadonlyMap<string, MealLogItemWithFood[]>,
-  waterLogs: readonly WaterLog[],
+  mealLogs: readonly MealLogSample[],
+  itemsByLog: ReadonlyMap<string, MealItemSample[]>,
+  waterLogs: readonly WaterSample[],
   days: readonly Date[],
 ) {
   const inPeriod = new Set(days.map(toDateKey))
 
   const caloriesByDate = new Map<string, number>()
-  const periodItems: MealLogItemWithFood[] = []
+  const periodItems: MealItemSample[] = []
 
   for (const log of mealLogs) {
     const dateKey = toDateKeyFromIso(log.logged_at)

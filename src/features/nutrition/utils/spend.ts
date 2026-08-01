@@ -1,4 +1,15 @@
-import type { MealLogItemWithFood, WeeklySpend } from '../types/nutrition.types'
+import type { FoodRef, WeeklySpend } from '../types/nutrition.types'
+
+/**
+ * Lo que hace falta de un alimento registrado para saber lo que costó.
+ *
+ * Igual que en los macros, admite la fila completa y la reducida de Analytics:
+ * el precio se cuenta con la misma regla en las dos pantallas.
+ */
+type SpendItem = {
+  readonly servings: number
+  readonly food: Pick<FoodRef, 'cost_per_serving'>
+}
 
 /**
  * Cuánto se gastó en lo registrado.
@@ -7,7 +18,7 @@ import type { MealLogItemWithFood, WeeklySpend } from '../types/nutrition.types'
  * En vez de disimularlo, se cuenta cuántos alimentos no tienen precio para que
  * la interfaz pueda decirlo: un gasto que parece completo sin serlo miente.
  */
-export function calculateSpend(items: readonly MealLogItemWithFood[]): WeeklySpend {
+export function calculateSpend(items: readonly SpendItem[]): WeeklySpend {
   let total = 0
   let itemsWithoutPrice = 0
 

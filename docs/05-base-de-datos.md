@@ -260,6 +260,27 @@ Analytics **no** define tablas de datos primarios (ver
   lleva `user_id` + RLS como cualquier otra tabla de usuario. Entraría por detrás
   de `useXSeries`, sin que Analytics se entere.
 
+### Coste medido de Analytics
+
+Medido en el navegador sobre la cuenta de desarrollo con ~10 semanas de historia
+(`scripts/seed-dev-data.mjs`), en el **peor caso: periodo de 90 días y caché
+fría**. Es la referencia con la que comparar antes de plantear vistas o rollups:
+
+| Periodo | Peticiones | Transferido | Consulta más lenta |
+| ------- | ---------- | ----------- | ------------------ |
+| 7 días  | 10         | 109 KB      | ~650 ms            |
+| 90 días | 10         | **316 KB**  | ~710 ms            |
+
+Las diez consultas salen en paralelo y TanStack Query las cachea 60 s, así que
+el coste se paga una vez por periodo. La primera medición dio **654 KB**: la
+mitad se iba en `meal_log_items`, que reutilizaba la consulta de la pantalla del
+día y bajaba el alimento entero por join. Acotar el `select` a las columnas que
+se agregan (`listItemsForSeries`, `listMealLogsForSeries`, `listWaterForSeries`)
+lo dejó en 316 KB **sin cambiar ninguna cifra en pantalla**.
+
+Es la lección que conviene recordar antes de sospechar de la arquitectura: el
+problema no era agregar en el cliente, era traer columnas que nadie suma.
+
 ## Migraciones
 
 - Toda modificación de esquema es una **migración** en `supabase/migrations/`.

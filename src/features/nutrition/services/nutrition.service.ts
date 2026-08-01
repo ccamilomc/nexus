@@ -305,11 +305,11 @@ export const nutritionService = {
   ): Promise<NutritionPeriodSeries> {
     try {
       const [mealLogs, waterLogs] = await Promise.all([
-        nutritionRepository.listMealLogsBetween(userId, previousRange.fromIso, range.toIso),
-        nutritionRepository.listWaterLogsBetween(userId, previousRange.fromIso, range.toIso),
+        nutritionRepository.listMealLogsForSeries(userId, previousRange.fromIso, range.toIso),
+        nutritionRepository.listWaterForSeries(userId, previousRange.fromIso, range.toIso),
       ])
 
-      const items = await nutritionRepository.listItemsByMealLogs(mealLogs.map(({ id }) => id))
+      const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
 
       return buildNutritionSeries(mealLogs, items, waterLogs, days, previousDays)
     } catch (error) {

@@ -35,6 +35,21 @@ export type FoodRef = Pick<
 export type MealLogItemWithFood = MealLogItem & { readonly food: FoodRef }
 
 /**
+ * Lo mínimo de una comida y de sus alimentos para agregar un periodo.
+ *
+ * Analytics recorre meses, no un día: aquí sólo bajan las columnas que se
+ * suman. Los cálculos (`macrosForServings`, `calculateSpend`) aceptan esta
+ * forma reducida además de la completa, así que la regla sigue siendo una.
+ */
+export type MealLogSample = Pick<MealLog, 'id' | 'logged_at'>
+
+export type MealItemSample = Pick<MealLogItem, 'meal_log_id' | 'servings'> & {
+  readonly food: Pick<Food, 'calories' | 'protein_g' | 'carbs_g' | 'fat_g' | 'cost_per_serving'>
+}
+
+export type WaterSample = Pick<WaterLog, 'amount_ml' | 'logged_at'>
+
+/**
  * Macros de un conjunto de alimentos.
  *
  * Siempre se **calculan** a partir de (alimento × porciones); nunca se
