@@ -50,10 +50,12 @@ flowchart LR
 
 ### Decisión de librería de persistencia
 
-Se pospone (YAGNI) hasta el Sprint 14 y se justificará en un ADR. Candidatas:
-persister oficial de TanStack Query + una utilidad mínima de IndexedDB
-(`idb-keyval`) frente a una solución más completa (Dexie). Se elegirá la más
-simple que cumpla, según la [política de dependencias](./10-stack-tecnologico.md#política-de-dependencias).
+**Resuelta:** persister síncrono de TanStack sobre `localStorage`. Se midió la
+caché real —**34,2 KB** con la pantalla más pesada abierta— y no justifica ni
+IndexedDB ni una dependencia nueva. Razonado en
+[ADR-0007](./adr/0007-cache-persistente-en-localstorage.md), que también explica
+por qué se borra al cerrar sesión y por qué un `maxAge` de 7 días no puede hacer
+pasar datos viejos por los de hoy.
 
 ## PWA
 
