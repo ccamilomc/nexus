@@ -1,8 +1,12 @@
 import { WifiOff } from 'lucide-react'
 
-import { useIsOnline } from '@/shared/hooks'
 import { cn } from '@/shared/lib/utils'
 
+// Directo al módulo, no al barrel de `shared/hooks`: por él también asoma
+// `useSeriesQuery`, que arrastra `core/auth` y con él el cliente de Supabase,
+// que valida las variables de entorno al cargarse. En CI no las hay, y el test
+// de este componente moría antes de empezar (ver la memoria del proyecto).
+import { useIsOnline } from '../../hooks/use-is-online'
 import { EmptyState } from './EmptyState'
 
 interface SkeletonProps {
