@@ -147,6 +147,12 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 
 - Cola de mutaciones offline, cache persistente, sincronización y resolución de
   conflictos (LWW por `updated_at`, tombstones por `deleted_at`).
+- **Pendiente conocido: reanudar lo que quedó pausado.** Sin red, TanStack Query
+  no falla —_pausa_ la consulta— y sin datos en caché la pantalla se quedaba
+  cargando para siempre. Ya se dice («Sin conexión», ver `SkeletonList`), pero al
+  devolver la señal con la pantalla abierta **las consultas pausadas no reanudan
+  solas**: hace falta recargar. Comprobado en el navegador. Aquí es donde toca
+  resolverlo, junto con la caché persistente que evitará el caso más común.
 - **DoD:** registrar datos sin conexión y sincronizar sin pérdidas al reconectar
   (ver [13 · Offline y PWA](./13-offline-y-pwa.md)).
 
