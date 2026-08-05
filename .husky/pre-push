@@ -1,0 +1,24 @@
+# Impide empujar directamente a `main`.
+#
+# La constitución del proyecto lo prohíbe (ver CLAUDE.md, «GIT») y el flujo es
+# rama → PR → CI verde → merge. Aun así ha pasado tres veces, siempre por lo
+# mismo: `gh pr merge --delete-branch` deja el repo en `main`, y el siguiente
+# trabajo empieza ahí sin querer.
+#
+# Recordarlo no ha bastado, así que se comprueba. Si algún día hace falta
+# saltárselo a conciencia: `git push --no-verify`.
+
+rama="$(git rev-parse --abbrev-ref HEAD)"
+
+if [ "$rama" = "main" ]; then
+  echo ""
+  echo "  Estás en main y el flujo del proyecto no empuja aquí."
+  echo ""
+  echo "  Lleva el trabajo a una rama y ábrele un PR:"
+  echo "      git switch -c feature/lo-que-sea"
+  echo ""
+  echo "  Si lo que hay en main ya está pusheado, basta con crear la rama"
+  echo "  desde aquí. Si no, además: git branch -f main origin/main"
+  echo ""
+  exit 1
+fi
