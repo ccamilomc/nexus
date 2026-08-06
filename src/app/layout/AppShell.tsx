@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { BottomNav } from '@/app/layout/BottomNav'
+import { OfflineBanner } from '@/app/layout/OfflineBanner'
 import { RouteFallback } from '@/app/layout/RouteFallback'
 import { Sidebar } from '@/app/layout/Sidebar'
 import { env } from '@/core/config/env'
@@ -29,6 +30,7 @@ export function AppShell() {
               Modo desarrollo · login desactivado (VITE_AUTH_DISABLED)
             </div>
           ) : null}
+          <OfflineBanner />
           <Suspense fallback={<RouteFallback />}>
             <Outlet />
           </Suspense>

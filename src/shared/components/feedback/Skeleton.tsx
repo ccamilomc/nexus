@@ -31,9 +31,13 @@ interface SkeletonListProps {
  * **Sin conexión no finge que algo viene en camino.** Cuando se cae la red,
  * TanStack Query no falla: *pausa* la consulta a la espera de señal. La consulta
  * se queda en `pending` para siempre, nunca hay error que mostrar, y la pantalla
- * se quedaba con los bloques latiendo indefinidamente sin explicar nada. Como
- * todas las pantallas pasan por aquí, decirlo en este único sitio las arregla
- * todas.
+ * se quedaba con los bloques latiendo indefinidamente sin explicar nada.
+ *
+ * Cubre el caso de **pantalla entera esperando datos**, que es el que pasa por
+ * aquí. Los `<Skeleton>` sueltos dentro de una tarjeta ya pintada —el agua del
+ * día, las dos frases de un resumen— siguen siendo marcadores en línea: llenar
+ * el dashboard de seis avisos repetidos sería peor. De ésos se encarga el
+ * `OfflineBanner` del cascarón, que lo dice una vez arriba.
  *
  * El texto se limita a lo comprobado. Se probó a devolver la señal con la
  * pantalla abierta y **las consultas pausadas no reanudaron solas**; recargar sí

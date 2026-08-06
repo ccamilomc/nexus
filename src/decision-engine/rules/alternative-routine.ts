@@ -107,11 +107,6 @@ function trainedToday(context: DailyContext): boolean {
  * o hace tanto que ya no se recuerdan.
  */
 function dayDue(context: DailyContext): RoutineDaySnapshot | null {
-  const candidates = context.workout.routineDays.filter(
-    ({ exercises }) => exercises.length >= MIN_SHORTENABLE,
-  )
-  if (candidates.length === 0) return null
-
   const lastUsed = new Map<string, string>()
   for (const session of context.workout.recentSessions) {
     if (session.routineDayId === undefined) continue
@@ -122,11 +117,18 @@ function dayDue(context: DailyContext): RoutineDaySnapshot | null {
     }
   }
 
-  // Las fechas `YYYY-MM-DD` se ordenan como texto igual que como fechas, y la
-  // cadena vacía queda por delante de cualquiera: los nunca usados van primero.
-  return [...candidates].sort((a, b) =>
-    (lastUsed.get(a.id) ?? '').localeCompare(lastUsed.get(b.id) ?? ''),
-  )[0] as RoutineDaySnapshot
+  // Se reduce en vez de ordenar y coger el primero: así el resultado ya es un
+  // día o `null`, sin el casting que hacía falta para convencer a TypeScript de
+  // que una lista no vacía tiene un elemento cero.
+  //
+  // Las fechas `YYYY-MM-DD` se comparan como texto igual que como fechas, y la
+  // cadena vacía queda por delante de cualquiera: los nunca entrenados ganan.
+  return context.workout.routineDays.reduce<RoutineDaySnapshot | null>((due, day) => {
+    if (day.exercises.length < MIN_SHORTENABLE) return due
+    if (due === null) return day
+
+    return (lastUsed.get(day.id) ?? '') < (lastUsed.get(due.id) ?? '') ? day : due
+  }, null)
 }
 
 /** Cuántos ejercicios entran en la versión corta: la mitad, hacia arriba. */
