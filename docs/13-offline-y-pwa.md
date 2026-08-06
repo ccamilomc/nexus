@@ -108,12 +108,47 @@ lienzo del tamaño deseado y `toDataURL('image/png')`), sin añadir dependencias
 activo con 36 ficheros cacheados, y **apagando el servidor la aplicación sigue
 abriendo**.
 
+### Instalación (A2HS)
+
+Quien decide si se puede instalar es el navegador; `useInstallPrompt`
+(`shared/hooks`) sólo se entera de esa decisión y la traduce a cuatro casos:
+`installed`, `ready`, `manual` (iOS) y `unavailable`.
+
+- **El aviso del navegador se guarda en el módulo, no en un componente.**
+  `beforeinstallprompt` se dispara **una sola vez** y suele llegar antes de que
+  React monte nada, así que un `useEffect` llega tarde; y un listener que muriera
+  con su componente perdería el aviso al salir del Dashboard, dejando la
+  aplicación sin forma de instalarse hasta la siguiente visita. Hay un test que
+  fija justo eso.
+- **`preventDefault()` sobre el aviso.** Sin él Chromium enseña su propia barra
+  cuando le parece, y el momento deja de decidirlo la aplicación.
+- **Se ofrece en dos sitios y con distinto tono:** una sección permanente en
+  **Ajustes**, que contesta los cuatro casos —incluido «ya está instalada», que
+  es a lo que se entra a Ajustes—, y un aviso **una sola vez** en el Dashboard,
+  que al descartarse no vuelve (`nexus.install-dismissed`).
+- **El aviso del Dashboard sólo sale cuando hay un botón que instala de verdad.**
+  En iOS habría que explicar dos toques que el usuario tendría que recordar
+  mientras cierra el aviso: eso estorba, y su sitio es Ajustes.
+- **iOS se explica, no se promete.** Safari no ofrece instalar por código, así
+  que allí se describen los dos toques reales (Compartir → «Añadir a inicio»).
+  Se detecta también el iPad de iPadOS 13+, que se hace pasar por un Mac y sólo
+  lo delata la pantalla táctil.
+
 ### Notificaciones
 
-- **Ayudan, no molestan.** Prioridad: agua, entrenamientos, hábitos, estudio.
-- Nada de notificaciones repetitivas. El usuario **controla completamente** su
-  configuración (`user_preferences`).
-- Canales: `in_app` y `push` (ver enum en [04](./04-modelo-de-datos.md)).
+**Aplazadas a propósito** ([ADR-0008](./adr/0008-notificaciones-aplazadas.md)).
+Lo que aquí se describía son **recordatorios a una hora**, y en la web eso sólo
+se consigue con **Web Push**: tabla de suscripciones, claves VAPID, una Edge
+Function que envíe y un programador (`pg_cron`) que decida a quién le toca. Es un
+subsistema de servidor, no el remate de un sprint de PWA. La alternativa que
+parece funcionar —`setTimeout` en la página— sólo avisa con la aplicación
+abierta, o sea a quien ya está mirándola.
+
+Por eso `user_preferences.notifications_enabled`, `reminder_times` y la tabla
+`notifications` **siguen sin usarse**: están previstas, no olvidadas. Cuando el
+requisito aparezca de verdad, entra como sprint propio y con estos principios
+intactos: ayudan y no molestan, prioridad para agua, entrenamientos, hábitos y
+estudio, y el usuario controla su configuración.
 
 ### Compatibilidad
 
@@ -123,7 +158,9 @@ abriendo**.
 
 ## Definición de "Hecho" de esta capa
 
-- Registrar datos sin conexión y verlos reflejados de inmediato.
-- Sincronizar al reconectar **sin pérdida** de datos ni duplicados.
+- Registrar datos sin conexión y verlos reflejados de inmediato. _(Sprint 14,
+  parado a propósito: sólo se hizo la caché persistente.)_
+- Sincronizar al reconectar **sin pérdida** de datos ni duplicados. _(Ídem.)_
 - App instalable, con app shell disponible offline y actualizaciones avisadas.
-- Notificaciones configurables y no intrusivas.
+  **Hecho.**
+- Notificaciones configurables y no intrusivas. _(Aplazado, ADR-0008.)_

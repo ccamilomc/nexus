@@ -1,3 +1,5 @@
+import { InstallBanner } from '@/app/layout/InstallBanner'
+
 import { DomainSummary } from '../components/DomainSummary'
 import { QuickActions } from '../components/QuickActions'
 import { useDashboard } from '../hooks/use-dashboard'
@@ -14,6 +16,9 @@ export function DashboardPage() {
           {name ? `, ${name}` : ''}
         </h1>
       </header>
+
+      {/* Tras el saludo y no encima: se ofrece, no se interrumpe. */}
+      <InstallBanner />
 
       <QuickActions />
       <DomainSummary />

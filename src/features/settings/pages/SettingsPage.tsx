@@ -1,5 +1,6 @@
 import { LogOut } from 'lucide-react'
 
+import { InstallCard } from '@/app/layout/InstallCard'
 import { useAuth } from '@/core/auth'
 import { ThemeToggle } from '@/core/theme'
 import { EmptyState } from '@/shared/components/feedback'
@@ -11,7 +12,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Ajustes" description="Preferencias, objetivos y notificaciones." />
+      <PageHeader title="Ajustes" description="Tu cuenta, la apariencia y la instalación." />
 
       <div className="space-y-4">
         <section
@@ -51,10 +52,9 @@ export function SettingsPage() {
           </div>
         </section>
 
-        <EmptyState
-          title="Más ajustes en camino"
-          description="Perfil y objetivos llegan pronto; las notificaciones, con el Sprint 15."
-        />
+        <InstallCard />
+
+        <EmptyState title="Más ajustes en camino" description="Perfil y objetivos llegan pronto." />
       </div>
     </>
   )
