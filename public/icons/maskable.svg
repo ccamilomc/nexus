@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!--
+    Variante «maskable» del icono: Android la recorta con la forma que decida el
+    lanzador (círculo, cuadrado redondeado…). Dos diferencias con el favicon:
+
+    1. El fondo va **a sangre**, sin esquinas redondeadas. Las pone la máscara;
+       si las trajera el icono se verían dos redondeos, uno dentro de otro.
+    2. La N se queda dentro de la **zona segura** (el 80 % central). Va de 10 a
+       22 sobre 32, o sea del 31 % al 69 %: sobrevive a cualquier recorte.
+  -->
+  <rect width="32" height="32" fill="#09090b" />
+  <path d="M10 22V10h2.2l7.6 8.2V10H22v12h-2.2L12.2 13.8V22H10Z" fill="#fafafa" />
+</svg>

@@ -73,6 +73,41 @@ controladas y notificaciones útiles.
 | **Instalación**     | Prompt de instalación (A2HS) con buen momento y UX.                  |
 | **Actualizaciones** | Aviso al usuario cuando hay versión nueva; recarga controlada.       |
 
+### Cómo está implementado
+
+Se usa **`vite-plugin-pwa`** (Workbox por debajo) como dependencia de desarrollo:
+genera el service worker y el manifiesto en el build, sin código de service
+worker escrito a mano —que es donde viven los errores difíciles de este terreno—
+y sin peso extra en el bundle de producción.
+
+- **`registerType: 'prompt'`.** La versión nueva **no se aplica sola**: se avisa
+  y decide el usuario (`UpdatePrompt`). Recargar por sorpresa a media serie en el
+  gimnasio se lleva por delante lo que estuviera haciendo.
+- **El registro vive en la raíz** (`main.tsx`), no en el cascarón. El cascarón
+  sólo se monta con sesión iniciada, así que registrarlo ahí dejaba sin service
+  worker a quien aún no ha entrado — justo el caso que permite abrir sin señal.
+  Se descubrió probando el build servido, donde la primera pantalla es `/entrar`.
+- **Nada de interceptar las llamadas a Supabase.** El service worker cachea el
+  cascarón; los datos los guarda la caché de TanStack Query
+  ([ADR-0007](./adr/0007-cache-persistente-en-localstorage.md)), que se borra al
+  cerrar sesión. Servir datos de salud caducados desde el service worker sería
+  saltarse esa garantía.
+- **Desactivado en desarrollo** (`devOptions.enabled: false`): un service worker
+  cacheando mientras se programa hace perder horas persiguiendo cambios que sí
+  estaban.
+
+**Iconos.** El manifiesto declara un PNG de 192 y el SVG para los tamaños
+grandes, que escala sin perder nitidez y evita arrastrar más binarios; más una
+variante `maskable` (fondo a sangre y la N dentro de la zona segura del 80 %).
+iOS ignora el manifiesto, así que su icono va como `apple-touch-icon` en el
+`index.html` y **tiene que ser PNG**. Si algún día el splash de Android pide un
+PNG de 512, se genera desde `favicon.svg` con un `<canvas>` (`drawImage` sobre un
+lienzo del tamaño deseado y `toDataURL('image/png')`), sin añadir dependencias.
+
+**Comprobado de punta a punta:** con el build servido, el service worker queda
+activo con 36 ficheros cacheados, y **apagando el servidor la aplicación sigue
+abriendo**.
+
 ### Notificaciones
 
 - **Ayudan, no molestan.** Prioridad: agua, entrenamientos, hábitos, estudio.
