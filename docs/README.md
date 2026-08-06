@@ -1,8 +1,8 @@
 # Documentación técnica — Nexus
 
-> **Estado:** Sprints 0–13 terminados: los seis dominios completos, con analíticas, y el Decision Engine con sus tres reglas insignia y el plan del día. Pendiente del 13: la capa `assistant` (IA). Siguiente: Sprint 14 (offline-first).
+> **Estado:** Sprints 0–13 terminados: los seis dominios completos, con analíticas, y el Decision Engine con sus tres reglas insignia y el plan del día. Pendiente del 13: la capa `assistant` (IA). El **14 (offline)** está parado a propósito —sólo se hizo la caché persistente ([ADR-0007](./adr/0007-cache-persistente-en-localstorage.md))— y el **15 (PWA)** está terminado sin las notificaciones ([ADR-0008](./adr/0008-notificaciones-aplazadas.md)). Siguiente: Sprint 16 (optimización y calidad).
 > **Versión del diseño:** 1.0
-> **Fecha:** 2026-08-01
+> **Fecha:** 2026-08-05
 
 Esta carpeta es la **fuente de verdad** de la arquitectura de Nexus. La regla es
 absoluta: **la documentación existe antes que el código** y nunca puede quedar

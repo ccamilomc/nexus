@@ -21,3 +21,4 @@ decisión tomada, sus consecuencias y las alternativas descartadas.
 | [0005](./0005-multiusuario-desde-el-diseno.md)      | Multiusuario desde el diseño (RLS + user_id)         | Aceptado |
 | [0006](./0006-analytics-agrega-en-el-cliente.md)    | Analytics agrega en el cliente, no en vistas SQL     | Aceptado |
 | [0007](./0007-cache-persistente-en-localstorage.md) | La caché se persiste en `localStorage`               | Aceptado |
+| [0008](./0008-notificaciones-aplazadas.md)          | Las notificaciones se aplazan hasta que haya push    | Aceptado |

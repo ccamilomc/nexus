@@ -162,6 +162,19 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
   notificaciones. Compatibilidad Android e iOS.
 - **DoD:** instalable, funciona offline lo esencial, actualizaciones controladas.
 
+> **Terminado sin las notificaciones.** La aplicación se instala y abre con el
+> servidor apagado; la versión nueva se avisa y la aplica el usuario, no una
+> recarga por sorpresa. El ofrecimiento de instalar sale una sola vez en el
+> Dashboard y vive permanente en Ajustes, que además explica los dos toques que
+> pide iOS.
+>
+> Las **notificaciones** quedan aplazadas
+> ([ADR-0008](./adr/0008-notificaciones-aplazadas.md)): lo que se pedía son
+> recordatorios a una hora, y en la web eso es **Web Push** —claves VAPID, Edge
+> Function y un programador en el servidor—, un sprint propio. Lo que se podía
+> hacer sin eso, o avisa sólo a quien ya está mirando la pantalla, o duplica lo
+> que el Decision Engine ya dice.
+
 ### Sprint 16 — Fase 16 · Optimización y calidad · **M**
 
 - Code splitting, lazy loading, memoización con evidencia, imágenes, bundles.

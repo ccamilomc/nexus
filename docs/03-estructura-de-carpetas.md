@@ -61,7 +61,7 @@ nexus/
 │   │   │   └── feedback/          # Estados de UI: EmptyState, Skeleton,
 │   │   │                          # LoadFailure, FormAlert
 │   │   ├── hooks/                 # Hooks genéricos (useElapsedSeconds,
-│   │   │                          # useSeriesQuery)
+│   │   │                          # useSeriesQuery, useInstallPrompt)
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas (fechas, series,
 │   │   │                          # formatos) con sus tipos al lado
