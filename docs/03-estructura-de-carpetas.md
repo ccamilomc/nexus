@@ -65,7 +65,7 @@ nexus/
 │   │   ├── lib/                   # Utilidades de terceros configuradas (cn, dates)
 │   │   ├── utils/                 # Funciones puras genéricas (fechas, series,
 │   │   │                          # formatos) con sus tipos al lado
-│   │   └── constants/             # Constantes transversales (aún sin usar)
+│   │   └── constants/             # Constantes transversales (WIDE_TAP_AREA)
 │   │
 │   └── styles/                    # CSS global, Tailwind base, tokens
 │

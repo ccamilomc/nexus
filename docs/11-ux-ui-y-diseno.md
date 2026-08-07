@@ -108,7 +108,15 @@ objetivos, con celebraciones **discretas**. Nunca presión ni patrones oscuros.
 
 ## Accesibilidad
 
-Requisito, no opcional (detalle transversal aquí; auditoría en Sprint 16):
+Requisito, no opcional. **Auditada en el Sprint 16** sobre las diez pantallas,
+con formularios abiertos y a 320 px: sin campos sin etiqueta, sin controles sin
+nombre, sin referencias ARIA rotas, sin ids duplicados, sin saltos en la
+jerarquía de encabezados, un único `h1` por pantalla y `lang`/`main` en su sitio.
+El **foco visible** se comprobó con `Tab` de verdad —no con `focus()`, que no
+activa `:focus-visible` y da falsos negativos— en 14 elementos seguidos: contorno
+de 2 px y anillo en todos. Lo único que salió fueron **objetivos táctiles cortos**
+(los enlaces «Abrir» del dashboard, de 20 px, y los «Ver …» de Analytics, de 16),
+corregidos con `WIDE_TAP_AREA`.
 
 - Navegable **por teclado**; **foco visible** en todo elemento interactivo.
 - `labels`, `roles` y ARIA cuando corresponda.
@@ -119,9 +127,17 @@ Requisito, no opcional (detalle transversal aquí; auditoría en Sprint 16):
   - En filas densas, el tamaño **visual** puede ser menor (32 px) siempre que el
     área pulsable llegue a 44 px: para eso está la variante `iconSm` del
     `Button`, que la amplía con un pseudo-elemento invisible.
+  - En **enlaces de texto** (los «Abrir» del dashboard, los «Ver …» de
+    Analytics) se usa la misma idea con otra forma: `WIDE_TAP_AREA`
+    (`shared/constants`) cubre todo el ancho y sólo corrige el alto, que es lo
+    que se queda corto en una línea de texto. Estirarlos de verdad abriría un
+    hueco donde el diseño pedía una línea.
   - En **controles adyacentes** (p. ej. el selector de tema) no se usa esa
     técnica: las áreas se solaparían y se pulsaría el botón equivocado. Ahí los
-    controles se agrandan de verdad.
+    controles se agrandan de verdad. Al aplicarla hay que **comprobar que no
+    choca** con otro control: se hace con `elementFromPoint` a ±21 px del centro,
+    llevando antes el elemento al centro de la pantalla (fuera del viewport
+    devuelve `null` y parece un fallo que no existe).
   - Cuando ni así caben, se documenta el porqué: los siete días del
     mini-calendario de hábitos miden **36 px** porque a 44 no entran en una
     pantalla de 320 px. Siguen por encima del mínimo de WCAG 2.2 (24 px) y

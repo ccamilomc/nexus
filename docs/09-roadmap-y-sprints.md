@@ -181,6 +181,23 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 - Testing donde aporta, auditoría de accesibilidad, SEO básico, performance.
 - **DoD:** métricas de rendimiento y accesibilidad en verde; sin regresiones.
 
+> **Accesibilidad: auditada y corregida.** Ver [11 · UX/UI](./11-ux-ui-y-diseno.md#accesibilidad).
+> Lo único que salió fueron objetivos táctiles cortos.
+>
+> **Rendimiento: medido, y de momento sin tocar nada.** El troceado por ruta ya
+> estaba hecho y Recharts (384 KB) vive aislado en la ruta de Analytics, así que
+> la primera visita son **193 KB gzip en 4 peticiones**; después el service
+> worker sirve todo. Los formateadores `Intl` ya se construyen una sola vez y las
+> animaciones de las gráficas ya estaban apagadas. El aviso del build sobre los
+> 500 KB va sobre el tamaño **sin comprimir**; la cifra honesta son 176 KB gzip.
+>
+> **Un pendiente con evidencia a medias:** cambiar Analytics a 90 días bloquea el
+> hilo **2.774 ms** (la peor tarea, 700 ms) sin ninguna petición de red — es
+> cálculo y pintado. Pero está medido **en desarrollo**, donde React va sin
+> minimizar y `StrictMode` renderiza dos veces; el build servido no se puede
+> medir porque exige una sesión real. No se optimiza sobre esa cifra: por
+> [CLAUDE.md](../CLAUDE.md) se optimiza con evidencia, y ésta no lo es todavía.
+
 ### Sprint 17 — Fase 17 · Revisión final y Release 1.0 · **M**
 
 - Eliminar código muerto/duplicado y deuda técnica, revisar arquitectura,
