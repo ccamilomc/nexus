@@ -22,6 +22,7 @@ export function calculateTotals(
 ): FinanceTotals {
   let income = 0
   let expense = 0
+  let fixedExpense = 0
 
   for (const transaction of transactions) {
     // **Los traspasos no cuentan.** Pasar dinero de efectivo a Nequi no es
@@ -30,11 +31,18 @@ export function calculateTotals(
     // ser cierto en cuanto tuvieras dos cuentas.
     if (transaction.kind === 'transfer') continue
 
-    if (transaction.kind === 'income') income += transaction.amount
-    else expense += transaction.amount
+    if (transaction.kind === 'income') {
+      income += transaction.amount
+      continue
+    }
+
+    expense += transaction.amount
+    // Lo fijo **no se resta** del gasto: es una parte de él, contada aparte
+    // para poder decir cuánto de lo que sale ya estaba decidido.
+    if (transaction.recurring_id !== null) fixedExpense += transaction.amount
   }
 
-  return { income, expense, balance: income - expense }
+  return { income, expense, fixedExpense, balance: income - expense }
 }
 
 /**

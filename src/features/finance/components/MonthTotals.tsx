@@ -25,6 +25,7 @@ const TOP_CATEGORIES = 5
  */
 export function MonthTotals({ totals, byCategory }: MonthTotalsProps) {
   const isNegative = totals.balance < 0
+  const variableExpense = totals.expense - totals.fixedExpense
   const visible = byCategory.slice(0, TOP_CATEGORIES)
   const rest = byCategory.slice(TOP_CATEGORIES)
   const restAmount = rest.reduce((sum, category) => sum + category.amount, 0)
@@ -32,10 +33,23 @@ export function MonthTotals({ totals, byCategory }: MonthTotalsProps) {
   return (
     <Card>
       <CardContent className="space-y-5 p-5">
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <Figure label="Gastado" value={formatCop(totals.expense)} />
-          <Figure label="Ingresado" value={formatCop(totals.income)} />
-          <Figure label="Balance" value={formatCop(totals.balance)} isNegative={isNegative} />
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+            <Figure label="Gastado" value={formatCop(totals.expense)} />
+            <Figure label="Ingresado" value={formatCop(totals.income)} />
+            <Figure label="Balance" value={formatCop(totals.balance)} isNegative={isNegative} />
+          </div>
+
+          {/* Separar lo que se repite de lo que se decide cada día es lo que
+              deja ver sobre cuánto se manda de verdad. Sólo se dice cuando hay
+              fijos: si no, sería una línea que siempre dice cero. */}
+          {totals.fixedExpense > 0 ? (
+            <p className="text-xs text-muted-foreground">
+              De lo gastado, <span className="tabular-nums">{formatCop(totals.fixedExpense)}</span>{' '}
+              son fijos y <span className="tabular-nums">{formatCop(variableExpense)}</span> los
+              decidiste sobre la marcha.
+            </p>
+          ) : null}
         </div>
 
         {byCategory.length > 0 ? (

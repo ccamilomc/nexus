@@ -64,6 +64,15 @@ export interface FinanceTransactionWithNames extends FinanceTransaction {
 export interface FinanceTotals {
   readonly income: number
   readonly expense: number
+  /**
+   * Cuánto del gasto vino de un pago fijo.
+   *
+   * Es parte de `expense`, no se suma aparte: separar lo que se repite de lo
+   * que se decide cada día es lo que deja ver **sobre cuánto se manda de
+   * verdad**. Un mes con $2.000.000 gastados no se parece en nada si $1.800.000
+   * son arriendo y servicios.
+   */
+  readonly fixedExpense: number
   /** Ingresos menos gastos. Puede ser negativo, y eso es un dato. */
   readonly balance: number
 }

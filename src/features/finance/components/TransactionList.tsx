@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+import { Pencil, Repeat } from 'lucide-react'
 
 import { EmptyState } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
@@ -56,10 +56,17 @@ export function TransactionList({ transactions, onEdit, editingId }: Transaction
               )}
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium">
+                <p className="flex items-center gap-1.5 truncate text-sm font-medium">
                   {transaction.kind === 'transfer'
                     ? 'Traspaso'
                     : (transaction.category?.name ?? UNCATEGORISED_LABEL)}
+
+                  {/* Los que salieron de un pago fijo se marcan: en una lista
+                      larga hay que poder distinguir lo que ya estaba decidido
+                      de lo que se decidió ese día. */}
+                  {transaction.recurring_id !== null ? (
+                    <Repeat className="h-3 w-3 shrink-0 text-muted-foreground" aria-label="Fijo" />
+                  ) : null}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {formatDay(transaction.occurred_on)}
