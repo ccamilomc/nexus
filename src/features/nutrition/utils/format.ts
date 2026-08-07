@@ -5,21 +5,9 @@ import type { FoodRef } from '../types/nutrition.types'
 const integerFormatter = new Intl.NumberFormat('es', { maximumFractionDigits: 0 })
 const decimalFormatter = new Intl.NumberFormat('es', { maximumFractionDigits: 1 })
 
-/**
- * Precios en pesos colombianos.
- *
- * Sin decimales a propósito: el peso no tiene centavos en circulación, así que
- * mostrar «$ 12.500,00» sería ruido.
- */
-const copFormatter = new Intl.NumberFormat('es-CO', {
-  style: 'currency',
-  currency: 'COP',
-  maximumFractionDigits: 0,
-})
-
-export function formatCop(amount: number): string {
-  return copFormatter.format(amount)
-}
+// `formatCop` se mudó a `shared/utils`: el dinero dejó de ser cosa sólo de
+// nutrición cuando llegó finanzas. Se reexporta para no tocar a sus llamadores.
+export { formatCop } from '@/shared/utils'
 
 /** A partir de un litro se habla en litros: nadie dice «tomé 1750 mililitros». */
 const ML_PER_LITER = 1000

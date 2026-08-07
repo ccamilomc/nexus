@@ -6,6 +6,7 @@ import {
   Moon,
   Repeat,
   UtensilsCrossed,
+  Wallet,
 } from 'lucide-react'
 
 import { ROUTES } from '@/app/router/routes'
@@ -54,5 +55,11 @@ export const SUMMARY_ITEMS: readonly SummaryItem[] = [
     label: 'Salud',
     Icon: HeartPulse,
     emptyLabel: 'Aún no tienes mediciones.',
+  },
+  {
+    to: ROUTES.finance,
+    label: 'Dinero',
+    Icon: Wallet,
+    emptyLabel: 'Sin movimientos este mes.',
   },
 ]

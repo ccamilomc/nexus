@@ -23,6 +23,7 @@ export const ROUTES = {
   studySubjects: '/estudio/materias',
   sleep: '/sueno',
   health: '/salud',
+  finance: '/dinero',
   analytics: '/analiticas',
   // `assistant` volverá con la capa de IA. Mientras no exista no tiene ruta:
   // una pantalla que promete algo que no llega resta más de lo que suma.
