@@ -32,6 +32,31 @@ importante?, ¿cuál es la siguiente acción? El usuario nunca debería pregunta
 - El tema se implementa en `core/theme`; los componentes consumen tokens, nunca
   valores crudos. Cambiar de tema no debe requerir tocar componentes.
 
+### El color de Nexus es el índigo
+
+`--primary: 255 70% 52%` en claro y `255 85% 68%` en oscuro (más claro, porque
+sobre negro la marca ilumina en vez de rellenar).
+
+**Se eligió por descarte razonado, y por eso no conviene «mejorarlo» sin releer
+esto.** El verde ya significa «bien» (`--success`) y el ámbar «cuidado»
+(`--warning`). Con la marca en cualquiera de los dos, **cada botón parecería un
+juicio** y la interfaz opinaría sin querer, que es justo lo que evita el resto
+del diseño (Salud no opina, las comparativas van en gris). El índigo no colisiona
+con ningún estado.
+
+Contraste **medido en el navegador**, no calculado: 7,36:1 sobre el fondo claro y
+5,09:1 sobre el oscuro, así que sirve también como color de texto
+(`text-primary`) y no sólo de relleno. El texto sobre el botón da 7,05 y 4,93.
+
+Alcanza a `--ring` (el anillo de foco es de la marca) y a `--accent` (los hover
+llevan un punto de color en vez del gris neutro). Lo demás sigue neutro a
+propósito: una aplicación de siete secciones se cansa si todo grita.
+
+**`--chart-4` se movió de 265 a 292** (magenta) al adoptar el índigo: era el
+morado del sueño y quedaba casi idéntico a la marca, con el título índigo de la
+sección justo encima de esa línea. Sigue por encima del 3:1 que pide WCAG para un
+elemento gráfico (5,14:1 en claro, 8,10:1 en oscuro).
+
 ## Sistema visual
 
 | Aspecto            | Regla                                                                            |
