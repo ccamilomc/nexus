@@ -50,7 +50,7 @@ nexus/
 │   │   ├── sleep/
 │   │   ├── health/
 │   │   ├── analytics/
-│   │   ├── assistant/             # Capa de IA (interpretación/explicación)
+│   │   ├── assistant/             # Capa de IA — AÚN NO EXISTE (llega con la IA)
 │   │   └── settings/
 │   │
 │   ├── shared/                    # Reutilizable SIN lógica de negocio

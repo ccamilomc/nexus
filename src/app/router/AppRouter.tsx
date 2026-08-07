@@ -66,9 +66,6 @@ const HealthPage = lazy(async () => ({
 const AnalyticsPage = lazy(async () => ({
   default: (await import('@/features/analytics')).AnalyticsPage,
 }))
-const AssistantPage = lazy(async () => ({
-  default: (await import('@/features/assistant')).AssistantPage,
-}))
 const SettingsPage = lazy(async () => ({
   default: (await import('@/features/settings')).SettingsPage,
 }))
@@ -112,7 +109,6 @@ export function AppRouter() {
             <Route path={ROUTES.sleep} element={<SleepPage />} />
             <Route path={ROUTES.health} element={<HealthPage />} />
             <Route path={ROUTES.analytics} element={<AnalyticsPage />} />
-            <Route path={ROUTES.assistant} element={<AssistantPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />
             <Route path={ROUTES.more} element={<MorePage />} />
             <Route path="*" element={<NotFoundPage />} />
