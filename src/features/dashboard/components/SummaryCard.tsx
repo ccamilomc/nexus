@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 interface SummaryCardProps {
   readonly to: string
@@ -28,9 +30,14 @@ export function SummaryCard({ to, label, Icon, children }: SummaryCardProps) {
       </CardHeader>
       <CardContent>
         {children}
+        {/* Medía 20 px de alto: se falla el toque con prisa. El área sube a 44
+            sin mover nada de sitio. */}
         <Link
           to={to}
-          className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline"
+          className={cn(
+            WIDE_TAP_AREA,
+            'mt-3 inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline',
+          )}
         >
           Abrir
           <ArrowRight className="h-3.5 w-3.5" aria-hidden />

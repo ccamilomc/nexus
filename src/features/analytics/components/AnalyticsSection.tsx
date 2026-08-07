@@ -4,6 +4,8 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 import { LoadFailure, Skeleton } from '@/shared/components/feedback'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 interface AnalyticsSectionProps {
   readonly title: string
@@ -46,9 +48,14 @@ export function AnalyticsSection({
           <Icon className="h-4 w-4" aria-hidden />
           {title}
         </h2>
+        {/* Medía 16 px de alto, lo que da la línea de un `text-xs`. El área
+            pulsable sube a 44 sin engordar la fila del título. */}
         <Link
           to={to}
-          className="inline-flex items-center gap-0.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className={cn(
+            WIDE_TAP_AREA,
+            'inline-flex items-center gap-0.5 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          )}
         >
           Ver {title.toLowerCase()}
           <ChevronRight className="h-3.5 w-3.5" aria-hidden />
