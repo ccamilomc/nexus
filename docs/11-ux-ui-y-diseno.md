@@ -57,6 +57,39 @@ morado del sueño y quedaba casi idéntico a la marca, con el título índigo de
 sección justo encima de esa línea. Sigue por encima del 3:1 que pide WCAG para un
 elemento gráfico (5,14:1 en claro, 8,10:1 en oscuro).
 
+### Superficies y elevación
+
+De fábrica shadcn deja `--background` y `--card` **con el mismo valor**: una
+tarjeta sólo se distinguía del fondo por un borde de 1 px y la aplicación entera
+parecía un documento en vez de una interfaz. Ya no.
+
+- **En claro, el lienzo va tintado y las tarjetas van blancas.** El papel
+  (`250 25% 98%`) está un punto por debajo del blanco, con una gota de la marca,
+  para que lo elevado sea de verdad lo más claro de la pantalla.
+- **En oscuro la profundidad la da la luz, no la sombra.** Una sombra negra sobre
+  un fondo casi negro no se ve. Cada capa que sube se aclara: fondo `5%`, tarjeta
+  `9%`, popover `11%`. Todas con una gota de índigo, para que el gris no sea un
+  gris de sistema operativo.
+- Las sombras (`shadow-card`, `shadow-raised`) salen de variables **porque
+  cambian con el tema**: reales en claro, casi imperceptibles en oscuro. Los
+  componentes escriben `shadow-card`, nunca una sombra a mano.
+
+Contrastes medidos tras el cambio: texto sobre tarjeta 19,9:1 (claro) y 17,5:1
+(oscuro); texto apagado 4,83 y 7,23; la marca sobre tarjeta 7,36 y 4,68. Todos
+sobre el mínimo AA.
+
+### Movimiento
+
+Tres duraciones y una curva, y nada más — el proyecto ya sabe que las escalas
+cortas se respetan y las largas se inventan:
+
+`--duration-fast` (120 ms) · `--duration-base` (200 ms) · `--duration-slow`
+(320 ms) · `--ease-out` (`cubic-bezier(0.16, 1, 0.3, 1)`, sale rápido y frena,
+que es como se mueve algo que responde a un dedo).
+
+En Tailwind son `duration-fast|base|slow` y `ease-out`. Toda animación debe poder
+quitarse sin perder funcionalidad; con `prefers-reduced-motion` se quitan.
+
 ## Sistema visual
 
 | Aspecto            | Regla                                                                            |
