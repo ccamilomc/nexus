@@ -38,7 +38,7 @@ export function TodayPage() {
             <MealSection
               date={today}
               meal={meal}
-              repeatable={repeatable?.get(meal.mealType) ?? null}
+              repeatable={repeatable?.[meal.mealType] ?? null}
             />
           </li>
         ))}

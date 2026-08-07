@@ -89,6 +89,21 @@ export interface RepeatableMeal {
   readonly items: readonly MealLogItemWithFood[]
 }
 
+/**
+ * Lo repetible de cada comida del día.
+ *
+ * **Un objeto plano y no un `Map`, y no es una preferencia de estilo.** Esto
+ * viaja por TanStack Query, y su caché se persiste en `localStorage` con
+ * `JSON.stringify` ([ADR-0007](../../../../docs/adr/0007-cache-persistente-en-localstorage.md)).
+ * Un `Map` no sobrevive a ese viaje: se serializa como `{}` y vuelve como un
+ * objeto pelado, así que al rehidratar la pantalla reventaba llamando a `.get`.
+ *
+ * La regla que deja esto: **todo lo que devuelva una consulta tiene que
+ * sobrevivir a un ida y vuelta por JSON.** Nada de `Map`, `Set`, `Date` ni
+ * instancias de clase.
+ */
+export type RepeatableMeals = Partial<Record<MealType, RepeatableMeal>>
+
 /** La hidratación de un día: cada registro y el total. */
 export interface DayWater {
   readonly logs: readonly WaterLog[]

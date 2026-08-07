@@ -222,7 +222,7 @@ describe('nutritionService.getRepeatableMeals', () => {
   it('sin comidas anteriores no hay nada que repetir', async () => {
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
-    expect(byType.size).toBe(0)
+    expect(Object.keys(byType)).toHaveLength(0)
   })
 
   it('busca sólo en las dos últimas semanas y antes de hoy', async () => {
@@ -242,9 +242,9 @@ describe('nutritionService.getRepeatableMeals', () => {
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
     expect(listRecentMealLogs).toHaveBeenCalledTimes(1)
-    expect(byType.get('lunch')?.items).toHaveLength(1)
-    expect(byType.get('dinner')?.items).toHaveLength(1)
-    expect(byType.get('breakfast')).toBeUndefined()
+    expect(byType.lunch?.items).toHaveLength(1)
+    expect(byType.dinner?.items).toHaveLength(1)
+    expect(byType.breakfast).toBeUndefined()
   })
 
   it('de cada tipo se queda con la más reciente', async () => {
@@ -254,7 +254,7 @@ describe('nutritionService.getRepeatableMeals', () => {
 
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
-    expect(byType.get('lunch')?.items[0]?.meal_log_id).toBe('ayer')
+    expect(byType.lunch?.items[0]?.meal_log_id).toBe('ayer')
   })
 
   it('salta las comidas que quedaron vacías', async () => {
@@ -267,14 +267,31 @@ describe('nutritionService.getRepeatableMeals', () => {
 
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
-    expect(byType.get('lunch')?.items[0]?.meal_log_id).toBe('con-comida')
+    expect(byType.lunch?.items[0]?.meal_log_id).toBe('con-comida')
   })
 
   it('si todas están vacías, no ofrece nada', async () => {
     listRecentMealLogs.mockResolvedValue([mealLog('vacia', 'lunch')])
     listItemsByMealLogs.mockResolvedValue([])
 
-    expect((await nutritionService.getRepeatableMeals(USER_ID, DATE)).size).toBe(0)
+    expect(Object.keys(await nutritionService.getRepeatableMeals(USER_ID, DATE))).toHaveLength(0)
+  })
+
+  it('sobrevive a ida y vuelta por JSON', async () => {
+    // Esto **reventaba la pantalla de Nutrición**. Devolvía un `Map`, y la caché
+    // de TanStack se persiste en `localStorage` con `JSON.stringify` (ADR-0007):
+    // un `Map` se serializa como `{}` y vuelve como un objeto pelado, así que al
+    // rehidratar `.get` ya no existía. Sólo se veía con la caché caliente.
+    //
+    // La regla que fija este test: **todo lo que devuelva una consulta tiene que
+    // sobrevivir a JSON**. Nada de `Map`, `Set`, `Date` ni instancias de clase.
+    listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch')])
+    listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 2)])
+
+    const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
+    const rehidratado: unknown = JSON.parse(JSON.stringify(byType))
+
+    expect(rehidratado).toEqual(byType)
   })
 })
 
