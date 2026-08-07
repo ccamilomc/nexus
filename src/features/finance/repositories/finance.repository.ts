@@ -5,6 +5,7 @@ import type {
   FinanceAccount,
   FinanceCategory,
   FinanceDebt,
+  FinanceRecurring,
   FinanceTransaction,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
@@ -112,6 +113,49 @@ export const financeRepository = {
 
     if (error) throw error
     return data ?? []
+  },
+
+  /** Los pagos fijos vivos, del que antes vence al que más tarda. */
+  async listRecurring(userId: string): Promise<FinanceRecurring[]> {
+    const { data, error } = await supabase
+      .from('finance_recurring')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('next_due_on', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  async insertRecurring(input: TablesInsert<'finance_recurring'>): Promise<FinanceRecurring> {
+    const { data, error } = await supabase
+      .from('finance_recurring')
+      .insert(input)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  /** Mueve un fijo a su siguiente vencimiento, o lo pausa/reanuda. */
+  async updateRecurring(
+    recurringId: string,
+    input: TablesUpdate<'finance_recurring'>,
+  ): Promise<void> {
+    const { error } = await supabase.from('finance_recurring').update(input).eq('id', recurringId)
+
+    if (error) throw error
+  },
+
+  async softDeleteRecurring(recurringId: string): Promise<void> {
+    const { error } = await supabase
+      .from('finance_recurring')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', recurringId)
+
+    if (error) throw error
   },
 
   async insertDebt(input: TablesInsert<'finance_debts'>): Promise<FinanceDebt> {

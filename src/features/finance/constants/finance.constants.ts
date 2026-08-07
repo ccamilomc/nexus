@@ -1,4 +1,15 @@
-import type { FinanceAccountKind, FinanceInterestKind } from '../types/finance.types'
+import type {
+  FinanceAccountKind,
+  FinanceInterestKind,
+  FinanceRecurrence,
+} from '../types/finance.types'
+
+/** Cada cuánto se repite un pago fijo. */
+export const RECURRENCE_LABELS: Readonly<Record<FinanceRecurrence, string>> = {
+  weekly: 'Cada semana',
+  monthly: 'Cada mes',
+  yearly: 'Cada año',
+}
 
 /** Cómo se llama cada tipo de cuenta en pantalla. */
 export const ACCOUNT_KIND_LABELS: Readonly<Record<FinanceAccountKind, string>> = {

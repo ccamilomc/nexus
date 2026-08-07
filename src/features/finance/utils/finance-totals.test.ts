@@ -32,6 +32,7 @@ function movement({
     counterpart_account_id: toAccountId,
     category_id: categoryId,
     debt_id: null,
+    recurring_id: null,
     kind,
     amount,
     occurred_on: '2026-08-07',

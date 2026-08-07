@@ -6,6 +6,7 @@ import type {
   AccountValues,
   CategoryValues,
   DebtValues,
+  RecurringValues,
   TransactionValues,
 } from '../schemas/finance.schema'
 import type {
@@ -15,10 +16,13 @@ import type {
   FinanceCategory,
   FinanceDebt,
   FinanceMonth,
+  FinanceRecurring,
   FinanceTransactionWithNames,
+  RecurringWithStatus,
 } from '../types/finance.types'
 import { calculateDebtBalance } from '../utils/debt-balance'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
+import { daysUntil, nextDueDate } from '../utils/recurrence'
 
 /** Cuántos movimientos recientes se enseñan sin pedir «ver todos». */
 const RECENT_LIMIT = 8
@@ -154,6 +158,104 @@ export const financeService = {
         debt,
         balance: calculateDebtBalance(debt, byDebt.get(debt.id) ?? [], todayKey),
       }))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Los pagos fijos con su estado: cuántos días faltan y si ya toca. */
+  async getRecurring(userId: string, today: Date): Promise<RecurringWithStatus[]> {
+    try {
+      const items = await financeRepository.listRecurring(userId)
+      const todayKey = toDateKey(today)
+
+      return items.map((recurring) => {
+        const daysLeft = daysUntil(recurring.next_due_on, todayKey)
+
+        return {
+          recurring,
+          daysLeft,
+          // Un fijo pausado no vence: se dejó a propósito y avisar de él sería
+          // ruido sobre algo que el usuario ya decidió.
+          isDue: recurring.paused_at === null && daysLeft <= 0,
+        }
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async createRecurring(userId: string, values: RecurringValues): Promise<FinanceRecurring> {
+    try {
+      const [, , day = 1] = values.nextDueOn.split('-').map(Number)
+
+      return await financeRepository.insertRecurring({
+        user_id: userId,
+        name: values.name,
+        kind: values.kind,
+        amount: values.amount,
+        account_id: values.accountId,
+        category_id: values.categoryId,
+        frequency: values.frequency,
+        next_due_on: values.nextDueOn,
+        // El día acordado sale del primer vencimiento. Guardarlo aparte es lo
+        // que evita que un fijo del 31 se quede en el 28 tras pasar por febrero.
+        anchor_day: day,
+        note: values.note?.trim() ? values.note.trim() : null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Confirma que un pago fijo ocurrió: lo apunta y lo mueve al siguiente.
+   *
+   * **Las dos cosas o ninguna sería lo ideal**, pero Supabase no da
+   * transacciones desde el cliente. Se apunta primero el movimiento y sólo
+   * después se avanza la fecha: si falla lo segundo, el fijo vuelve a ofrecerse
+   * y el usuario ve un gasto duplicado que puede quitar. Al revés se perdería un
+   * pago sin rastro, que es peor.
+   */
+  async confirmRecurring(
+    userId: string,
+    item: FinanceRecurring,
+    occurredOn: string,
+  ): Promise<void> {
+    try {
+      await financeRepository.insertTransaction({
+        user_id: userId,
+        account_id: item.account_id,
+        category_id: item.category_id,
+        recurring_id: item.id,
+        kind: item.kind,
+        amount: item.amount,
+        occurred_on: occurredOn,
+        note: item.name,
+      })
+
+      await financeRepository.updateRecurring(item.id, {
+        next_due_on: nextDueDate(item.next_due_on, item.frequency, item.anchor_day),
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Pausa un fijo o lo reanuda. Pausado no vence ni avisa. */
+  async setRecurringPaused(recurringId: string, isPaused: boolean): Promise<void> {
+    try {
+      await financeRepository.updateRecurring(recurringId, {
+        paused_at: isPaused ? new Date().toISOString() : null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async removeRecurring(recurringId: string): Promise<void> {
+    try {
+      await financeRepository.softDeleteRecurring(recurringId)
     } catch (error) {
       throw toAppError(error)
     }

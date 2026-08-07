@@ -12,6 +12,7 @@ interface FinanceTab {
 
 const TABS: readonly FinanceTab[] = [
   { to: ROUTES.finance, label: 'Movimientos', end: true },
+  { to: ROUTES.financeRecurring, label: 'Fijos', end: false },
   { to: ROUTES.financeDebts, label: 'Deudas', end: false },
   { to: ROUTES.financeAccounts, label: 'Cuentas', end: false },
   { to: ROUTES.financeCategories, label: 'Categorías', end: false },
