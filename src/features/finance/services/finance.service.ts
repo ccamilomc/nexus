@@ -24,6 +24,29 @@ function monthRange(date: Date): { readonly fromKey: string; readonly toKey: str
   return { fromKey: toDateKey(from), toKey: toDateKey(to) }
 }
 
+/**
+ * Traduce el formulario a la fila de la base.
+ *
+ * **Limpia lo que no aplica al tipo**, y no es cortesía: la base exige que un
+ * traspaso lleve cuenta destino y no lleve categoría, y que un gasto sea al
+ * revés. Cambiar de tipo en el formulario arrastraría lo elegido antes y la
+ * escritura se rechazaría con un error técnico.
+ */
+function toTransactionRow(values: TransactionValues) {
+  const isTransfer = values.kind === 'transfer'
+
+  return {
+    account_id: values.accountId,
+    counterpart_account_id: isTransfer ? values.toAccountId : null,
+    category_id: isTransfer ? null : values.categoryId,
+    kind: values.kind,
+    amount: values.amount,
+    occurred_on: values.occurredOn,
+    // Una nota vacía es ausencia de nota, no una nota en blanco.
+    note: values.note?.trim() ? values.note.trim() : null,
+  }
+}
+
 /** Reglas de negocio de finanzas. Traduce errores técnicos a `AppError`. */
 export const financeService = {
   async getAccounts(userId: string): Promise<FinanceAccount[]> {
@@ -129,23 +152,23 @@ export const financeService = {
 
   async createTransaction(userId: string, values: TransactionValues): Promise<void> {
     try {
-      const isTransfer = values.kind === 'transfer'
+      await financeRepository.insertTransaction({ user_id: userId, ...toTransactionRow(values) })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
 
-      await financeRepository.insertTransaction({
-        user_id: userId,
-        account_id: values.accountId,
-        // Un traspaso no se gastó en nada, así que no lleva categoría; y sólo
-        // él lleva cuenta destino. La base exige esta forma, pero se limpia
-        // aquí para que cambiar de tipo en el formulario no arrastre lo que se
-        // había elegido antes.
-        counterpart_account_id: isTransfer ? values.toAccountId : null,
-        category_id: isTransfer ? null : values.categoryId,
-        kind: values.kind,
-        amount: values.amount,
-        occurred_on: values.occurredOn,
-        // Una nota vacía es ausencia de nota, no una nota en blanco.
-        note: values.note?.trim() ? values.note.trim() : null,
-      })
+  /**
+   * Corrige un movimiento ya apuntado.
+   *
+   * Se puede cambiar todo, incluido el tipo: un gasto mal clasificado como
+   * ingreso se arregla en el sitio, sin borrarlo y volver a escribirlo. Por eso
+   * `toTransactionRow` limpia lo que no aplica —pasar de gasto a traspaso deja
+   * la categoría atrás— en vez de sólo escribir lo que cambió.
+   */
+  async updateTransaction(transactionId: string, values: TransactionValues): Promise<void> {
+    try {
+      await financeRepository.updateTransaction(transactionId, toTransactionRow(values))
     } catch (error) {
       throw toAppError(error)
     }

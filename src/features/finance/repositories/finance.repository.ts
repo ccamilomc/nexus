@@ -1,4 +1,4 @@
-import { supabase, type TablesInsert } from '@/core/supabase'
+import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   FinanceAccount,
@@ -128,6 +128,18 @@ export const financeRepository = {
 
     if (error) throw error
     return data
+  },
+
+  async updateTransaction(
+    transactionId: string,
+    input: TablesUpdate<'finance_transactions'>,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('finance_transactions')
+      .update(input)
+      .eq('id', transactionId)
+
+    if (error) throw error
   },
 
   /** Borrado lógico: el histórico no se pierde y la sincronización lo entiende. */

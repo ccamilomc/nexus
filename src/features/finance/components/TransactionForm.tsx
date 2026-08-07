@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check } from 'lucide-react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { useToday } from '@/core/time'
@@ -11,13 +12,20 @@ import { Select } from '@/shared/components/ui/select'
 import { cn } from '@/shared/lib/utils'
 import { toDateKey } from '@/shared/utils'
 
-import { useCreateTransaction } from '../hooks/use-finance'
+import { useCreateTransaction, useUpdateTransaction } from '../hooks/use-finance'
 import { transactionSchema, type TransactionValues } from '../schemas/finance.schema'
-import type { FinanceAccount, FinanceCategory } from '../types/finance.types'
+import type {
+  FinanceAccount,
+  FinanceCategory,
+  FinanceTransactionWithNames,
+} from '../types/finance.types'
 
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
   readonly categories: readonly FinanceCategory[]
+  /** El movimiento que se está corrigiendo, o `null` para apuntar uno nuevo. */
+  readonly editing?: FinanceTransactionWithNames | null
+  readonly onFinishEditing?: () => void
 }
 
 const KIND_OPTIONS = [
@@ -35,27 +43,57 @@ const KIND_OPTIONS = [
  * primera, la categoría puede quedarse vacía y la nota es opcional — en el caso
  * corriente sólo hay que escribir el monto y pulsar.
  */
-export function TransactionForm({ accounts, categories }: TransactionFormProps) {
+export function TransactionForm({
+  accounts,
+  categories,
+  editing = null,
+  onFinishEditing,
+}: TransactionFormProps) {
   const today = useToday()
   const create = useCreateTransaction()
+  const update = useUpdateTransaction()
+
+  const blankValues: TransactionValues = {
+    kind: 'expense',
+    amount: Number.NaN,
+    accountId: accounts[0]?.id ?? '',
+    toAccountId: null,
+    categoryId: null,
+    occurredOn: toDateKey(today),
+  }
 
   const {
     register,
     handleSubmit,
     watch,
     setValue,
+    reset,
     resetField,
     formState: { errors, isSubmitting },
   } = useForm<TransactionValues>({
     resolver: zodResolver(transactionSchema),
-    defaultValues: {
-      kind: 'expense',
-      accountId: accounts[0]?.id ?? '',
-      toAccountId: null,
-      categoryId: null,
-      occurredOn: toDateKey(today),
-    },
+    defaultValues: blankValues,
   })
+
+  // Al elegir un movimiento para corregir, el formulario se llena con lo que
+  // tenía. Depende de `editing.id` y no del objeto: los datos se refrescan tras
+  // guardar y un objeto nuevo con el mismo contenido rehaciría el formulario
+  // encima de lo que el usuario estuviera escribiendo.
+  const editingId = editing?.id ?? null
+  useEffect(() => {
+    if (!editing) return
+
+    reset({
+      kind: editing.kind,
+      amount: editing.amount,
+      accountId: editing.account_id,
+      toAccountId: editing.counterpart_account_id,
+      categoryId: editing.category_id,
+      occurredOn: editing.occurred_on,
+      note: editing.note ?? '',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ver el comentario
+  }, [editingId, reset])
 
   const kind = watch('kind')
   const accountId = watch('accountId')
@@ -73,6 +111,21 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
   )
 
   const onSubmit = handleSubmit((values) => {
+    if (editing) {
+      update.mutate(
+        { transactionId: editing.id, values },
+        {
+          // Al terminar de corregir se vuelve a apuntar en limpio: quedarse en
+          // modo edición invitaría a modificar el mismo movimiento otra vez.
+          onSuccess: () => {
+            reset(blankValues)
+            onFinishEditing?.()
+          },
+        },
+      )
+      return
+    }
+
     create.mutate(values, {
       onSuccess: () => {
         // Se vacían **sólo** el monto y la nota, y con `resetField`, que es la
@@ -88,10 +141,15 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
     })
   })
 
+  const pending = create.isPending || update.isPending
+  const failure = create.error ?? update.error
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <fieldset>
-        <legend className="mb-2 text-sm font-medium">¿Qué apuntas?</legend>
+        <legend className="mb-2 text-sm font-medium">
+          {editing ? 'Corrige el movimiento' : '¿Qué apuntas?'}
+        </legend>
         <div className="flex flex-wrap gap-2">
           {visibleKinds.map(({ value, label }) => (
             <Button
@@ -194,12 +252,28 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
         {errors.note ? <FormAlert>{errors.note.message}</FormAlert> : null}
       </div>
 
-      <Button type="submit" disabled={isSubmitting || create.isPending}>
-        <Check aria-hidden />
-        {create.isPending ? 'Guardando…' : 'Apuntar'}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={isSubmitting || pending}>
+          <Check aria-hidden />
+          {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Apuntar'}
+        </Button>
 
-      {create.error ? <FormAlert>{create.error.message}</FormAlert> : null}
+        {editing ? (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => {
+              reset(blankValues)
+              onFinishEditing?.()
+            }}
+          >
+            Cancelar
+          </Button>
+        ) : null}
+      </div>
+
+      {failure ? <FormAlert>{failure.message}</FormAlert> : null}
     </form>
   )
 }

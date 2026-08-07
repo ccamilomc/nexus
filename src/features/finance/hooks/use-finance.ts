@@ -71,6 +71,22 @@ export function useCreateTransaction() {
   })
 }
 
+interface UpdateTransactionVariables {
+  readonly transactionId: string
+  readonly values: TransactionValues
+}
+
+/** Corrige un movimiento ya apuntado. */
+export function useUpdateTransaction() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, UpdateTransactionVariables>({
+    mutationFn: ({ transactionId, values }) =>
+      financeService.updateTransaction(transactionId, values),
+    onSuccess: refresh,
+  })
+}
+
 /** Quita un movimiento apuntado por error. */
 export function useRemoveTransaction() {
   const refresh = useRefreshMovements()
