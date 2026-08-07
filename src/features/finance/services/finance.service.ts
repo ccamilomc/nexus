@@ -129,10 +129,17 @@ export const financeService = {
 
   async createTransaction(userId: string, values: TransactionValues): Promise<void> {
     try {
+      const isTransfer = values.kind === 'transfer'
+
       await financeRepository.insertTransaction({
         user_id: userId,
         account_id: values.accountId,
-        category_id: values.categoryId,
+        // Un traspaso no se gastó en nada, así que no lleva categoría; y sólo
+        // él lleva cuenta destino. La base exige esta forma, pero se limpia
+        // aquí para que cambiar de tipo en el formulario no arrastre lo que se
+        // había elegido antes.
+        counterpart_account_id: isTransfer ? values.toAccountId : null,
+        category_id: isTransfer ? null : values.categoryId,
         kind: values.kind,
         amount: values.amount,
         occurred_on: values.occurredOn,

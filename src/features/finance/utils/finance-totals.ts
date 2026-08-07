@@ -24,6 +24,12 @@ export function calculateTotals(
   let expense = 0
 
   for (const transaction of transactions) {
+    // **Los traspasos no cuentan.** Pasar dinero de efectivo a Nequi no es
+    // gasto ni ingreso: el dinero sigue siendo tuyo, sólo cambió de cajón.
+    // Contarlos inflaría los dos totales y «cuánto gasté este mes» dejaría de
+    // ser cierto en cuanto tuvieras dos cuentas.
+    if (transaction.kind === 'transfer') continue
+
     if (transaction.kind === 'income') income += transaction.amount
     else expense += transaction.amount
   }
@@ -82,8 +88,23 @@ export function calculateAccountBalance(
   transactions: readonly FinanceTransactionWithNames[],
   accountId: string,
 ): number {
-  const ofAccount = transactions.filter((transaction) => transaction.account_id === accountId)
-  const { balance } = calculateTotals(ofAccount)
+  let balance = initialBalance
 
-  return initialBalance + balance
+  for (const transaction of transactions) {
+    const isOrigin = transaction.account_id === accountId
+
+    // Un traspaso sí mueve el saldo de las dos cuentas, aunque no aparezca en
+    // los totales del mes: sale de una y entra en la otra.
+    if (transaction.kind === 'transfer') {
+      if (isOrigin) balance -= transaction.amount
+      else if (transaction.counterpart_account_id === accountId) balance += transaction.amount
+      continue
+    }
+
+    if (!isOrigin) continue
+    if (transaction.kind === 'income') balance += transaction.amount
+    else balance -= transaction.amount
+  }
+
+  return balance
 }

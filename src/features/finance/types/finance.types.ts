@@ -16,6 +16,8 @@ export type FinanceTransaction = Tables<'finance_transactions'>
  */
 export interface FinanceTransactionWithNames extends FinanceTransaction {
   readonly account: { readonly name: string } | null
+  /** La cuenta destino. Sólo en un traspaso. */
+  readonly toAccount: { readonly name: string } | null
   readonly category: { readonly name: string } | null
 }
 

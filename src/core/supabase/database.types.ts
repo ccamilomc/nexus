@@ -255,10 +255,11 @@ export type Database = {
           account_id: string
           amount: number
           category_id: string | null
+          counterpart_account_id: string | null
           created_at: string
           deleted_at: string | null
           id: string
-          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          kind: Database["public"]["Enums"]["finance_transaction_kind"]
           note: string | null
           occurred_on: string
           updated_at: string
@@ -268,10 +269,11 @@ export type Database = {
           account_id: string
           amount: number
           category_id?: string | null
+          counterpart_account_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
-          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          kind: Database["public"]["Enums"]["finance_transaction_kind"]
           note?: string | null
           occurred_on: string
           updated_at?: string
@@ -281,10 +283,11 @@ export type Database = {
           account_id?: string
           amount?: number
           category_id?: string | null
+          counterpart_account_id?: string | null
           created_at?: string
           deleted_at?: string | null
           id?: string
-          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          kind?: Database["public"]["Enums"]["finance_transaction_kind"]
           note?: string | null
           occurred_on?: string
           updated_at?: string
@@ -303,6 +306,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "finance_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_counterpart_account_id_fkey"
+            columns: ["counterpart_account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
             referencedColumns: ["id"]
           },
         ]
@@ -1440,6 +1450,7 @@ export type Database = {
         | "credit_card"
         | "savings"
       finance_entry_kind: "income" | "expense"
+      finance_transaction_kind: "income" | "expense" | "transfer"
       habit_frequency: "daily" | "weekly" | "custom"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       muscle_group:
@@ -1643,6 +1654,7 @@ export const Constants = {
         "savings",
       ],
       finance_entry_kind: ["income", "expense"],
+      finance_transaction_kind: ["income", "expense", "transfer"],
       habit_frequency: ["daily", "weekly", "custom"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       muscle_group: [

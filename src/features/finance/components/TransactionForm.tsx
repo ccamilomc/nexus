@@ -20,6 +20,12 @@ interface TransactionFormProps {
   readonly categories: readonly FinanceCategory[]
 }
 
+const KIND_OPTIONS = [
+  { value: 'expense', label: 'Un gasto' },
+  { value: 'income', label: 'Un ingreso' },
+  { value: 'transfer', label: 'Un traspaso' },
+] as const
+
 /**
  * Registrar un movimiento.
  *
@@ -45,13 +51,26 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
     defaultValues: {
       kind: 'expense',
       accountId: accounts[0]?.id ?? '',
+      toAccountId: null,
       categoryId: null,
       occurredOn: toDateKey(today),
     },
   })
 
   const kind = watch('kind')
-  const visibleCategories = categories.filter((category) => category.kind === kind)
+  const accountId = watch('accountId')
+  const isTransfer = kind === 'transfer'
+  // Un traspaso no tiene categoría: no se gastó en nada.
+  const visibleCategories = isTransfer
+    ? []
+    : categories.filter((category) => category.kind === kind)
+  // A sí misma no se traspasa nada, así que la cuenta origen no se ofrece.
+  const destinations = accounts.filter((account) => account.id !== accountId)
+  // Con una sola cuenta no hay a dónde traspasar: ofrecerlo sería un callejón
+  // sin salida —se elige el tipo y el desplegable de destino sale vacío—.
+  const visibleKinds = KIND_OPTIONS.filter(
+    ({ value }) => value !== 'transfer' || accounts.length > 1,
+  )
 
   const onSubmit = handleSubmit((values) => {
     create.mutate(values, {
@@ -73,21 +92,23 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
     <form onSubmit={onSubmit} className="space-y-4">
       <fieldset>
         <legend className="mb-2 text-sm font-medium">¿Qué apuntas?</legend>
-        <div className="flex gap-2">
-          {(['expense', 'income'] as const).map((option) => (
+        <div className="flex flex-wrap gap-2">
+          {visibleKinds.map(({ value, label }) => (
             <Button
-              key={option}
+              key={value}
               type="button"
-              variant={kind === option ? 'default' : 'outline'}
+              variant={kind === value ? 'default' : 'outline'}
               onClick={() => {
-                setValue('kind', option)
-                // La categoría del otro tipo no aplica: dejarla puesta guardaría
-                // un gasto clasificado como «Salario».
+                setValue('kind', value)
+                // Lo que no aplica al tipo nuevo se limpia: dejarlo puesto
+                // guardaría un gasto clasificado como «Salario», o un traspaso
+                // con la cuenta destino de otro tipo.
                 setValue('categoryId', null)
+                setValue('toAccountId', null)
               }}
-              className={cn('flex-1')}
+              className={cn('min-w-24 flex-1')}
             >
-              {option === 'expense' ? 'Un gasto' : 'Un ingreso'}
+              {label}
             </Button>
           ))}
         </div>
@@ -110,7 +131,7 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <Label htmlFor="finance-account">Cuenta</Label>
+          <Label htmlFor="finance-account">{isTransfer ? 'Desde' : 'Cuenta'}</Label>
           <Select id="finance-account" {...register('accountId')}>
             {accounts.map((account) => (
               <option key={account.id} value={account.id}>
@@ -121,24 +142,44 @@ export function TransactionForm({ accounts, categories }: TransactionFormProps) 
           {errors.accountId ? <FormAlert>{errors.accountId.message}</FormAlert> : null}
         </div>
 
-        <div>
-          <Label htmlFor="finance-category">Categoría</Label>
-          <Select
-            id="finance-category"
-            {...register('categoryId', {
-              // Un `<select>` no sabe de `null`: la opción vacía llega como '' y
-              // aquí se traduce a «sin categoría», que es lo que significa.
-              setValueAs: (value: string) => (value === '' ? null : value),
-            })}
-          >
-            <option value="">Sin categoría</option>
-            {visibleCategories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
-        </div>
+        {isTransfer ? (
+          <div>
+            <Label htmlFor="finance-to-account">Hacia</Label>
+            <Select
+              id="finance-to-account"
+              {...register('toAccountId', {
+                setValueAs: (value: string) => (value === '' ? null : value),
+              })}
+            >
+              <option value="">Elige una cuenta</option>
+              {destinations.map((account) => (
+                <option key={account.id} value={account.id}>
+                  {account.name}
+                </option>
+              ))}
+            </Select>
+            {errors.toAccountId ? <FormAlert>{errors.toAccountId.message}</FormAlert> : null}
+          </div>
+        ) : (
+          <div>
+            <Label htmlFor="finance-category">Categoría</Label>
+            <Select
+              id="finance-category"
+              {...register('categoryId', {
+                // Un `<select>` no sabe de `null`: la opción vacía llega como ''
+                // y aquí se traduce a «sin categoría», que es lo que significa.
+                setValueAs: (value: string) => (value === '' ? null : value),
+              })}
+            >
+              <option value="">Sin categoría</option>
+              {visibleCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
       </div>
 
       <div>

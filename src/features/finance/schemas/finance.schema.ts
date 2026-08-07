@@ -6,22 +6,35 @@ import { z } from 'zod'
  * El importe se pide **entero**: el peso colombiano no tiene centavos en
  * circulación, así que admitir decimales sólo daría ocasión de equivocarse.
  */
-export const transactionSchema = z.object({
-  kind: z.enum(['income', 'expense']),
-  amount: z
-    .number({ message: 'Escribe un monto.' })
-    .int('Los pesos no llevan centavos.')
-    .positive('El monto tiene que ser mayor que cero.')
-    // Diez mil millones: mucho más que cualquier gasto personal, y por debajo
-    // de lo que aguanta la columna. Atrapa el cero de más al teclear.
-    .max(9_999_999_999, 'Ese monto no parece real. Revísalo.'),
-  accountId: z.string().min(1, 'Elige una cuenta.'),
-  // Sin categoría también es válido: obligar a clasificar en el momento haría
-  // que registrar costara más, y lo que no se registra no existe.
-  categoryId: z.string().nullable(),
-  occurredOn: z.string().min(1, 'Elige una fecha.'),
-  note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
-})
+export const transactionSchema = z
+  .object({
+    kind: z.enum(['income', 'expense', 'transfer']),
+    amount: z
+      .number({ message: 'Escribe un monto.' })
+      .int('Los pesos no llevan centavos.')
+      .positive('El monto tiene que ser mayor que cero.')
+      // Diez mil millones: mucho más que cualquier gasto personal, y por debajo
+      // de lo que aguanta la columna. Atrapa el cero de más al teclear.
+      .max(9_999_999_999, 'Ese monto no parece real. Revísalo.'),
+    accountId: z.string().min(1, 'Elige una cuenta.'),
+    /** A dónde va el dinero. Sólo en un traspaso. */
+    toAccountId: z.string().nullable(),
+    // Sin categoría también es válido: obligar a clasificar en el momento haría
+    // que registrar costara más, y lo que no se registra no existe.
+    categoryId: z.string().nullable(),
+    occurredOn: z.string().min(1, 'Elige una fecha.'),
+    note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
+  })
+  // La misma forma que exige la base, dicha aquí para que el error salga en el
+  // campo y no como un fallo del servidor.
+  .refine((values) => values.kind !== 'transfer' || values.toAccountId !== null, {
+    message: 'Elige a qué cuenta va.',
+    path: ['toAccountId'],
+  })
+  .refine((values) => values.kind !== 'transfer' || values.toAccountId !== values.accountId, {
+    message: 'Tiene que ser una cuenta distinta.',
+    path: ['toAccountId'],
+  })
 
 export type TransactionValues = z.infer<typeof transactionSchema>
 

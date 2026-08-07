@@ -53,7 +53,12 @@ export const financeRepository = {
   ): Promise<FinanceTransactionWithNames[]> {
     const { data, error } = await supabase
       .from('finance_transactions')
-      .select('*, account:finance_accounts(name), category:finance_categories(name)')
+      // Las cuentas se incrustan **indicando la columna**: desde que existen los
+      // traspasos hay dos claves foráneas hacia `finance_accounts` (origen y
+      // destino) y sin la pista PostgREST no sabe cuál de las dos quieres.
+      .select(
+        '*, account:finance_accounts!account_id(name), toAccount:finance_accounts!counterpart_account_id(name), category:finance_categories(name)',
+      )
       .eq('user_id', userId)
       .is('deleted_at', null)
       .gte('occurred_on', fromDateKey)

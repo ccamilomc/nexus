@@ -9,11 +9,12 @@ import {
 } from './finance-totals'
 
 interface MovementOptions {
-  readonly kind?: 'income' | 'expense'
+  readonly kind?: 'income' | 'expense' | 'transfer'
   readonly amount: number
   readonly categoryId?: string | null
   readonly categoryName?: string | null
   readonly accountId?: string
+  readonly toAccountId?: string | null
 }
 
 function movement({
@@ -22,11 +23,13 @@ function movement({
   categoryId = 'cat-1',
   categoryName = 'Mercado',
   accountId = 'acc-1',
+  toAccountId = null,
 }: MovementOptions): FinanceTransactionWithNames {
   return {
-    id: `t-${amount}-${categoryId ?? 'sin'}-${kind}`,
+    id: `t-${amount}-${categoryId ?? 'sin'}-${kind}-${accountId}`,
     user_id: 'u-1',
     account_id: accountId,
+    counterpart_account_id: toAccountId,
     category_id: categoryId,
     kind,
     amount,
@@ -36,8 +39,21 @@ function movement({
     updated_at: '2026-08-07T10:00:00Z',
     deleted_at: null,
     account: { name: 'Efectivo' },
+    toAccount: toAccountId === null ? null : { name: 'Nequi' },
     category: categoryName === null ? null : { name: categoryName },
   }
+}
+
+/** Un traspaso: de una cuenta propia a otra. Ni gasto ni ingreso. */
+function transfer(amount: number, from = 'acc-1', to = 'acc-2') {
+  return movement({
+    kind: 'transfer',
+    amount,
+    accountId: from,
+    toAccountId: to,
+    categoryId: null,
+    categoryName: null,
+  })
 }
 
 describe('calculateTotals', () => {
@@ -64,6 +80,15 @@ describe('calculateTotals', () => {
 
   it('sin movimientos, todo en cero', () => {
     expect(calculateTotals([])).toEqual({ income: 0, expense: 0, balance: 0 })
+  })
+
+  it('un traspaso no es gasto ni ingreso', () => {
+    // Pasar dinero de efectivo a Nequi no cambia cuánto tienes ni cuánto
+    // gastaste: el dinero sigue siendo tuyo, sólo cambió de cajón. Contarlo
+    // inflaría los dos totales del mes.
+    const totals = calculateTotals([movement({ amount: 30_000 }), transfer(500_000)])
+
+    expect(totals).toEqual({ income: 0, expense: 30_000, balance: -30_000 })
   })
 })
 
@@ -125,5 +150,14 @@ describe('calculateAccountBalance', () => {
     )
 
     expect(balance).toBe(450_000)
+  })
+
+  it('el traspaso sí mueve el saldo: sale de una cuenta y entra en la otra', () => {
+    // No cuenta en los totales del mes, pero el dinero cambió de sitio de
+    // verdad. Ignorarlo aquí dejaría los dos saldos mal.
+    const movements = [transfer(200_000, 'acc-1', 'acc-2')]
+
+    expect(calculateAccountBalance(500_000, movements, 'acc-1')).toBe(300_000)
+    expect(calculateAccountBalance(0, movements, 'acc-2')).toBe(200_000)
   })
 })

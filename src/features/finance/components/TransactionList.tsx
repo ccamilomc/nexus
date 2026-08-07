@@ -1,6 +1,7 @@
 import { EmptyState } from '@/shared/components/feedback'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
+import { cn } from '@/shared/lib/utils'
 import { formatCop } from '@/shared/utils'
 
 import { useRemoveTransaction } from '../hooks/use-finance'
@@ -42,23 +43,32 @@ export function TransactionList({ transactions }: TransactionListProps) {
             <li key={transaction.id} className="flex items-center gap-3 px-3 py-2.5">
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
-                  {transaction.category?.name ?? UNCATEGORISED_LABEL}
+                  {transaction.kind === 'transfer'
+                    ? 'Traspaso'
+                    : (transaction.category?.name ?? UNCATEGORISED_LABEL)}
                 </p>
                 <p className="truncate text-xs text-muted-foreground">
                   {formatDay(transaction.occurred_on)}
                   {transaction.account ? ` · ${transaction.account.name}` : ''}
+                  {/* En un traspaso importa a dónde fue, no sólo de dónde salió. */}
+                  {transaction.kind === 'transfer' && transaction.toAccount
+                    ? ` → ${transaction.toAccount.name}`
+                    : ''}
                   {transaction.note ? ` · ${transaction.note}` : ''}
                 </p>
               </div>
 
               {/* El signo delante y no el color solo: quien no distingue rojo de
-                  verde tiene que poder leer si entró o salió. */}
+                  verde tiene que poder leer si entró o salió. Un traspaso no
+                  lleva signo, porque no entró ni salió: cambió de cajón. */}
               <span
-                className={`shrink-0 text-sm font-semibold tabular-nums ${
-                  transaction.kind === 'income' ? 'text-success' : ''
-                }`}
+                className={cn(
+                  'shrink-0 text-sm font-semibold tabular-nums',
+                  transaction.kind === 'income' && 'text-success',
+                  transaction.kind === 'transfer' && 'text-muted-foreground',
+                )}
               >
-                {transaction.kind === 'income' ? '+' : '−'}
+                {transaction.kind === 'income' ? '+' : transaction.kind === 'expense' ? '−' : ''}
                 {formatCop(transaction.amount)}
               </span>
 
