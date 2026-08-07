@@ -24,7 +24,8 @@ export const ROUTES = {
   sleep: '/sueno',
   health: '/salud',
   analytics: '/analiticas',
-  assistant: '/asistente',
+  // `assistant` volverá con la capa de IA. Mientras no exista no tiene ruta:
+  // una pantalla que promete algo que no llega resta más de lo que suma.
   settings: '/ajustes',
   more: '/mas',
 } as const

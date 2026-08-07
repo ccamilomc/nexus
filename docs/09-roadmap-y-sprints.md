@@ -142,6 +142,11 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 > pendiente: necesita una Edge Function y la clave de un proveedor, y por
 > [ADR-0003](./adr/0003-ia-como-capa-de-interpretacion.md) la app funciona entera
 > sin ella.
+>
+> **Su pantalla se retiró en el Sprint 16.** Era un cascarón que decía «llega en
+> el Sprint 13» con el Sprint 13 ya cerrado: una habitación vacía con el cartel
+> caducado y una entrada permanente en el menú. La feature, la ruta y la entrada
+> vuelven juntas cuando haya algo detrás.
 
 ### Sprint 14 — Fase 14 · Offline-first y sincronización · **L**
 

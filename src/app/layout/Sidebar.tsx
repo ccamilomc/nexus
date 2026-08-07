@@ -1,47 +1,68 @@
 import { NavLink } from 'react-router-dom'
 
 import { UserMenu } from '@/app/layout/UserMenu'
-import { NAV_ITEMS } from '@/app/router/navigation'
+import { NAV_GROUPS } from '@/app/router/navigation'
 import { ROUTES } from '@/app/router/routes'
-import { ThemeToggle } from '@/core/theme'
 import { cn } from '@/shared/lib/utils'
 
-/** Navegación de escritorio (≥ lg). En móvil se usa `BottomNav`. */
+/**
+ * Navegación de escritorio (≥ lg). En móvil se usa `BottomNav`.
+ *
+ * Las entradas van **agrupadas por área pero todas a un toque**: el encabezado
+ * ordena la vista sin esconder nada detrás de un desplegable. Ver `NAV_GROUPS`.
+ *
+ * Aquí no está el selector de tema. Vivía abajo, ocupando sitio fijo para algo
+ * que se toca dos veces al año, y además **ya estaba en Ajustes**: eran dos
+ * mandos para lo mismo.
+ */
 export function Sidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col border-r border-border bg-card lg:flex">
-      <div className="flex h-16 shrink-0 items-center border-b border-border px-6">
+      <div className="flex h-14 shrink-0 items-center border-b border-border px-6">
         <span className="text-lg font-semibold tracking-tight">Nexus</span>
       </div>
 
       <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto p-3">
-        <ul className="space-y-1">
-          {NAV_ITEMS.map(({ to, label, Icon }) => (
-            <li key={to}>
-              <NavLink
-                to={to}
-                end={to === ROUTES.dashboard}
-                className={({ isActive }) =>
-                  cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-                    isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
-                  )
-                }
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                {label}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        {NAV_GROUPS.map((group, index) => (
+          <div
+            key={group.title ?? `sin-titulo-${index}`}
+            className={index > 0 ? 'mt-4' : undefined}
+          >
+            {group.title ? (
+              <h2 className="px-3 pb-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                {group.title}
+              </h2>
+            ) : null}
+
+            <ul className="space-y-0.5">
+              {group.items.map(({ to, label, Icon }) => (
+                <li key={to}>
+                  <NavLink
+                    to={to}
+                    end={to === ROUTES.dashboard}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium',
+                        'transition-colors duration-fast ease-out',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        isActive
+                          ? 'bg-accent text-accent-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground',
+                      )
+                    }
+                  >
+                    <Icon className="h-4 w-4 shrink-0" aria-hidden />
+                    {label}
+                  </NavLink>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </nav>
 
-      <div className="shrink-0 space-y-3 border-t border-border p-3">
+      <div className="shrink-0 border-t border-border p-3">
         <UserMenu />
-        <ThemeToggle />
       </div>
     </aside>
   )
