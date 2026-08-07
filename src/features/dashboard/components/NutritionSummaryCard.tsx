@@ -6,7 +6,7 @@ import { SummaryLines } from './SummaryLines'
 
 /** Tarjeta de nutrición con lo consumido hoy. */
 export function NutritionSummaryCard({ to, label, Icon, emptyLabel }: SummaryItem) {
-  const { isPending, isEmpty, lines } = useNutritionSummary()
+  const { isPending, isEmpty, lines, progress } = useNutritionSummary()
 
   return (
     <SummaryCard to={to} label={label} Icon={Icon}>
@@ -15,6 +15,7 @@ export function NutritionSummaryCard({ to, label, Icon, emptyLabel }: SummaryIte
         isEmpty={isEmpty}
         emptyLabel={emptyLabel}
         lines={lines}
+        progress={progress}
         loadingLabel="Cargando tu nutrición de hoy"
       />
     </SummaryCard>

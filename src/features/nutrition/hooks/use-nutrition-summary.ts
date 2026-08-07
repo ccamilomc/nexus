@@ -1,4 +1,5 @@
 import { useToday } from '@/core/time'
+import type { DomainSummaryData, SummaryProgress } from '@/shared/types'
 
 import { formatCalories, formatVolumeMl } from '../utils/format'
 import { useActiveGoal, useDayNutrition, useDayWater } from './use-nutrition'
@@ -6,17 +7,12 @@ import { useActiveGoal, useDayNutrition, useDayWater } from './use-nutrition'
 /**
  * Resumen de nutrición para otras pantallas (hoy, el dashboard).
  *
- * Devuelve frases ya formadas, no datos crudos: así el módulo decide **cómo se
- * cuenta lo suyo** y quien lo muestra sólo lo coloca. Es el contrato que evita
- * que el dashboard tenga que conocer macros, metas ni unidades.
+ * Sigue decidiendo **cómo se cuenta lo suyo**: quien lo muestra no sabe de
+ * macros, metas ni unidades. Lo que se lleva y la meta viajan también como
+ * cifras para poder dibujar el avance, pero la palabra y el formato los pone
+ * este módulo.
  */
-export interface NutritionSummary {
-  readonly isPending: boolean
-  /** No hay nada registrado hoy. */
-  readonly isEmpty: boolean
-  /** Frases cortas, listas para mostrar. */
-  readonly lines: readonly string[]
-}
+export type NutritionSummary = DomainSummaryData
 
 /** Con objetivo se dice el avance; sin él, sólo la cifra. */
 function describe(consumed: string, target: string | null): string {
@@ -33,17 +29,38 @@ export function useNutritionSummary(): NutritionSummary {
   const calories = day.data?.totals.calories ?? 0
   const waterMl = water.data?.totalMl ?? 0
 
-  const lines = [
-    describe(
-      formatCalories(calories),
-      goal.data ? formatCalories(goal.data.calories_target) : null,
-    ),
-    describe(formatVolumeMl(waterMl), goal.data ? formatVolumeMl(goal.data.water_ml_target) : null),
-  ]
+  const caloriesText = describe(
+    formatCalories(calories),
+    goal.data ? formatCalories(goal.data.calories_target) : null,
+  )
+  const waterText = describe(
+    formatVolumeMl(waterMl),
+    goal.data ? formatVolumeMl(goal.data.water_ml_target) : null,
+  )
+
+  // Sin objetivo no hay barra que pintar, y las cifras se quedan como frases:
+  // una barra sin meta tendría que inventarse el 100 %.
+  const progress: readonly SummaryProgress[] = goal.data
+    ? [
+        {
+          label: 'Calorías',
+          value: calories,
+          target: goal.data.calories_target,
+          display: caloriesText,
+        },
+        {
+          label: 'Agua',
+          value: waterMl,
+          target: goal.data.water_ml_target,
+          display: waterText,
+        },
+      ]
+    : []
 
   return {
     isPending,
     isEmpty: !isPending && calories === 0 && waterMl === 0,
-    lines,
+    lines: progress.length > 0 ? [] : [caloriesText, waterText],
+    progress,
   }
 }
