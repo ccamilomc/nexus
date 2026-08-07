@@ -20,6 +20,7 @@ import type {
   FinanceCategory,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
+import { AccountField } from './AccountField'
 
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
@@ -199,17 +200,13 @@ export function TransactionForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="finance-account">{isTransfer ? 'Desde' : 'Cuenta'}</Label>
-          <Select id="finance-account" {...register('accountId')}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </Select>
-          {errors.accountId ? <FormAlert>{errors.accountId.message}</FormAlert> : null}
-        </div>
+        <AccountField
+          id="finance-account"
+          label={isTransfer ? 'Desde' : 'Cuenta'}
+          accounts={accounts}
+          registration={register('accountId')}
+          error={errors.accountId?.message}
+        />
 
         {isTransfer ? (
           <div>
