@@ -66,6 +66,9 @@ const HealthPage = lazy(async () => ({
 const FinancePage = lazy(async () => ({
   default: (await import('@/features/finance')).FinancePage,
 }))
+const FinanceDebtsPage = lazy(async () => ({
+  default: (await import('@/features/finance')).DebtsPage,
+}))
 const FinanceAccountsPage = lazy(async () => ({
   default: (await import('@/features/finance')).AccountsPage,
 }))
@@ -118,6 +121,7 @@ export function AppRouter() {
             <Route path={ROUTES.sleep} element={<SleepPage />} />
             <Route path={ROUTES.health} element={<HealthPage />} />
             <Route path={ROUTES.finance} element={<FinancePage />} />
+            <Route path={ROUTES.financeDebts} element={<FinanceDebtsPage />} />
             <Route path={ROUTES.financeAccounts} element={<FinanceAccountsPage />} />
             <Route path={ROUTES.financeCategories} element={<FinanceCategoriesPage />} />
             <Route path={ROUTES.analytics} element={<AnalyticsPage />} />

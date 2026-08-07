@@ -11,15 +11,18 @@ import { MonthPicker } from '../components/MonthPicker'
 import { MonthTotals } from '../components/MonthTotals'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
-import { useAccounts, useCategories, useMonth } from '../hooks/use-finance'
+import { useAccounts, useCategories, useDebts, useMonth } from '../hooks/use-finance'
 
 /** Tus finanzas del mes: qué entró, qué salió y en qué se fue. */
 export function FinancePage() {
   const today = useToday()
   // Qué mes se mira. Arranca en el actual, que es el caso de siempre.
   const [visibleMonth, setVisibleMonth] = useState(today)
+  // Cuál se está corrigiendo. El formulario de arriba hace las dos cosas.
+  const [editingId, setEditingId] = useState<string | null>(null)
   const accounts = useAccounts()
   const categories = useCategories()
+  const debts = useDebts()
   const month = useMonth(visibleMonth)
 
   if (accounts.isPending || month.isPending) {
@@ -53,6 +56,10 @@ export function FinancePage() {
     )
   }
 
+  // Se busca en lo que hay cargado: si el mes cambia y ya no está, la edición
+  // se cae sola en vez de quedar apuntando a algo que no se ve.
+  const editing = month.data?.recent.find(({ id }) => id === editingId) ?? null
+
   return (
     <>
       <PageHeader title="Finanzas" description="Lo que entra, lo que sale y en qué se va." />
@@ -67,11 +74,26 @@ export function FinancePage() {
 
         <Card>
           <CardContent className="p-5">
-            <TransactionForm accounts={accounts.data} categories={categories.data ?? []} />
+            <TransactionForm
+              accounts={accounts.data}
+              categories={categories.data ?? []}
+              debts={debts.data ?? []}
+              editing={editing}
+              onFinishEditing={() => setEditingId(null)}
+            />
           </CardContent>
         </Card>
 
-        <TransactionList transactions={month.data?.recent ?? []} />
+        <TransactionList
+          transactions={month.data?.recent ?? []}
+          editingId={editingId}
+          onEdit={(transaction) => {
+            setEditingId(transaction.id)
+            // El formulario está arriba: sin subir, al pulsar «corregir» no
+            // pasaría nada visible y parecería que el botón no funciona.
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+          }}
+        />
       </div>
     </>
   )

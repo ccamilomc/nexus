@@ -24,6 +24,7 @@ export const ROUTES = {
   sleep: '/sueno',
   health: '/salud',
   finance: '/finanzas',
+  financeDebts: '/finanzas/deudas',
   financeAccounts: '/finanzas/cuentas',
   financeCategories: '/finanzas/categorias',
   analytics: '/analiticas',

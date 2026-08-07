@@ -1,4 +1,7 @@
+import { Pencil } from 'lucide-react'
+
 import { EmptyState } from '@/shared/components/feedback'
+import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { cn } from '@/shared/lib/utils'
@@ -10,6 +13,9 @@ import { UNCATEGORISED_LABEL } from '../utils/finance-totals'
 
 interface TransactionListProps {
   readonly transactions: readonly FinanceTransactionWithNames[]
+  readonly onEdit: (transaction: FinanceTransactionWithNames) => void
+  /** Cuál se está corrigiendo, para señalarlo en la lista. */
+  readonly editingId: string | null
 }
 
 const dayFormatter = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'short' })
@@ -23,7 +29,7 @@ function formatDay(dateKey: string): string {
 }
 
 /** Los últimos movimientos, del más reciente al más antiguo. */
-export function TransactionList({ transactions }: TransactionListProps) {
+export function TransactionList({ transactions, onEdit, editingId }: TransactionListProps) {
   const remove = useRemoveTransaction()
 
   if (transactions.length === 0) {
@@ -40,7 +46,15 @@ export function TransactionList({ transactions }: TransactionListProps) {
       <CardContent className="p-2">
         <ul className="divide-y divide-border">
           {transactions.map((transaction) => (
-            <li key={transaction.id} className="flex items-center gap-3 px-3 py-2.5">
+            <li
+              key={transaction.id}
+              className={cn(
+                'flex items-center gap-3 rounded-md px-3 py-2.5',
+                // El que se está corrigiendo se señala: el formulario está
+                // arriba y sin esto no se sabe cuál de todos se va a cambiar.
+                transaction.id === editingId && 'bg-accent',
+              )}
+            >
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">
                   {transaction.kind === 'transfer'
@@ -71,6 +85,17 @@ export function TransactionList({ transactions }: TransactionListProps) {
                 {transaction.kind === 'income' ? '+' : transaction.kind === 'expense' ? '−' : ''}
                 {formatCop(transaction.amount)}
               </span>
+
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="shrink-0 text-muted-foreground"
+                onClick={() => onEdit(transaction)}
+              >
+                <Pencil aria-hidden />
+                <span className="sr-only">Corregir {formatCop(transaction.amount)}</span>
+              </Button>
 
               <ConfirmButton
                 label="Quitar"

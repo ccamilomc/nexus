@@ -1,8 +1,10 @@
-import { supabase, type TablesInsert } from '@/core/supabase'
+import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
+  DebtPaymentRow,
   FinanceAccount,
   FinanceCategory,
+  FinanceDebt,
   FinanceTransaction,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
@@ -81,6 +83,70 @@ export const financeRepository = {
     return data
   },
 
+  /** Las deudas vivas, de la más reciente a la más antigua. */
+  async listDebts(userId: string): Promise<FinanceDebt[]> {
+    const { data, error } = await supabase
+      .from('finance_debts')
+      .select('*')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .order('started_on', { ascending: false })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Los abonos de todas las deudas del usuario.
+   *
+   * Una consulta para todas y no una por deuda: la pantalla las enseña juntas,
+   * y preguntar deuda por deuda serían tantos viajes como deudas haya.
+   */
+  async listDebtPayments(userId: string): Promise<DebtPaymentRow[]> {
+    const { data, error } = await supabase
+      .from('finance_transactions')
+      .select('debt_id, amount, occurred_on')
+      .eq('user_id', userId)
+      .is('deleted_at', null)
+      .not('debt_id', 'is', null)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  async insertDebt(input: TablesInsert<'finance_debts'>): Promise<FinanceDebt> {
+    const { data, error } = await supabase.from('finance_debts').insert(input).select('*').single()
+
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Borrado lógico de una deuda apuntada por error.
+   *
+   * Los abonos que la señalaban se quedan: eran gastos de verdad y el dinero
+   * salió igual. Lo dice el `on delete set null` de la columna, pero aquí ni
+   * siquiera se llega a borrar la fila.
+   */
+  async softDeleteDebt(debtId: string): Promise<void> {
+    const { error } = await supabase
+      .from('finance_debts')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', debtId)
+
+    if (error) throw error
+  },
+
+  /** Marca una deuda como saldada, o la reabre. */
+  async setDebtSettled(debtId: string, settledAt: string | null): Promise<void> {
+    const { error } = await supabase
+      .from('finance_debts')
+      .update({ settled_at: settledAt })
+      .eq('id', debtId)
+
+    if (error) throw error
+  },
+
   async insertCategory(input: TablesInsert<'finance_categories'>): Promise<FinanceCategory> {
     const { data, error } = await supabase
       .from('finance_categories')
@@ -128,6 +194,18 @@ export const financeRepository = {
 
     if (error) throw error
     return data
+  },
+
+  async updateTransaction(
+    transactionId: string,
+    input: TablesUpdate<'finance_transactions'>,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('finance_transactions')
+      .update(input)
+      .eq('id', transactionId)
+
+    if (error) throw error
   },
 
   /** Borrado lógico: el histórico no se pierde y la sincronización lo entiende. */

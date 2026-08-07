@@ -2,13 +2,22 @@ import { toAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
-import type { AccountValues, CategoryValues, TransactionValues } from '../schemas/finance.schema'
 import type {
+  AccountValues,
+  CategoryValues,
+  DebtValues,
+  TransactionValues,
+} from '../schemas/finance.schema'
+import type {
+  DebtPayment,
+  DebtWithBalance,
   FinanceAccount,
   FinanceCategory,
+  FinanceDebt,
   FinanceMonth,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
+import { calculateDebtBalance } from '../utils/debt-balance'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 
 /** Cuántos movimientos recientes se enseñan sin pedir «ver todos». */
@@ -22,6 +31,31 @@ function monthRange(date: Date): { readonly fromKey: string; readonly toKey: str
   const to = new Date(date.getFullYear(), date.getMonth() + 1, 0)
 
   return { fromKey: toDateKey(from), toKey: toDateKey(to) }
+}
+
+/**
+ * Traduce el formulario a la fila de la base.
+ *
+ * **Limpia lo que no aplica al tipo**, y no es cortesía: la base exige que un
+ * traspaso lleve cuenta destino y no lleve categoría, y que un gasto sea al
+ * revés. Cambiar de tipo en el formulario arrastraría lo elegido antes y la
+ * escritura se rechazaría con un error técnico.
+ */
+function toTransactionRow(values: TransactionValues) {
+  const isTransfer = values.kind === 'transfer'
+
+  return {
+    account_id: values.accountId,
+    counterpart_account_id: isTransfer ? values.toAccountId : null,
+    category_id: isTransfer ? null : values.categoryId,
+    // Un traspaso mueve dinero entre cuentas propias: no abona ninguna deuda.
+    debt_id: isTransfer ? null : values.debtId,
+    kind: values.kind,
+    amount: values.amount,
+    occurred_on: values.occurredOn,
+    // Una nota vacía es ausencia de nota, no una nota en blanco.
+    note: values.note?.trim() ? values.note.trim() : null,
+  }
 }
 
 /** Reglas de negocio de finanzas. Traduce errores técnicos a `AppError`. */
@@ -92,6 +126,89 @@ export const financeService = {
     }
   },
 
+  /**
+   * Las deudas con sus cuentas hechas.
+   *
+   * Los abonos se traen en una sola consulta y se reparten aquí: preguntar
+   * deuda por deuda serían tantos viajes como deudas haya, y agrupar en
+   * TypeScript es el mismo criterio que Analytics ([ADR-0006](../../../../docs/adr/0006-analytics-agrega-en-el-cliente.md)).
+   */
+  async getDebts(userId: string, today: Date): Promise<DebtWithBalance[]> {
+    try {
+      const [debts, payments] = await Promise.all([
+        financeRepository.listDebts(userId),
+        financeRepository.listDebtPayments(userId),
+      ])
+
+      const byDebt = new Map<string, DebtPayment[]>()
+      for (const { debt_id, amount, occurred_on } of payments) {
+        if (!debt_id) continue
+        const list = byDebt.get(debt_id) ?? []
+        list.push({ amount, occurredOn: occurred_on })
+        byDebt.set(debt_id, list)
+      }
+
+      const todayKey = toDateKey(today)
+
+      return debts.map((debt) => ({
+        debt,
+        balance: calculateDebtBalance(debt, byDebt.get(debt.id) ?? [], todayKey),
+      }))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async createDebt(userId: string, values: DebtValues): Promise<FinanceDebt> {
+    try {
+      return await financeRepository.insertDebt({
+        user_id: userId,
+        counterpart: values.counterpart,
+        direction: values.direction,
+        principal: values.principal,
+        interest_kind: values.interestKind,
+        // Sin intereses no hay tasa que guardar, y la base lo exige así.
+        interest_rate: values.interestKind === 'none' ? null : values.interestRate,
+        started_on: values.startedOn,
+        due_on: values.dueOn ?? null,
+        instalments: values.instalments ?? null,
+        note: values.note?.trim() ? values.note.trim() : null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Da una deuda por saldada, o la reabre.
+   *
+   * **Se marca a mano y no cuando los abonos cubren el monto.** Que las cuentas
+   * cuadren no siempre significa que la otra persona la dé por cerrada, y
+   * cerrarla sola dejaría de contar intereses de algo que sigue vivo.
+   */
+  /**
+   * Quita una deuda apuntada por error.
+   *
+   * **No es lo mismo que saldarla:** saldada significa «ya la pagué» y se queda
+   * en el histórico; borrada significa «no existía». Sus abonos siguen siendo
+   * gastos, porque el dinero salió igual.
+   */
+  async removeDebt(debtId: string): Promise<void> {
+    try {
+      await financeRepository.softDeleteDebt(debtId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async setDebtSettled(debtId: string, isSettled: boolean): Promise<void> {
+    try {
+      await financeRepository.setDebtSettled(debtId, isSettled ? new Date().toISOString() : null)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
   async createCategory(userId: string, values: CategoryValues): Promise<FinanceCategory> {
     try {
       return await financeRepository.insertCategory({
@@ -129,23 +246,23 @@ export const financeService = {
 
   async createTransaction(userId: string, values: TransactionValues): Promise<void> {
     try {
-      const isTransfer = values.kind === 'transfer'
+      await financeRepository.insertTransaction({ user_id: userId, ...toTransactionRow(values) })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
 
-      await financeRepository.insertTransaction({
-        user_id: userId,
-        account_id: values.accountId,
-        // Un traspaso no se gastó en nada, así que no lleva categoría; y sólo
-        // él lleva cuenta destino. La base exige esta forma, pero se limpia
-        // aquí para que cambiar de tipo en el formulario no arrastre lo que se
-        // había elegido antes.
-        counterpart_account_id: isTransfer ? values.toAccountId : null,
-        category_id: isTransfer ? null : values.categoryId,
-        kind: values.kind,
-        amount: values.amount,
-        occurred_on: values.occurredOn,
-        // Una nota vacía es ausencia de nota, no una nota en blanco.
-        note: values.note?.trim() ? values.note.trim() : null,
-      })
+  /**
+   * Corrige un movimiento ya apuntado.
+   *
+   * Se puede cambiar todo, incluido el tipo: un gasto mal clasificado como
+   * ingreso se arregla en el sitio, sin borrarlo y volver a escribirlo. Por eso
+   * `toTransactionRow` limpia lo que no aplica —pasar de gasto a traspaso deja
+   * la categoría atrás— en vez de sólo escribir lo que cambió.
+   */
+  async updateTransaction(transactionId: string, values: TransactionValues): Promise<void> {
+    try {
+      await financeRepository.updateTransaction(transactionId, toTransactionRow(values))
     } catch (error) {
       throw toAppError(error)
     }
