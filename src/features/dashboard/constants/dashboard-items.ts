@@ -10,28 +10,10 @@ import {
 
 import { ROUTES } from '@/app/router/routes'
 
-export interface DashboardItem {
+export interface SummaryItem {
   readonly to: string
   readonly label: string
   readonly Icon: LucideIcon
-}
-
-/**
- * Registros frecuentes que **llevan a su pantalla**, porque hay algo que elegir
- * (qué comiste, qué entrenaste).
- *
- * El agua no está aquí: se registra de un toque desde el propio panel, así que
- * la coloca `QuickActions` con su acción.
- */
-export const QUICK_ACTIONS: readonly DashboardItem[] = [
-  { to: ROUTES.workout, label: 'Entreno', Icon: Dumbbell },
-  { to: ROUTES.nutrition, label: 'Comida', Icon: UtensilsCrossed },
-  { to: ROUTES.habits, label: 'Hábito', Icon: Repeat },
-  { to: ROUTES.study, label: 'Estudio', Icon: BookOpen },
-  { to: ROUTES.sleep, label: 'Sueño', Icon: Moon },
-]
-
-export interface SummaryItem extends DashboardItem {
   readonly emptyLabel: string
 }
 

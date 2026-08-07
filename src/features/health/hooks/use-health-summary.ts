@@ -1,3 +1,5 @@
+import type { DomainSummaryData } from '@/shared/types'
+
 import { METRIC_LABELS } from '../constants/health.constants'
 import { formatBmiValue, formatChange, formatValue } from '../utils/format'
 import { useHealthOverview } from './use-health'
@@ -8,12 +10,7 @@ import { useHealthOverview } from './use-health'
  * Devuelve frases ya formadas, no datos crudos: el módulo decide **cómo se
  * cuenta lo suyo** y quien lo muestra sólo lo coloca.
  */
-export interface HealthSummary {
-  readonly isPending: boolean
-  /** Aún no hay ninguna medición. */
-  readonly isEmpty: boolean
-  readonly lines: readonly string[]
-}
+export type HealthSummary = DomainSummaryData
 
 export function useHealthSummary(): HealthSummary {
   const { data, isPending } = useHealthOverview()
@@ -31,5 +28,7 @@ export function useHealthSummary(): HealthSummary {
       ]
     : []
 
-  return { isPending, isEmpty: !isPending && metrics.length === 0, lines }
+  // Sin barra, y no por falta de datos: **Salud no opina**. Dibujar el peso
+  // avanzando hacia una meta convertiría un dato en un reproche.
+  return { isPending, isEmpty: !isPending && metrics.length === 0, lines, progress: [] }
 }

@@ -1,4 +1,5 @@
 import { useToday } from '@/core/time'
+import type { DomainSummaryData } from '@/shared/types'
 import { formatMinutes, toDateKey, toDateKeyFromIso } from '@/shared/utils'
 
 import { useSessionHistory } from './use-session-history'
@@ -10,12 +11,7 @@ import { useSessionHistory } from './use-session-history'
  * cuenta lo suyo** y quien lo muestra sólo lo coloca. Mismo contrato que
  * nutrición, hábitos y estudio.
  */
-export interface WorkoutSummary {
-  readonly isPending: boolean
-  /** No se ha entrenado hoy. */
-  readonly isEmpty: boolean
-  readonly lines: readonly string[]
-}
+export type WorkoutSummary = DomainSummaryData
 
 export function useWorkoutSummary(): WorkoutSummary {
   const today = useToday()
@@ -40,5 +36,7 @@ export function useWorkoutSummary(): WorkoutSummary {
           `${setCount} ${setCount === 1 ? 'serie' : 'series'} · ${formatMinutes(minutes)}`,
         ]
 
-  return { isPending, isEmpty: !isPending && todaySessions.length === 0, lines }
+  // Sin barra: entrenar no tiene una meta diaria contra la que avanzar. Un día
+  // sin gimnasio puede ser justo lo que tocaba.
+  return { isPending, isEmpty: !isPending && todaySessions.length === 0, lines, progress: [] }
 }
