@@ -35,6 +35,8 @@ esquema físico (columnas, tipos, índices, RLS, migraciones) está en
 | `recommendation_type`    | `day_recalculation`, `meal_swap`, `alternative_routine`, `alert`, `insight`                        |
 | `recommendation_status`  | `pending`, `accepted`, `dismissed`, `expired`                                                      |
 | `notification_channel`   | `in_app`, `push`                                                                                   |
+| `finance_account_kind`   | `cash`, `bank`, `wallet`, `credit_card`, `savings`                                                 |
+| `finance_entry_kind`     | `income`, `expense`                                                                                |
 
 ## Mapa de dominios
 
@@ -426,6 +428,55 @@ erDiagram
     profiles ||--o{ body_metrics : registra
     profiles ||--o{ progress_photos : sube
     profiles ||--o{ health_goals : define
+```
+
+## Finance (personal, sin bancos)
+
+Nexus **no se conecta a ningún banco ni mueve dinero**. Es un registro manual: se
+apunta lo que se gasta —hasta un dulce de $800— y el sistema lo ordena, lo suma y
+lo proyecta.
+
+- **finance_accounts**: de dónde sale el dinero (efectivo, Nequi, banco, tarjeta).
+  Son cajones con nombre, no cuentas conectadas. Guardan `initial_balance`; el
+  saldo de hoy **se calcula** sumando los movimientos, como las rachas o los
+  macros.
+- **finance_categories**: catálogo global + personal, igual que `foods` y
+  `exercises`. Cada una es de ingreso o de gasto.
+- **finance_transactions**: cada movimiento (`kind`, `amount`, `occurred_on`,
+  `note`), con su cuenta y su categoría.
+
+### El importe siempre es positivo; la dirección la pone `kind`
+
+Guardar importes con signo invita a un gasto negativo que suma en vez de restar,
+y a que cada consulta tenga que acordarse del criterio. Con `amount > 0` forzado
+por la base y un `kind` que dice si entra o sale, no cabe el caso raro.
+
+### La fecha es un día, no un instante
+
+`occurred_on` es `date`. Un gasto pertenece a un día («el martes gasté 800»), no
+a las 21:04 UTC — el mismo criterio que hábitos y sueño (ver [La fecha es local](#la-fecha-es-local)).
+
+### Por ahora no hay traspasos entre cuentas
+
+Mover dinero de efectivo a Nequi no es ingreso ni gasto, y meterlo como tal
+inflaría los totales del mes. Se deja fuera hasta que haga falta de verdad;
+entrará como un `kind` nuevo con su cuenta destino, sin tocar lo existente.
+
+### El presupuesto de comida sigue en Nutrición, de momento
+
+`nutrition_goals.weekly_food_budget` y el coste por porción **no se tocan en esta
+fase**. La integración —que registrar el mercado alimente macros y gasto a la
+vez— es el motivo por el que finanzas vive dentro de Nexus y no en otra app, pero
+hacerla antes de que el registro básico funcione sería construir el puente antes
+que las orillas.
+
+```mermaid
+erDiagram
+    profiles ||--o{ finance_accounts : posee
+    profiles ||--o{ finance_categories : personaliza
+    profiles ||--o{ finance_transactions : registra
+    finance_accounts ||--o{ finance_transactions : origina
+    finance_categories ||--o{ finance_transactions : clasifica
 ```
 
 ## Inteligencia y comunicación

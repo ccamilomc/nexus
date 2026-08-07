@@ -184,6 +184,25 @@ Columnas comunes omitidas por brevedad en cada tabla:
 **progress_photos** (sync): `user_id`, `storage_path text`, `angle text`, `taken_at timestamptz`, `weight_kg numeric(5,2) null`, `notes null`.
 **health_goals** (sync): `user_id`, `target_weight_kg numeric(5,2) null`, `target_body_fat_pct numeric(4,1) null`, `is_active boolean`, `effective_from date`.
 
+### Finance
+
+**finance_accounts** (sync): `user_id`, `name text`, `kind finance_account_kind`, `initial_balance numeric(12,2)`, `currency text default 'COP'`, `archived_at timestamptz null`.
+**finance_categories** (catálogo global + personal): `user_id null = global`, `name text`, `kind finance_entry_kind`, `archived_at null`.
+**finance_transactions** (sync): `user_id`, `account_id FK restrict`, `category_id FK set null`, `kind finance_entry_kind`, `amount numeric(12,2) check (> 0)`, `occurred_on date`, `note null`.
+
+Tres decisiones que la forma no explica sola:
+
+- **`amount` siempre positivo, forzado por la base.** La dirección la pone
+  `kind`. Con importes con signo cabe un gasto negativo que suma en vez de
+  restar, y cada consulta tendría que acordarse del criterio.
+- **`account_id` es `on delete restrict`.** Borrar una cuenta no puede llevarse
+  por delante el historial de lo que se gastó desde ella; para dejar de verla
+  está `archived_at`. La categoría sí es `set null`: el movimiento sobrevive sin
+  clasificar, que es la verdad.
+- **`numeric(12,2)` y no `(10,2)`** como el resto del dinero del proyecto: los
+  precios por porción son pequeños, pero un arriendo o un salario en pesos
+  colombianos no caben en ocho dígitos enteros.
+
 ### Inteligencia y comunicación
 
 **recommendations** (sync): `user_id`, `type recommendation_type`, `domain plan_item_domain null`, `title text`, `message text`, `reason text`, `data jsonb`, `priority priority`, `status recommendation_status default 'pending'`, `valid_until timestamptz null`.

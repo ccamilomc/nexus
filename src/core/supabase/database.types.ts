@@ -181,6 +181,132 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_accounts: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          currency: string
+          deleted_at: string | null
+          id: string
+          initial_balance: number
+          kind: Database["public"]["Enums"]["finance_account_kind"]
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          initial_balance?: number
+          kind?: Database["public"]["Enums"]["finance_account_kind"]
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          currency?: string
+          deleted_at?: string | null
+          id?: string
+          initial_balance?: number
+          kind?: Database["public"]["Enums"]["finance_account_kind"]
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      finance_categories: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          name: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          name: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          name?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      finance_transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category_id: string | null
+          created_at: string
+          deleted_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          note: string | null
+          occurred_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          note?: string | null
+          occurred_on: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          note?: string | null
+          occurred_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "finance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       foods: {
         Row: {
           brand: string | null
@@ -1307,6 +1433,13 @@ export type Database = {
         | "medicine_ball"
         | "plate"
         | "cardio_machine"
+      finance_account_kind:
+        | "cash"
+        | "bank"
+        | "wallet"
+        | "credit_card"
+        | "savings"
+      finance_entry_kind: "income" | "expense"
       habit_frequency: "daily" | "weekly" | "custom"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
       muscle_group:
@@ -1502,6 +1635,14 @@ export const Constants = {
         "plate",
         "cardio_machine",
       ],
+      finance_account_kind: [
+        "cash",
+        "bank",
+        "wallet",
+        "credit_card",
+        "savings",
+      ],
+      finance_entry_kind: ["income", "expense"],
       habit_frequency: ["daily", "weekly", "custom"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
       muscle_group: [
