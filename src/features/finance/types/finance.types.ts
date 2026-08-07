@@ -6,6 +6,17 @@ export type FinanceDebtDirection = Enums<'finance_debt_direction'>
 export type FinanceInterestKind = Enums<'finance_interest_kind'>
 
 export type FinanceDebt = Tables<'finance_debts'>
+export type FinanceRecurrence = Enums<'finance_recurrence'>
+export type FinanceRecurring = Tables<'finance_recurring'>
+
+/** Un pago fijo con lo que hace falta para decidir si toca ya. */
+export interface RecurringWithStatus {
+  readonly recurring: FinanceRecurring
+  /** Días para el próximo. Negativo si ya venció. */
+  readonly daysLeft: number
+  /** Vencido o vence hoy: es lo que se ofrece confirmar. */
+  readonly isDue: boolean
+}
 
 /** Un abono a una deuda: cuánto y cuándo. Sale de un movimiento real. */
 export interface DebtPayment {

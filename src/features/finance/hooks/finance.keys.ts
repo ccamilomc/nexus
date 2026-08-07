@@ -15,4 +15,8 @@ export const financeKeys = {
   // uno tiene que refrescar también el saldo de la deuda que baja.
   debts: (userId: string | undefined, todayKey: string) =>
     [...financeKeys.movements(), 'debts', userId, todayKey] as const,
+  // También bajo `movements`: confirmar un fijo apunta un movimiento y mueve su
+  // fecha, así que las dos cosas tienen que refrescarse juntas.
+  recurring: (userId: string | undefined, todayKey: string) =>
+    [...financeKeys.movements(), 'recurring', userId, todayKey] as const,
 }

@@ -10,6 +10,7 @@ import type {
   AccountValues,
   CategoryValues,
   DebtValues,
+  RecurringValues,
   TransactionValues,
 } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
@@ -19,6 +20,8 @@ import type {
   FinanceCategory,
   FinanceDebt,
   FinanceMonth,
+  FinanceRecurring,
+  RecurringWithStatus,
 } from '../types/finance.types'
 import { financeKeys } from './finance.keys'
 
@@ -151,6 +154,69 @@ export function useArchiveAccount() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (accountId) => financeService.archiveAccount(accountId),
+    onSuccess: refresh,
+  })
+}
+
+/** Los pagos fijos con su estado a día de hoy. */
+export function useRecurring() {
+  const { user } = useAuth()
+  const today = useToday()
+  const userId = user?.id
+
+  return useQuery<RecurringWithStatus[], AppError>({
+    // El día entra en la clave: «faltan 3 días» cambia al pasar de fecha.
+    queryKey: financeKeys.recurring(userId, toDateKey(today)),
+    queryFn: () => (userId ? financeService.getRecurring(userId, today) : []),
+  })
+}
+
+/** Crea un pago fijo. */
+export function useCreateRecurring() {
+  const { user } = useAuth()
+  const refresh = useRefreshMovements()
+
+  return useMutation<FinanceRecurring, AppError, RecurringValues>({
+    mutationFn: (values) => financeService.createRecurring(requireUserId(user?.id), values),
+    onSuccess: refresh,
+  })
+}
+
+/** Confirma que un fijo se pagó: lo apunta y lo mueve al siguiente. */
+export function useConfirmRecurring() {
+  const { user } = useAuth()
+  const today = useToday()
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, FinanceRecurring>({
+    mutationFn: (item) =>
+      financeService.confirmRecurring(requireUserId(user?.id), item, toDateKey(today)),
+    onSuccess: refresh,
+  })
+}
+
+interface PauseRecurringVariables {
+  readonly recurringId: string
+  readonly isPaused: boolean
+}
+
+/** Pausa un fijo o lo reanuda. */
+export function usePauseRecurring() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, PauseRecurringVariables>({
+    mutationFn: ({ recurringId, isPaused }) =>
+      financeService.setRecurringPaused(recurringId, isPaused),
+    onSuccess: refresh,
+  })
+}
+
+/** Quita un fijo. Los movimientos que ya confirmó se quedan. */
+export function useRemoveRecurring() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (recurringId) => financeService.removeRecurring(recurringId),
     onSuccess: refresh,
   })
 }

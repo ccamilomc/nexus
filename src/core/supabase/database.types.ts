@@ -304,6 +304,75 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_recurring: {
+        Row: {
+          account_id: string
+          amount: number
+          anchor_day: number
+          category_id: string | null
+          created_at: string
+          deleted_at: string | null
+          frequency: Database["public"]["Enums"]["finance_recurrence"]
+          id: string
+          kind: Database["public"]["Enums"]["finance_entry_kind"]
+          name: string
+          next_due_on: string
+          note: string | null
+          paused_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          anchor_day: number
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          frequency?: Database["public"]["Enums"]["finance_recurrence"]
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          name: string
+          next_due_on: string
+          note?: string | null
+          paused_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          anchor_day?: number
+          category_id?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          frequency?: Database["public"]["Enums"]["finance_recurrence"]
+          id?: string
+          kind?: Database["public"]["Enums"]["finance_entry_kind"]
+          name?: string
+          next_due_on?: string
+          note?: string | null
+          paused_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_recurring_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_recurring_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "finance_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finance_transactions: {
         Row: {
           account_id: string
@@ -317,6 +386,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["finance_transaction_kind"]
           note: string | null
           occurred_on: string
+          recurring_id: string | null
           updated_at: string
           user_id: string
         }
@@ -332,6 +402,7 @@ export type Database = {
           kind: Database["public"]["Enums"]["finance_transaction_kind"]
           note?: string | null
           occurred_on: string
+          recurring_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -347,6 +418,7 @@ export type Database = {
           kind?: Database["public"]["Enums"]["finance_transaction_kind"]
           note?: string | null
           occurred_on?: string
+          recurring_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -377,6 +449,13 @@ export type Database = {
             columns: ["debt_id"]
             isOneToOne: false
             referencedRelation: "finance_debts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_recurring_id_fkey"
+            columns: ["recurring_id"]
+            isOneToOne: false
+            referencedRelation: "finance_recurring"
             referencedColumns: ["id"]
           },
         ]
@@ -1519,6 +1598,7 @@ export type Database = {
         | "none"
         | "monthly_on_principal"
         | "monthly_on_balance"
+      finance_recurrence: "weekly" | "monthly" | "yearly"
       finance_transaction_kind: "income" | "expense" | "transfer"
       habit_frequency: "daily" | "weekly" | "custom"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
@@ -1729,6 +1809,7 @@ export const Constants = {
         "monthly_on_principal",
         "monthly_on_balance",
       ],
+      finance_recurrence: ["weekly", "monthly", "yearly"],
       finance_transaction_kind: ["income", "expense", "transfer"],
       habit_frequency: ["daily", "weekly", "custom"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],

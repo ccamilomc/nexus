@@ -14,6 +14,9 @@ interface DebtCardProps {
   readonly onRemove: (debtId: string) => void
 }
 
+/** La tasa, con coma decimal: en español «1,5 %», no «1.5 %». */
+const rateFormatter = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 2 })
+
 const dayFormatter = new Intl.DateTimeFormat('es-CO', {
   day: 'numeric',
   month: 'short',
@@ -97,7 +100,8 @@ export function DebtCard({ item, isBusy, onToggleSettled, onRemove }: DebtCardPr
           // Se dice **cómo** corre, no sólo cuánto: el mismo 2 % da casi el
           // doble de intereses sobre el capital que sobre el saldo.
           <p className="text-xs text-muted-foreground">
-            {debt.interest_rate} % mensual {INTEREST_KIND_LABELS[debt.interest_kind]}
+            {rateFormatter.format(debt.interest_rate)} % mensual{' '}
+            {INTEREST_KIND_LABELS[debt.interest_kind]}
           </p>
         ) : null}
 

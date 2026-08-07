@@ -99,3 +99,21 @@ export const debtSchema = z
   })
 
 export type DebtValues = z.infer<typeof debtSchema>
+
+/** Un pago fijo: el gimnasio, el arriendo, una suscripción. */
+export const recurringSchema = z.object({
+  name: z.string().trim().min(1, 'Ponle un nombre.').max(40, 'El nombre es demasiado largo.'),
+  kind: z.enum(['income', 'expense']),
+  amount: z
+    .number({ message: 'Escribe cuánto.' })
+    .int('Los pesos no llevan centavos.')
+    .positive('Tiene que ser mayor que cero.')
+    .max(9_999_999_999, 'Ese monto no parece real. Revísalo.'),
+  accountId: z.string().min(1, 'Elige una cuenta.'),
+  categoryId: z.string().nullable(),
+  frequency: z.enum(['weekly', 'monthly', 'yearly']),
+  nextDueOn: z.string().min(1, 'Elige cuándo toca el siguiente.'),
+  note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
+})
+
+export type RecurringValues = z.infer<typeof recurringSchema>

@@ -29,6 +29,7 @@ export function DebtForm() {
     register,
     handleSubmit,
     watch,
+    setValue,
     reset,
     formState: { errors, isSubmitting },
   } = useForm<DebtValues>({
@@ -48,16 +49,16 @@ export function DebtForm() {
 
   const onSubmit = handleSubmit((values) => {
     create.mutate(values, {
-      onSuccess: () =>
-        reset({
-          direction: values.direction,
-          interestKind: 'none',
-          interestRate: null,
-          startedOn: toDateKey(today),
-          dueOn: null,
-          instalments: null,
-          counterpart: '',
-        }),
+      onSuccess: () => {
+        // `reset()` **sin argumentos**, que vuelve a los valores por defecto y
+        // vacía todo lo demás. Con un objeto parcial sólo se aplica lo que se
+        // lista y los campos omitidos **conservan lo que había**: así el monto
+        // de la deuda anterior se quedaba puesto en el formulario, listo para
+        // apuntar la siguiente con la cifra equivocada.
+        reset()
+        // Salvo el sentido: quien apunta una deuda suele apuntar otra igual.
+        setValue('direction', values.direction)
+      },
     })
   })
 
