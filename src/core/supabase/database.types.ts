@@ -250,6 +250,60 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_debts: {
+        Row: {
+          counterpart: string
+          created_at: string
+          deleted_at: string | null
+          direction: Database["public"]["Enums"]["finance_debt_direction"]
+          due_on: string | null
+          id: string
+          instalments: number | null
+          interest_kind: Database["public"]["Enums"]["finance_interest_kind"]
+          interest_rate: number | null
+          note: string | null
+          principal: number
+          settled_at: string | null
+          started_on: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          counterpart: string
+          created_at?: string
+          deleted_at?: string | null
+          direction: Database["public"]["Enums"]["finance_debt_direction"]
+          due_on?: string | null
+          id?: string
+          instalments?: number | null
+          interest_kind?: Database["public"]["Enums"]["finance_interest_kind"]
+          interest_rate?: number | null
+          note?: string | null
+          principal: number
+          settled_at?: string | null
+          started_on: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          counterpart?: string
+          created_at?: string
+          deleted_at?: string | null
+          direction?: Database["public"]["Enums"]["finance_debt_direction"]
+          due_on?: string | null
+          id?: string
+          instalments?: number | null
+          interest_kind?: Database["public"]["Enums"]["finance_interest_kind"]
+          interest_rate?: number | null
+          note?: string | null
+          principal?: number
+          settled_at?: string | null
+          started_on?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       finance_transactions: {
         Row: {
           account_id: string
@@ -257,6 +311,7 @@ export type Database = {
           category_id: string | null
           counterpart_account_id: string | null
           created_at: string
+          debt_id: string | null
           deleted_at: string | null
           id: string
           kind: Database["public"]["Enums"]["finance_transaction_kind"]
@@ -271,6 +326,7 @@ export type Database = {
           category_id?: string | null
           counterpart_account_id?: string | null
           created_at?: string
+          debt_id?: string | null
           deleted_at?: string | null
           id?: string
           kind: Database["public"]["Enums"]["finance_transaction_kind"]
@@ -285,6 +341,7 @@ export type Database = {
           category_id?: string | null
           counterpart_account_id?: string | null
           created_at?: string
+          debt_id?: string | null
           deleted_at?: string | null
           id?: string
           kind?: Database["public"]["Enums"]["finance_transaction_kind"]
@@ -313,6 +370,13 @@ export type Database = {
             columns: ["counterpart_account_id"]
             isOneToOne: false
             referencedRelation: "finance_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_transactions_debt_id_fkey"
+            columns: ["debt_id"]
+            isOneToOne: false
+            referencedRelation: "finance_debts"
             referencedColumns: ["id"]
           },
         ]
@@ -1449,7 +1513,12 @@ export type Database = {
         | "wallet"
         | "credit_card"
         | "savings"
+      finance_debt_direction: "i_owe" | "owed_to_me"
       finance_entry_kind: "income" | "expense"
+      finance_interest_kind:
+        | "none"
+        | "monthly_on_principal"
+        | "monthly_on_balance"
       finance_transaction_kind: "income" | "expense" | "transfer"
       habit_frequency: "daily" | "weekly" | "custom"
       meal_type: "breakfast" | "lunch" | "dinner" | "snack"
@@ -1653,7 +1722,13 @@ export const Constants = {
         "credit_card",
         "savings",
       ],
+      finance_debt_direction: ["i_owe", "owed_to_me"],
       finance_entry_kind: ["income", "expense"],
+      finance_interest_kind: [
+        "none",
+        "monthly_on_principal",
+        "monthly_on_balance",
+      ],
       finance_transaction_kind: ["income", "expense", "transfer"],
       habit_frequency: ["daily", "weekly", "custom"],
       meal_type: ["breakfast", "lunch", "dinner", "snack"],
