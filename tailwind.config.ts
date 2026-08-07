@@ -59,6 +59,21 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      // La elevación cambia con el tema (en oscuro casi no hay sombra: la
+      // profundidad la da la luz), así que sale de variables y no de valores
+      // fijos. Los componentes escriben `shadow-card`, no una sombra a mano.
+      boxShadow: {
+        card: 'var(--shadow-card)',
+        raised: 'var(--shadow-raised)',
+      },
+      transitionDuration: {
+        fast: 'var(--duration-fast)',
+        base: 'var(--duration-base)',
+        slow: 'var(--duration-slow)',
+      },
+      transitionTimingFunction: {
+        out: 'var(--ease-out)',
+      },
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
