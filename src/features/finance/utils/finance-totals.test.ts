@@ -15,6 +15,8 @@ interface MovementOptions {
   readonly categoryName?: string | null
   readonly accountId?: string
   readonly toAccountId?: string | null
+  /** Salió de un pago fijo confirmado. */
+  readonly fromRecurring?: boolean
 }
 
 function movement({
@@ -24,6 +26,7 @@ function movement({
   categoryName = 'Mercado',
   accountId = 'acc-1',
   toAccountId = null,
+  fromRecurring = false,
 }: MovementOptions): FinanceTransactionWithNames {
   return {
     id: `t-${amount}-${categoryId ?? 'sin'}-${kind}-${accountId}`,
@@ -32,7 +35,7 @@ function movement({
     counterpart_account_id: toAccountId,
     category_id: categoryId,
     debt_id: null,
-    recurring_id: null,
+    recurring_id: fromRecurring ? 'rec-1' : null,
     kind,
     amount,
     occurred_on: '2026-08-07',
@@ -66,7 +69,12 @@ describe('calculateTotals', () => {
       movement({ amount: 120_000 }),
     ])
 
-    expect(totals).toEqual({ income: 3_000_000, expense: 120_800, balance: 2_879_200 })
+    expect(totals).toEqual({
+      income: 3_000_000,
+      expense: 120_800,
+      fixedExpense: 0,
+      balance: 2_879_200,
+    })
   })
 
   it('el saldo negativo se devuelve tal cual', () => {
@@ -81,7 +89,29 @@ describe('calculateTotals', () => {
   })
 
   it('sin movimientos, todo en cero', () => {
-    expect(calculateTotals([])).toEqual({ income: 0, expense: 0, balance: 0 })
+    expect(calculateTotals([])).toEqual({ income: 0, expense: 0, fixedExpense: 0, balance: 0 })
+  })
+
+  it('separa lo fijo de lo que se decidió sobre la marcha', () => {
+    // Lo fijo es **parte** del gasto, no algo aparte: un mes de dos millones no
+    // se parece en nada si uno ochocientos son arriendo y servicios.
+    const totals = calculateTotals([
+      movement({ amount: 1_800_000, fromRecurring: true }),
+      movement({ amount: 200_000 }),
+    ])
+
+    expect(totals.expense).toBe(2_000_000)
+    expect(totals.fixedExpense).toBe(1_800_000)
+  })
+
+  it('un ingreso fijo no cuenta como gasto fijo', () => {
+    // El salario es el pago fijo más fijo de todos, y no es un gasto.
+    const totals = calculateTotals([
+      movement({ kind: 'income', amount: 3_000_000, fromRecurring: true }),
+    ])
+
+    expect(totals.fixedExpense).toBe(0)
+    expect(totals.income).toBe(3_000_000)
   })
 
   it('un traspaso no es gasto ni ingreso', () => {
@@ -90,7 +120,7 @@ describe('calculateTotals', () => {
     // inflaría los dos totales del mes.
     const totals = calculateTotals([movement({ amount: 30_000 }), transfer(500_000)])
 
-    expect(totals).toEqual({ income: 0, expense: 30_000, balance: -30_000 })
+    expect(totals).toEqual({ income: 0, expense: 30_000, fixedExpense: 0, balance: -30_000 })
   })
 })
 
