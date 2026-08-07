@@ -14,7 +14,7 @@ import type {
   Food,
   MealType,
   NutritionGoal,
-  RepeatableMeal,
+  RepeatableMeals,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
@@ -174,9 +174,9 @@ export function useRepeatableMeals(date: Date) {
   const { user } = useAuth()
   const userId = user?.id
 
-  return useQuery<ReadonlyMap<MealType, RepeatableMeal>, AppError>({
+  return useQuery<RepeatableMeals, AppError>({
     queryKey: nutritionKeys.repeatable(userId, toDateKey(date)),
-    queryFn: () => (userId ? nutritionService.getRepeatableMeals(userId, date) : new Map()),
+    queryFn: () => (userId ? nutritionService.getRepeatableMeals(userId, date) : {}),
   })
 }
 

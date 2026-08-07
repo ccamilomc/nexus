@@ -11,7 +11,7 @@ import type {
   MealType,
   NutritionGoal,
   NutritionPeriodSeries,
-  RepeatableMeal,
+  RepeatableMeals,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
@@ -178,10 +178,7 @@ export const nutritionService = {
    * las dos últimas semanas: lo que se comió hace tres meses no es «lo de
    * siempre», y ofrecerlo sería ruido.
    */
-  async getRepeatableMeals(
-    userId: string,
-    date: Date,
-  ): Promise<ReadonlyMap<MealType, RepeatableMeal>> {
+  async getRepeatableMeals(userId: string, date: Date): Promise<RepeatableMeals> {
     try {
       const { fromIso } = dayRange(date)
       const since = new Date(new Date(fromIso).getTime() - REPEAT_WINDOW_DAYS * MS_PER_DAY)
@@ -192,20 +189,20 @@ export const nutritionService = {
         fromIso,
         REPEAT_CANDIDATES,
       )
-      if (logs.length === 0) return new Map()
+      if (logs.length === 0) return {}
 
       const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
 
-      const byType = new Map<MealType, RepeatableMeal>()
+      const byType: RepeatableMeals = {}
       // Los registros llegan del más reciente al más antiguo, así que la primera
       // vez que aparece un tipo es la última que se comió. Una comida que quedó
       // vacía —se borró lo que tenía— se salta: repetir la nada no sirve.
       for (const log of logs) {
-        if (byType.has(log.meal_type)) continue
+        if (byType[log.meal_type]) continue
 
         const logItems = items.filter((item) => item.meal_log_id === log.id)
         if (logItems.length > 0)
-          byType.set(log.meal_type, { loggedAt: log.logged_at, items: logItems })
+          byType[log.meal_type] = { loggedAt: log.logged_at, items: logItems }
       }
 
       return byType
@@ -223,7 +220,7 @@ export const nutritionService = {
    */
   async repeatMeal(userId: string, date: Date, mealType: MealType): Promise<void> {
     try {
-      const template = (await this.getRepeatableMeals(userId, date)).get(mealType)
+      const template = (await this.getRepeatableMeals(userId, date))[mealType]
       if (!template)
         throw createAppError('not_found', 'No hay ninguna comida anterior que repetir.')
 

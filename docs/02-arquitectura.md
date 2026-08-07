@@ -168,6 +168,21 @@ sincroniza manualmente.** Detalle de reglas en
 | **Validación**    | Zod             | Esquemas compartidos entre formulario, service y tipos. |
 | **Local efímero** | `useState`      | Estado de un acordeón, hover, etc.                      |
 
+### Regla: lo que devuelve una consulta tiene que sobrevivir a JSON
+
+Nada de `Map`, `Set`, `Date` ni instancias de clase en el `data` de una
+`useQuery`. Sólo objetos planos, arrays y primitivas.
+
+**No es purismo, es una consecuencia de persistir la caché**
+([ADR-0007](./adr/0007-cache-persistente-en-localstorage.md)): se guarda en
+`localStorage` con `JSON.stringify`. Un `Map` se serializa como `{}` y vuelve
+como un objeto pelado.
+
+Costó una pantalla rota. `useRepeatableMeals` devolvía un `ReadonlyMap` y
+Nutrición reventaba con `repeatable?.get is not a function` **sólo al rehidratar
+la caché** — nunca en la primera carga, que es cuando se prueba. Lo fija un test
+que hace ida y vuelta por JSON sobre el resultado del servicio.
+
 ## Flujo de datos de ejemplo (registrar una serie de gimnasio)
 
 1. El usuario pulsa "Guardar serie" en un `Component`.
