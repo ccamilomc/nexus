@@ -2,6 +2,34 @@ import type { Enums, Tables } from '@/core/supabase'
 
 export type FinanceAccountKind = Enums<'finance_account_kind'>
 export type FinanceEntryKind = Enums<'finance_entry_kind'>
+export type FinanceDebtDirection = Enums<'finance_debt_direction'>
+export type FinanceInterestKind = Enums<'finance_interest_kind'>
+
+export type FinanceDebt = Tables<'finance_debts'>
+
+/** Un abono a una deuda: cuánto y cuándo. Sale de un movimiento real. */
+export interface DebtPayment {
+  readonly amount: number
+  readonly occurredOn: string
+}
+
+/** Un abono tal como llega de la base, antes de agruparlo por deuda. */
+export interface DebtPaymentRow {
+  readonly debt_id: string | null
+  readonly amount: number
+  readonly occurred_on: string
+}
+
+/** Una deuda con sus cuentas hechas. */
+export interface DebtWithBalance {
+  readonly debt: FinanceDebt
+  readonly balance: {
+    readonly principal: number
+    readonly interest: number
+    readonly paid: number
+    readonly remaining: number
+  }
+}
 
 export type FinanceAccount = Tables<'finance_accounts'>
 export type FinanceCategory = Tables<'finance_categories'>

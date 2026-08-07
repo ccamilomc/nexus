@@ -22,6 +22,8 @@ export const transactionSchema = z
     // Sin categoría también es válido: obligar a clasificar en el momento haría
     // que registrar costara más, y lo que no se registra no existe.
     categoryId: z.string().nullable(),
+    /** La deuda que abona este movimiento, si abona alguna. */
+    debtId: z.string().nullable(),
     occurredOn: z.string().min(1, 'Elige una fecha.'),
     note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
   })
@@ -59,3 +61,41 @@ export const categorySchema = z.object({
 })
 
 export type CategoryValues = z.infer<typeof categorySchema>
+
+/**
+ * Una deuda.
+ *
+ * La tasa es **mensual** y se pide sólo cuando corre interés: pedirla siempre
+ * invitaría a poner un número donde no hace falta, y la base rechaza una tasa
+ * sin forma de correr.
+ */
+export const debtSchema = z
+  .object({
+    counterpart: z
+      .string()
+      .trim()
+      .min(1, 'Escribe a quién.')
+      .max(60, 'El nombre es demasiado largo.'),
+    direction: z.enum(['i_owe', 'owed_to_me']),
+    principal: z
+      .number({ message: 'Escribe cuánto.' })
+      .int('Los pesos no llevan centavos.')
+      .positive('Tiene que ser mayor que cero.')
+      .max(9_999_999_999, 'Ese monto no parece real. Revísalo.'),
+    interestKind: z.enum(['none', 'monthly_on_principal', 'monthly_on_balance']),
+    interestRate: z
+      .number()
+      .min(0, 'No puede ser negativa.')
+      .max(100, 'Más del 100 % mensual no es una tasa, es un error.')
+      .nullable(),
+    startedOn: z.string().min(1, 'Elige desde cuándo.'),
+    dueOn: z.string().nullable(),
+    instalments: z.number().int().positive('Tiene que ser al menos una.').nullable(),
+    note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
+  })
+  .refine((values) => values.interestKind === 'none' || values.interestRate !== null, {
+    message: 'Escribe la tasa mensual.',
+    path: ['interestRate'],
+  })
+
+export type DebtValues = z.infer<typeof debtSchema>

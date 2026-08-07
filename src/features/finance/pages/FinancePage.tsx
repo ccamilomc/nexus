@@ -11,7 +11,7 @@ import { MonthPicker } from '../components/MonthPicker'
 import { MonthTotals } from '../components/MonthTotals'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
-import { useAccounts, useCategories, useMonth } from '../hooks/use-finance'
+import { useAccounts, useCategories, useDebts, useMonth } from '../hooks/use-finance'
 
 /** Tus finanzas del mes: qué entró, qué salió y en qué se fue. */
 export function FinancePage() {
@@ -22,6 +22,7 @@ export function FinancePage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const accounts = useAccounts()
   const categories = useCategories()
+  const debts = useDebts()
   const month = useMonth(visibleMonth)
 
   if (accounts.isPending || month.isPending) {
@@ -76,6 +77,7 @@ export function FinancePage() {
             <TransactionForm
               accounts={accounts.data}
               categories={categories.data ?? []}
+              debts={debts.data ?? []}
               editing={editing}
               onFinishEditing={() => setEditingId(null)}
             />

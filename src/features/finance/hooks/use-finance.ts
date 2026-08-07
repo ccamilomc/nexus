@@ -3,10 +3,23 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { useToday } from '@/core/time'
+import { toDateKey } from '@/shared/utils'
 
-import type { AccountValues, CategoryValues, TransactionValues } from '../schemas/finance.schema'
+import type {
+  AccountValues,
+  CategoryValues,
+  DebtValues,
+  TransactionValues,
+} from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
-import type { FinanceAccount, FinanceCategory, FinanceMonth } from '../types/finance.types'
+import type {
+  DebtWithBalance,
+  FinanceAccount,
+  FinanceCategory,
+  FinanceDebt,
+  FinanceMonth,
+} from '../types/finance.types'
 import { financeKeys } from './finance.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -47,6 +60,20 @@ export function useMonth(date: Date) {
   return useQuery<FinanceMonth | null, AppError>({
     queryKey: financeKeys.month(userId, monthKeyOf(date)),
     queryFn: () => (userId ? financeService.getMonth(userId, date) : null),
+  })
+}
+
+/** Las deudas con sus cuentas hechas a día de hoy. */
+export function useDebts() {
+  const { user } = useAuth()
+  const today = useToday()
+  const userId = user?.id
+
+  return useQuery<DebtWithBalance[], AppError>({
+    // El día entra en la clave: los intereses corridos cambian al pasar de
+    // fecha, y sin él la caché seguiría enseñando los de ayer.
+    queryKey: financeKeys.debts(userId, toDateKey(today)),
+    queryFn: () => (userId ? financeService.getDebts(userId, today) : []),
   })
 }
 
@@ -124,6 +151,42 @@ export function useArchiveAccount() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (accountId) => financeService.archiveAccount(accountId),
+    onSuccess: refresh,
+  })
+}
+
+/** Crea una deuda. */
+export function useCreateDebt() {
+  const { user } = useAuth()
+  const refresh = useRefreshMovements()
+
+  return useMutation<FinanceDebt, AppError, DebtValues>({
+    mutationFn: (values) => financeService.createDebt(requireUserId(user?.id), values),
+    onSuccess: refresh,
+  })
+}
+
+interface SettleDebtVariables {
+  readonly debtId: string
+  readonly isSettled: boolean
+}
+
+/** Da una deuda por saldada, o la reabre. */
+export function useSettleDebt() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, SettleDebtVariables>({
+    mutationFn: ({ debtId, isSettled }) => financeService.setDebtSettled(debtId, isSettled),
+    onSuccess: refresh,
+  })
+}
+
+/** Quita una deuda apuntada por error. Sus abonos siguen siendo gastos. */
+export function useRemoveDebt() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (debtId) => financeService.removeDebt(debtId),
     onSuccess: refresh,
   })
 }

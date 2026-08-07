@@ -10,11 +10,12 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Select } from '@/shared/components/ui/select'
 import { cn } from '@/shared/lib/utils'
-import { toDateKey } from '@/shared/utils'
+import { formatCop, toDateKey } from '@/shared/utils'
 
 import { useCreateTransaction, useUpdateTransaction } from '../hooks/use-finance'
 import { transactionSchema, type TransactionValues } from '../schemas/finance.schema'
 import type {
+  DebtWithBalance,
   FinanceAccount,
   FinanceCategory,
   FinanceTransactionWithNames,
@@ -23,6 +24,7 @@ import type {
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
   readonly categories: readonly FinanceCategory[]
+  readonly debts: readonly DebtWithBalance[]
   /** El movimiento que se está corrigiendo, o `null` para apuntar uno nuevo. */
   readonly editing?: FinanceTransactionWithNames | null
   readonly onFinishEditing?: () => void
@@ -46,6 +48,7 @@ const KIND_OPTIONS = [
 export function TransactionForm({
   accounts,
   categories,
+  debts,
   editing = null,
   onFinishEditing,
 }: TransactionFormProps) {
@@ -59,6 +62,7 @@ export function TransactionForm({
     accountId: accounts[0]?.id ?? '',
     toAccountId: null,
     categoryId: null,
+    debtId: null,
     occurredOn: toDateKey(today),
   }
 
@@ -89,6 +93,7 @@ export function TransactionForm({
       accountId: editing.account_id,
       toAccountId: editing.counterpart_account_id,
       categoryId: editing.category_id,
+      debtId: editing.debt_id,
       occurredOn: editing.occurred_on,
       note: editing.note ?? '',
     })
@@ -108,6 +113,12 @@ export function TransactionForm({
   // sin salida —se elige el tipo y el desplegable de destino sale vacío—.
   const visibleKinds = KIND_OPTIONS.filter(
     ({ value }) => value !== 'transfer' || accounts.length > 1,
+  )
+  // Pagar lo que debes es un gasto; cobrar lo que te deben, un ingreso. Ofrecer
+  // las del otro sentido dejaría abonar una deuda con dinero que entró.
+  const relevantDebts = debts.filter(
+    ({ debt }) =>
+      debt.settled_at === null && debt.direction === (kind === 'income' ? 'owed_to_me' : 'i_owe'),
   )
 
   const onSubmit = handleSubmit((values) => {
@@ -239,6 +250,30 @@ export function TransactionForm({
           </div>
         )}
       </div>
+
+      {/* Sólo aparece si hay deudas del sentido que toca: pagar una deuda es un
+          gasto, y cobrar lo que te deben es un ingreso. Sin deudas vivas, el
+          campo no existe y el formulario no crece por nada. */}
+      {relevantDebts.length > 0 ? (
+        <div>
+          <Label htmlFor="finance-debt">
+            {kind === 'income' ? '¿Te abonan una deuda?' : '¿Abona una deuda?'}
+          </Label>
+          <Select
+            id="finance-debt"
+            {...register('debtId', {
+              setValueAs: (value: string) => (value === '' ? null : value),
+            })}
+          >
+            <option value="">No</option>
+            {relevantDebts.map(({ debt, balance }) => (
+              <option key={debt.id} value={debt.id}>
+                {debt.counterpart} · faltan {formatCop(balance.remaining)}
+              </option>
+            ))}
+          </Select>
+        </div>
+      ) : null}
 
       <div>
         <Label htmlFor="finance-date">Fecha</Label>

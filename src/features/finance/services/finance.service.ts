@@ -2,13 +2,22 @@ import { toAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
-import type { AccountValues, CategoryValues, TransactionValues } from '../schemas/finance.schema'
 import type {
+  AccountValues,
+  CategoryValues,
+  DebtValues,
+  TransactionValues,
+} from '../schemas/finance.schema'
+import type {
+  DebtPayment,
+  DebtWithBalance,
   FinanceAccount,
   FinanceCategory,
+  FinanceDebt,
   FinanceMonth,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
+import { calculateDebtBalance } from '../utils/debt-balance'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 
 /** Cuántos movimientos recientes se enseñan sin pedir «ver todos». */
@@ -39,6 +48,8 @@ function toTransactionRow(values: TransactionValues) {
     account_id: values.accountId,
     counterpart_account_id: isTransfer ? values.toAccountId : null,
     category_id: isTransfer ? null : values.categoryId,
+    // Un traspaso mueve dinero entre cuentas propias: no abona ninguna deuda.
+    debt_id: isTransfer ? null : values.debtId,
     kind: values.kind,
     amount: values.amount,
     occurred_on: values.occurredOn,
@@ -110,6 +121,89 @@ export const financeService = {
         kind: values.kind,
         initial_balance: values.initialBalance,
       })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Las deudas con sus cuentas hechas.
+   *
+   * Los abonos se traen en una sola consulta y se reparten aquí: preguntar
+   * deuda por deuda serían tantos viajes como deudas haya, y agrupar en
+   * TypeScript es el mismo criterio que Analytics ([ADR-0006](../../../../docs/adr/0006-analytics-agrega-en-el-cliente.md)).
+   */
+  async getDebts(userId: string, today: Date): Promise<DebtWithBalance[]> {
+    try {
+      const [debts, payments] = await Promise.all([
+        financeRepository.listDebts(userId),
+        financeRepository.listDebtPayments(userId),
+      ])
+
+      const byDebt = new Map<string, DebtPayment[]>()
+      for (const { debt_id, amount, occurred_on } of payments) {
+        if (!debt_id) continue
+        const list = byDebt.get(debt_id) ?? []
+        list.push({ amount, occurredOn: occurred_on })
+        byDebt.set(debt_id, list)
+      }
+
+      const todayKey = toDateKey(today)
+
+      return debts.map((debt) => ({
+        debt,
+        balance: calculateDebtBalance(debt, byDebt.get(debt.id) ?? [], todayKey),
+      }))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async createDebt(userId: string, values: DebtValues): Promise<FinanceDebt> {
+    try {
+      return await financeRepository.insertDebt({
+        user_id: userId,
+        counterpart: values.counterpart,
+        direction: values.direction,
+        principal: values.principal,
+        interest_kind: values.interestKind,
+        // Sin intereses no hay tasa que guardar, y la base lo exige así.
+        interest_rate: values.interestKind === 'none' ? null : values.interestRate,
+        started_on: values.startedOn,
+        due_on: values.dueOn ?? null,
+        instalments: values.instalments ?? null,
+        note: values.note?.trim() ? values.note.trim() : null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Da una deuda por saldada, o la reabre.
+   *
+   * **Se marca a mano y no cuando los abonos cubren el monto.** Que las cuentas
+   * cuadren no siempre significa que la otra persona la dé por cerrada, y
+   * cerrarla sola dejaría de contar intereses de algo que sigue vivo.
+   */
+  /**
+   * Quita una deuda apuntada por error.
+   *
+   * **No es lo mismo que saldarla:** saldada significa «ya la pagué» y se queda
+   * en el histórico; borrada significa «no existía». Sus abonos siguen siendo
+   * gastos, porque el dinero salió igual.
+   */
+  async removeDebt(debtId: string): Promise<void> {
+    try {
+      await financeRepository.softDeleteDebt(debtId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async setDebtSettled(debtId: string, isSettled: boolean): Promise<void> {
+    try {
+      await financeRepository.setDebtSettled(debtId, isSettled ? new Date().toISOString() : null)
     } catch (error) {
       throw toAppError(error)
     }
