@@ -19,4 +19,8 @@ export const financeKeys = {
   // fecha, así que las dos cosas tienen que refrescarse juntas.
   recurring: (userId: string | undefined, todayKey: string) =>
     [...financeKeys.movements(), 'recurring', userId, todayKey] as const,
+  // Bajo `movements` porque un gasto cambia cuánto llevas del tope.
+  budgets: (userId: string | undefined, monthKey: string) =>
+    [...financeKeys.movements(), 'budgets', userId, monthKey] as const,
+  budgetCaps: (userId: string | undefined) => [...financeKeys.all, 'budget-caps', userId] as const,
 }

@@ -6,12 +6,14 @@ import { PageHeader } from '@/shared/components/layout'
 import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { AccountForm } from '../components/AccountForm'
+import { BudgetList } from '../components/BudgetList'
 import { FinanceNav } from '../components/FinanceNav'
 import { MonthPicker } from '../components/MonthPicker'
 import { MonthTotals } from '../components/MonthTotals'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
-import { useAccounts, useCategories, useDebts, useMonth } from '../hooks/use-finance'
+import { useAccounts, useBudgets, useCategories, useDebts, useMonth } from '../hooks/use-finance'
+import { monthProgressPercent } from '../utils/budgets'
 
 /** Tus finanzas del mes: qué entró, qué salió y en qué se fue. */
 export function FinancePage() {
@@ -23,6 +25,7 @@ export function FinancePage() {
   const accounts = useAccounts()
   const categories = useCategories()
   const debts = useDebts()
+  const budgets = useBudgets(visibleMonth)
   const month = useMonth(visibleMonth)
 
   if (accounts.isPending || month.isPending) {
@@ -71,6 +74,10 @@ export function FinancePage() {
         {month.data ? (
           <MonthTotals totals={month.data.totals} byCategory={month.data.byCategory} />
         ) : null}
+
+        {/* Vacío fuera del mes en curso: un tope es un valor único, no un
+            histórico, y medir julio con el tope de agosto sería mentir. */}
+        <BudgetList budgets={budgets.data ?? []} monthProgress={monthProgressPercent(today)} />
 
         <Card>
           <CardContent className="p-5">

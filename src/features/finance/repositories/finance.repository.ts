@@ -3,6 +3,7 @@ import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 import type {
   DebtPaymentRow,
   FinanceAccount,
+  FinanceBudget,
   FinanceCategory,
   FinanceDebt,
   FinanceRecurring,
@@ -113,6 +114,40 @@ export const financeRepository = {
 
     if (error) throw error
     return data ?? []
+  },
+
+  /** Los topes mensuales del usuario. */
+  async listBudgets(userId: string): Promise<FinanceBudget[]> {
+    const { data, error } = await supabase.from('finance_budgets').select('*').eq('user_id', userId)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Pone o cambia el tope de una categoría.
+   *
+   * `upsert` sobre `(user_id, category_id)`: hay un único tope por categoría y
+   * quien lo pone no tiene por qué saber si ya existía.
+   */
+  async upsertBudget(input: TablesInsert<'finance_budgets'>): Promise<void> {
+    const { error } = await supabase
+      .from('finance_budgets')
+      .upsert(input, { onConflict: 'user_id,category_id' })
+
+    if (error) throw error
+  },
+
+  /**
+   * Quita el tope de una categoría, que vuelve a no tener límite.
+   *
+   * Borrado de verdad y no lógico: un tope es un ajuste, no el registro de algo
+   * que ocurrió. No hay nada que conservar.
+   */
+  async deleteBudget(budgetId: string): Promise<void> {
+    const { error } = await supabase.from('finance_budgets').delete().eq('id', budgetId)
+
+    if (error) throw error
   },
 
   /** Los pagos fijos vivos, del que antes vence al que más tarda. */

@@ -15,8 +15,10 @@ import type {
 } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
 import type {
+  BudgetStatus,
   DebtWithBalance,
   FinanceAccount,
+  FinanceBudget,
   FinanceCategory,
   FinanceDebt,
   FinanceMonth,
@@ -155,6 +157,56 @@ export function useArchiveAccount() {
   return useMutation<void, AppError, string>({
     mutationFn: (accountId) => financeService.archiveAccount(accountId),
     onSuccess: refresh,
+  })
+}
+
+/** Cómo van los topes de un mes. Vacío si no es el mes en curso. */
+export function useBudgets(month: Date) {
+  const { user } = useAuth()
+  const today = useToday()
+  const userId = user?.id
+
+  return useQuery<BudgetStatus[], AppError>({
+    queryKey: financeKeys.budgets(userId, monthKeyOf(month)),
+    queryFn: () => (userId ? financeService.getBudgets(userId, month, today) : []),
+  })
+}
+
+/** Los topes tal cual, para editarlos. */
+export function useBudgetCaps() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<FinanceBudget[], AppError>({
+    queryKey: financeKeys.budgetCaps(userId),
+    queryFn: () => (userId ? financeService.getBudgetCaps(userId) : []),
+  })
+}
+
+interface SetBudgetVariables {
+  readonly categoryId: string
+  readonly amount: number
+}
+
+/** Pone o cambia el tope de una categoría. */
+export function useSetBudget() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation<void, AppError, SetBudgetVariables>({
+    mutationFn: ({ categoryId, amount }) =>
+      financeService.setBudget(requireUserId(user?.id), categoryId, amount),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+  })
+}
+
+/** Quita el tope de una categoría. */
+export function useRemoveBudget() {
+  const queryClient = useQueryClient()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (budgetId) => financeService.removeBudget(budgetId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
   })
 }
 
