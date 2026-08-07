@@ -14,6 +14,7 @@ import { RECURRENCE_LABELS } from '../constants/finance.constants'
 import { useCreateRecurring } from '../hooks/use-finance'
 import { recurringSchema, type RecurringValues } from '../schemas/finance.schema'
 import type { FinanceAccount, FinanceCategory } from '../types/finance.types'
+import { AccountField } from './AccountField'
 
 interface RecurringFormProps {
   readonly accounts: readonly FinanceAccount[]
@@ -112,17 +113,13 @@ export function RecurringForm({ accounts, categories }: RecurringFormProps) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <Label htmlFor="recurring-account">Cuenta</Label>
-          <Select id="recurring-account" {...register('accountId')}>
-            {accounts.map((account) => (
-              <option key={account.id} value={account.id}>
-                {account.name}
-              </option>
-            ))}
-          </Select>
-          {errors.accountId ? <FormAlert>{errors.accountId.message}</FormAlert> : null}
-        </div>
+        <AccountField
+          id="recurring-account"
+          label="Cuenta"
+          accounts={accounts}
+          registration={register('accountId')}
+          error={errors.accountId?.message}
+        />
 
         <div>
           <Label htmlFor="recurring-category">Categoría</Label>
