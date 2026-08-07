@@ -11,16 +11,23 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Select } from '@/shared/components/ui/select'
 
+import { BudgetField } from '../components/BudgetField'
 import { FinanceNav } from '../components/FinanceNav'
-import { useArchiveCategory, useCategories, useCreateCategory } from '../hooks/use-finance'
+import {
+  useArchiveCategory,
+  useBudgetCaps,
+  useCategories,
+  useCreateCategory,
+} from '../hooks/use-finance'
 import { categorySchema, type CategoryValues } from '../schemas/finance.schema'
-import type { FinanceCategory } from '../types/finance.types'
+import type { FinanceBudget, FinanceCategory } from '../types/finance.types'
 
 /** Las categorías: las que trae Nexus y las tuyas. */
 export function CategoriesPage() {
   const categories = useCategories()
   const create = useCreateCategory()
   const archive = useArchiveCategory()
+  const caps = useBudgetCaps()
 
   const {
     register,
@@ -38,6 +45,7 @@ export function CategoriesPage() {
 
   const expenses = (categories.data ?? []).filter((category) => category.kind === 'expense')
   const incomes = (categories.data ?? []).filter((category) => category.kind === 'income')
+  const budgetByCategory = new Map((caps.data ?? []).map((budget) => [budget.category_id, budget]))
 
   return (
     <>
@@ -85,11 +93,14 @@ export function CategoriesPage() {
           />
         ) : (
           <>
+            {/* El tope sólo se ofrece en los gastos: un ingreso no tiene
+                límite que respetar, y poner uno al salario no significa nada. */}
             <CategoryGroup
               title="Gastos"
               categories={expenses}
               isArchiving={archive.isPending}
               onArchive={(id) => archive.mutate(id)}
+              budgetByCategory={budgetByCategory}
             />
             <CategoryGroup
               title="Ingresos"
@@ -109,9 +120,17 @@ interface CategoryGroupProps {
   readonly categories: readonly FinanceCategory[]
   readonly isArchiving: boolean
   readonly onArchive: (categoryId: string) => void
+  /** Sólo lo reciben los gastos: un ingreso no tiene tope que respetar. */
+  readonly budgetByCategory?: ReadonlyMap<string, FinanceBudget>
 }
 
-function CategoryGroup({ title, categories, isArchiving, onArchive }: CategoryGroupProps) {
+function CategoryGroup({
+  title,
+  categories,
+  isArchiving,
+  onArchive,
+  budgetByCategory,
+}: CategoryGroupProps) {
   if (categories.length === 0) return null
 
   return (
@@ -122,8 +141,19 @@ function CategoryGroup({ title, categories, isArchiving, onArchive }: CategoryGr
         </h2>
         <ul className="divide-y divide-border">
           {categories.map((category) => (
-            <li key={category.id} className="flex items-center gap-3 px-3 py-2.5">
+            <li
+              key={category.id}
+              className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2.5"
+            >
               <span className="min-w-0 flex-1 truncate text-sm">{category.name}</span>
+
+              {budgetByCategory ? (
+                <BudgetField
+                  categoryId={category.id}
+                  categoryName={category.name}
+                  budget={budgetByCategory.get(category.id)}
+                />
+              ) : null}
 
               {/* Las del catálogo (sin `user_id`) son de todos: no se archivan,
                   y la RLS lo impediría igualmente. Sólo se retiran las propias. */}

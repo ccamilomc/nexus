@@ -7,6 +7,20 @@ export type FinanceInterestKind = Enums<'finance_interest_kind'>
 
 export type FinanceDebt = Tables<'finance_debts'>
 export type FinanceRecurrence = Enums<'finance_recurrence'>
+export type FinanceBudget = Tables<'finance_budgets'>
+
+/** Cómo va un tope mensual: lo gastado, el límite y lo que queda. */
+export interface BudgetStatus {
+  readonly categoryId: string
+  readonly name: string
+  readonly spent: number
+  readonly cap: number
+  /** Puede pasar de 100, y entonces `isExceeded`. */
+  readonly percent: number
+  /** Lo que queda. Negativo cuando se pasó, y eso es el dato. */
+  readonly remaining: number
+  readonly isExceeded: boolean
+}
 export type FinanceRecurring = Tables<'finance_recurring'>
 
 /** Un pago fijo con lo que hace falta para decidir si toca ya. */
