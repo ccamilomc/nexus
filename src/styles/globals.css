@@ -13,7 +13,20 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    --primary: 240 5.9% 10%;
+    /**
+     * El color de Nexus: índigo.
+     *
+     * Se eligió por descarte razonado, no por gusto. El verde ya significa
+     * «bien» (`--success`) y el ámbar «cuidado» (`--warning`): con la marca en
+     * cualquiera de esos dos, **cada botón parecería un juicio** y la interfaz
+     * opinaría sin querer, que es justo lo que el resto del diseño evita. El
+     * índigo no colisiona con ningún estado.
+     *
+     * Contraste verificado: 7,2:1 sobre el fondo claro y 5:1 sobre el oscuro,
+     * así que sirve también como color de texto (`text-primary`), no sólo de
+     * relleno.
+     */
+    --primary: 255 70% 52%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 4.8% 95.9%;
@@ -22,8 +35,10 @@
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    /* Los estados de hover llevan un punto de la marca en vez del gris neutro:
+       es lo que hace que la aplicación se sienta de un color y no de ninguno. */
+    --accent: 255 40% 95%;
+    --accent-foreground: 255 45% 22%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -36,7 +51,9 @@
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 240 10% 3.9%;
+    /* El anillo de foco es de la marca: se ve en toda la aplicación al navegar
+       con teclado y es de las cosas que más la hacen sentir de una pieza. */
+    --ring: 255 70% 52%;
 
     /**
      * Colores de las gráficas.
@@ -52,7 +69,10 @@
     --chart-1: 221 74% 42%;
     --chart-2: 162 74% 27%;
     --chart-3: 30 88% 38%;
-    --chart-4: 265 62% 50%;
+    /* Estaba en 265 y la marca es 255: la línea del sueño se confundía con el
+       color de la aplicación, y el título índigo de la sección caía justo
+       encima. Movida a magenta, sigue por encima de 3:1 (5,1:1). */
+    --chart-4: 292 60% 48%;
     --chart-5: 344 70% 44%;
 
     --radius: 0.5rem;
@@ -68,8 +88,10 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    /* Sobre negro el índigo tiene que aclararse para seguir legible: en oscuro
+       la marca ilumina, no rellena. Sobre este tono el texto va oscuro. */
+    --primary: 255 85% 68%;
+    --primary-foreground: 255 45% 8%;
 
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
@@ -77,7 +99,7 @@
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
 
-    --accent: 240 3.7% 15.9%;
+    --accent: 255 25% 17%;
     --accent-foreground: 0 0% 98%;
 
     --destructive: 0 62.8% 30.6%;
@@ -91,12 +113,12 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --ring: 255 85% 68%;
 
     --chart-1: 217 84% 66%;
     --chart-2: 162 62% 48%;
     --chart-3: 38 90% 58%;
-    --chart-4: 265 78% 72%;
+    --chart-4: 292 75% 72%;
     --chart-5: 348 82% 68%;
   }
 }
