@@ -2,7 +2,7 @@ import { toAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
-import type { AccountValues, TransactionValues } from '../schemas/finance.schema'
+import type { AccountValues, CategoryValues, TransactionValues } from '../schemas/finance.schema'
 import type {
   FinanceAccount,
   FinanceCategory,
@@ -87,6 +87,41 @@ export const financeService = {
         kind: values.kind,
         initial_balance: values.initialBalance,
       })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async createCategory(userId: string, values: CategoryValues): Promise<FinanceCategory> {
+    try {
+      return await financeRepository.insertCategory({
+        user_id: userId,
+        name: values.name,
+        kind: values.kind,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Retira una categoría de los formularios sin tocar el histórico.
+   *
+   * La RLS impide archivar una del catálogo global, así que no hace falta
+   * comprobarlo aquí: quien lo intente recibe un error de permisos, no un
+   * borrado silencioso de algo que era de todos.
+   */
+  async archiveCategory(categoryId: string): Promise<void> {
+    try {
+      await financeRepository.archiveCategory(categoryId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  async archiveAccount(accountId: string): Promise<void> {
+    try {
+      await financeRepository.archiveAccount(accountId)
     } catch (error) {
       throw toAppError(error)
     }

@@ -4,6 +4,7 @@ import { PageHeader } from '@/shared/components/layout'
 import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { AccountForm } from '../components/AccountForm'
+import { FinanceNav } from '../components/FinanceNav'
 import { MonthTotals } from '../components/MonthTotals'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
@@ -35,7 +36,7 @@ export function FinancePage() {
     return (
       <>
         <PageHeader
-          title="Dinero"
+          title="Finanzas"
           description="Empieza por decir de dónde sale: efectivo, Nequi, el banco."
         />
         <Card>
@@ -49,7 +50,8 @@ export function FinancePage() {
 
   return (
     <>
-      <PageHeader title="Dinero" description="Lo que entra, lo que sale y en qué se va." />
+      <PageHeader title="Finanzas" description="Lo que entra, lo que sale y en qué se va." />
+      <FinanceNav />
 
       <div className="space-y-4">
         {month.data ? (

@@ -8,17 +8,9 @@ import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { Select } from '@/shared/components/ui/select'
 
+import { ACCOUNT_KIND_LABELS } from '../constants/finance.constants'
 import { useCreateAccount } from '../hooks/use-finance'
 import { accountSchema, type AccountValues } from '../schemas/finance.schema'
-import type { FinanceAccountKind } from '../types/finance.types'
-
-const KIND_LABELS: Readonly<Record<FinanceAccountKind, string>> = {
-  cash: 'Efectivo',
-  bank: 'Cuenta bancaria',
-  wallet: 'Billetera digital',
-  credit_card: 'Tarjeta de crédito',
-  savings: 'Ahorros',
-}
 
 interface AccountFormProps {
   readonly onCreated?: () => void
@@ -68,7 +60,7 @@ export function AccountForm({ onCreated }: AccountFormProps) {
         <div>
           <Label htmlFor="account-kind">Tipo</Label>
           <Select id="account-kind" {...register('kind')}>
-            {Object.entries(KIND_LABELS).map(([value, label]) => (
+            {Object.entries(ACCOUNT_KIND_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>

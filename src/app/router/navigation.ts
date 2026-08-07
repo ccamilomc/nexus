@@ -62,6 +62,13 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         Icon: CalendarCheck,
         isPrimary: true,
       },
+      {
+        to: ROUTES.finance,
+        label: 'Finanzas',
+        description: 'Gastos, ingresos y en qué se va el mes.',
+        Icon: Wallet,
+        isPrimary: false,
+      },
     ],
   },
   {
@@ -112,18 +119,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Estudio',
         description: 'Materias y sesiones de foco.',
         Icon: BookOpen,
-        isPrimary: false,
-      },
-    ],
-  },
-  {
-    title: 'Dinero',
-    items: [
-      {
-        to: ROUTES.finance,
-        label: 'Movimientos',
-        description: 'Gastos, ingresos y en qué se va el mes.',
-        Icon: Wallet,
         isPrimary: false,
       },
     ],

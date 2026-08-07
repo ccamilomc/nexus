@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 
-import type { AccountValues, TransactionValues } from '../schemas/finance.schema'
+import type { AccountValues, CategoryValues, TransactionValues } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
 import type { FinanceAccount, FinanceCategory, FinanceMonth } from '../types/finance.types'
 import { financeKeys } from './finance.keys'
@@ -81,13 +81,54 @@ export function useRemoveTransaction() {
   })
 }
 
+/** Refresca cuentas y categorías, que se consumen juntas en los formularios. */
+function useRefreshCatalog() {
+  const queryClient = useQueryClient()
+
+  return useCallback(
+    () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+    [queryClient],
+  )
+}
+
 /** Crea una cuenta. */
 export function useCreateAccount() {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
+  const refresh = useRefreshCatalog()
 
   return useMutation<FinanceAccount, AppError, AccountValues>({
     mutationFn: (values) => financeService.createAccount(requireUserId(user?.id), values),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+    onSuccess: refresh,
+  })
+}
+
+/** Retira una cuenta de los formularios sin tocar su histórico. */
+export function useArchiveAccount() {
+  const refresh = useRefreshCatalog()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (accountId) => financeService.archiveAccount(accountId),
+    onSuccess: refresh,
+  })
+}
+
+/** Crea una categoría propia. */
+export function useCreateCategory() {
+  const { user } = useAuth()
+  const refresh = useRefreshCatalog()
+
+  return useMutation<FinanceCategory, AppError, CategoryValues>({
+    mutationFn: (values) => financeService.createCategory(requireUserId(user?.id), values),
+    onSuccess: refresh,
+  })
+}
+
+/** Retira una categoría propia. Las del catálogo las protege la RLS. */
+export function useArchiveCategory() {
+  const refresh = useRefreshCatalog()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (categoryId) => financeService.archiveCategory(categoryId),
+    onSuccess: refresh,
   })
 }

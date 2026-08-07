@@ -38,3 +38,11 @@ export const accountSchema = z.object({
 })
 
 export type AccountValues = z.infer<typeof accountSchema>
+
+/** Una categoría propia, para lo que el catálogo no cubre. */
+export const categorySchema = z.object({
+  name: z.string().trim().min(1, 'Ponle un nombre.').max(30, 'El nombre es demasiado largo.'),
+  kind: z.enum(['income', 'expense']),
+})
+
+export type CategoryValues = z.infer<typeof categorySchema>

@@ -76,6 +76,42 @@ export const financeRepository = {
     return data
   },
 
+  async insertCategory(input: TablesInsert<'finance_categories'>): Promise<FinanceCategory> {
+    const { data, error } = await supabase
+      .from('finance_categories')
+      .insert(input)
+      .select('*')
+      .single()
+
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Archivar, no borrar.
+   *
+   * Una categoría borrada dejaría sin clasificar los movimientos que la usaban;
+   * archivada desaparece de los formularios y el histórico sigue contando la
+   * verdad. Lo mismo con las cuentas.
+   */
+  async archiveCategory(categoryId: string): Promise<void> {
+    const { error } = await supabase
+      .from('finance_categories')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', categoryId)
+
+    if (error) throw error
+  },
+
+  async archiveAccount(accountId: string): Promise<void> {
+    const { error } = await supabase
+      .from('finance_accounts')
+      .update({ archived_at: new Date().toISOString() })
+      .eq('id', accountId)
+
+    if (error) throw error
+  },
+
   async insertTransaction(
     input: TablesInsert<'finance_transactions'>,
   ): Promise<FinanceTransaction> {

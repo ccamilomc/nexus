@@ -58,7 +58,7 @@ export const SUMMARY_ITEMS: readonly SummaryItem[] = [
   },
   {
     to: ROUTES.finance,
-    label: 'Dinero',
+    label: 'Finanzas',
     Icon: Wallet,
     emptyLabel: 'Sin movimientos este mes.',
   },
