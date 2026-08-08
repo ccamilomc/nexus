@@ -1,4 +1,5 @@
 import type { Enums, Tables } from '@/core/supabase'
+import type { SeriesPoint } from '@/shared/utils'
 
 export type FinanceAccountKind = Enums<'finance_account_kind'>
 export type FinanceEntryKind = Enums<'finance_entry_kind'>
@@ -128,6 +129,31 @@ export interface CategorySpend {
   readonly amount: number
   /** Porción del gasto total del tramo, de 0 a 100. */
   readonly share: number
+}
+
+/**
+ * Las finanzas de un periodo, tal y como las consume Analytics.
+ *
+ * **Un día sin movimientos apuntados es un cero, no un hueco.** Es el mismo
+ * criterio que entrenamiento y estudio, y el contrario que nutrición o sueño:
+ * un gasto se apunta en el momento de hacerlo, así que un día en blanco
+ * significa que no salió dinero. La app asume que se apunta todo —registrar
+ * cuesta dos toques justamente por eso— y sin ese supuesto ninguna cifra de
+ * finanzas valdría nada.
+ */
+export interface FinancePeriodSeries {
+  /** Gasto de cada día del periodo. */
+  readonly expensePoints: readonly SeriesPoint[]
+  readonly totalExpense: number
+  readonly previousTotalExpense: number
+  readonly totalIncome: number
+  readonly previousTotalIncome: number
+  /** Ingresos menos gastos. Puede ser negativo, y eso es el dato. */
+  readonly balance: number
+  /** Cuánto del gasto salió de un pago fijo. Es parte del total, no aparte. */
+  readonly fixedExpense: number
+  /** Días con al menos un movimiento. Lo que hace honesto al gráfico. */
+  readonly daysWithMovements: number
 }
 
 /** El mes en curso: totales, reparto por categoría y los últimos movimientos. */
