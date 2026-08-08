@@ -11,6 +11,7 @@ module.exports = {
         'decision-engine',
         'dashboard',
         'planning',
+        'finance',
         'workout',
         'nutrition',
         'habits',

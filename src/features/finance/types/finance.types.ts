@@ -91,6 +91,35 @@ export interface FinanceTotals {
   readonly balance: number
 }
 
+/**
+ * Cómo termina el mes en curso.
+ *
+ * **Dos cifras y no una, a propósito.** Una parte ya está decidida —los fijos
+ * que faltan por vencer— y la otra sale de suponer que el resto del mes se
+ * parece a lo que va. Fundirlas en un solo número escondería cuál de las dos
+ * puede fallar, y es justo lo que hay que saber para hacer algo al respecto.
+ */
+export interface MonthProjection {
+  /** Días que quedan del mes, sin contar hoy. */
+  readonly daysLeft: number
+  /** Lo que falta por salir de pagos fijos que vencen este mes. */
+  readonly pendingExpense: number
+  /** Lo que falta por entrar de fijos que vencen este mes. */
+  readonly pendingIncome: number
+  /** Cuántos vencimientos hay detrás de esas dos cifras. */
+  readonly pendingCount: number
+  /** El cierre contando sólo lo que ya está decidido. Puede ser negativo. */
+  readonly committedBalance: number
+  /**
+   * Lo que se iría en gasto variable al ritmo de estos días, redondeado.
+   *
+   * `null` cuando el mes es demasiado nuevo para hablar de un ritmo.
+   */
+  readonly estimatedVariable: number | null
+  /** El cierre contando también el ritmo. `null` cuando no se puede estimar. */
+  readonly projectedBalance: number | null
+}
+
 /** Cuánto se fue en una categoría, para la comparación entre ellas. */
 export interface CategorySpend {
   readonly categoryId: string | null

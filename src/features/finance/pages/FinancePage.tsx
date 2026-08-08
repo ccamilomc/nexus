@@ -9,10 +9,18 @@ import { AccountForm } from '../components/AccountForm'
 import { BudgetList } from '../components/BudgetList'
 import { FinanceNav } from '../components/FinanceNav'
 import { MonthPicker } from '../components/MonthPicker'
+import { MonthProjectionCard } from '../components/MonthProjectionCard'
 import { MonthTotals } from '../components/MonthTotals'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
-import { useAccounts, useBudgets, useCategories, useDebts, useMonth } from '../hooks/use-finance'
+import {
+  useAccounts,
+  useBudgets,
+  useCategories,
+  useDebts,
+  useMonth,
+  useMonthProjection,
+} from '../hooks/use-finance'
 import { monthProgressPercent } from '../utils/budgets'
 
 /** Tus finanzas del mes: qué entró, qué salió y en qué se fue. */
@@ -27,6 +35,9 @@ export function FinancePage() {
   const debts = useDebts()
   const budgets = useBudgets(visibleMonth)
   const month = useMonth(visibleMonth)
+  // Por encima de las salidas tempranas: un hook detrás de un `return` dejaría
+  // de llamarse en cuanto la página cargue.
+  const projection = useMonthProjection(visibleMonth)
 
   if (accounts.isPending || month.isPending) {
     return <SkeletonList label="Cargando tus finanzas" rows={3} rowClassName="h-28" />
@@ -74,6 +85,11 @@ export function FinancePage() {
         {month.data ? (
           <MonthTotals totals={month.data.totals} byCategory={month.data.byCategory} />
         ) : null}
+
+        {/* Después de «cómo voy» y antes de los topes: la pregunta que sigue a
+            mirar el mes es cómo va a acabar. Se calla sola fuera del mes en
+            curso y cuando no tiene nada que añadir. */}
+        <MonthProjectionCard projection={projection} />
 
         {/* Vacío fuera del mes en curso: un tope es un valor único, no un
             histórico, y medir julio con el tope de agosto sería mentir. */}

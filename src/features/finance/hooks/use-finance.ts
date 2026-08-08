@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback } from 'react'
+import { useCallback, useMemo } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
@@ -23,8 +23,10 @@ import type {
   FinanceDebt,
   FinanceMonth,
   FinanceRecurring,
+  MonthProjection,
   RecurringWithStatus,
 } from '../types/finance.types'
+import { projectMonthEnd } from '../utils/projection'
 import { financeKeys } from './finance.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -221,6 +223,37 @@ export function useRecurring() {
     queryKey: financeKeys.recurring(userId, toDateKey(today)),
     queryFn: () => (userId ? financeService.getRecurring(userId, today) : []),
   })
+}
+
+/**
+ * Cómo termina el mes: lo que falta por salir de fijos y lo que se iría al ritmo
+ * de estos días.
+ *
+ * **Sólo el mes en curso**, igual que los topes: proyectar un mes que ya cerró
+ * no es proyectar, es contar un pasado distinto del que fue.
+ *
+ * Compone dos consultas que ya existen y no añade ninguna —los fijos son los
+ * mismos que enseña su pestaña, y TanStack los comparte por clave—, así que el
+ * cálculo cabe en un `useMemo` en vez de en una consulta propia. Devuelve `null`
+ * mientras cargan: la tarjeta aparece cuando hay algo que decir, no antes.
+ */
+export function useMonthProjection(month: Date): MonthProjection | null {
+  const today = useToday()
+  const { data: monthData } = useMonth(month)
+  const { data: recurring } = useRecurring()
+
+  const totals = monthData?.totals
+  const isCurrentMonth = monthKeyOf(month) === monthKeyOf(today)
+
+  return useMemo(() => {
+    if (!isCurrentMonth || !totals || !recurring) return null
+
+    return projectMonthEnd(
+      totals,
+      recurring.map((item) => item.recurring),
+      today,
+    )
+  }, [isCurrentMonth, totals, recurring, today])
 }
 
 /** Crea un pago fijo. */
