@@ -4,6 +4,17 @@
  * El motor no conoce ninguna feature: define aquí la forma de los datos que
  * necesita, y son los services de cada dominio quienes rellenan este snapshot.
  * Por eso todos los tipos son locales al motor y no se importan de fuera.
+ *
+ * **El contrato sólo declara lo que alguna regla lee.** Llegó a pedir el perfil
+ * (sexo, altura, fecha de nacimiento), los límites del día (tiempo, equipo,
+ * energía), el peso objetivo y la calidad del sueño: nada de eso lo leía
+ * ninguna regla, y los dos primeros ni siquiera se rellenaban con datos reales
+ * —el sexo se mandaba siempre como `unspecified`, un valor que nadie había
+ * dicho—. Un contrato que pide lo que no usa hace creer que el motor sabe cosas
+ * que no sabe, y obliga a inventar valores para rellenarlo.
+ *
+ * Cuando una regla nueva necesite algo, se añade **con ella**: es entonces
+ * cuando se sabe qué forma tiene que tener.
  */
 
 export type PlanItemDomain = 'workout' | 'nutrition' | 'study' | 'habit' | 'sleep' | 'health'
@@ -11,13 +22,6 @@ export type PlanItemDomain = 'workout' | 'nutrition' | 'study' | 'habit' | 'slee
 export type PlanItemStatus = 'pending' | 'in_progress' | 'done' | 'skipped' | 'rescheduled'
 
 export type Priority = 'low' | 'medium' | 'high' | 'critical'
-
-export type EnergyLevel = 'low' | 'normal' | 'high'
-
-export type Sex = 'male' | 'female' | 'other' | 'unspecified'
-
-export type Equipment =
-  'none' | 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'kettlebell' | 'band' | 'bodyweight'
 
 export interface MacroTotals {
   readonly calories: number
@@ -117,16 +121,10 @@ export interface DailyContext {
   readonly date: string
   /** Momento de la evaluación, ISO 8601. Se inyecta para que el motor sea determinista. */
   readonly now: string
-  readonly profile: {
-    readonly sex: Sex
-    readonly birthDate?: string
-    readonly heightCm?: number
-  }
   readonly goals: {
     readonly nutrition?: NutritionGoalSnapshot
     readonly sleepMinutes?: number
     readonly studyWeeklyMinutes?: number
-    readonly weightKg?: number
   }
   readonly plan: readonly PlanItemSnapshot[]
   readonly workout: {
@@ -161,12 +159,5 @@ export interface DailyContext {
   }
   readonly sleep: {
     readonly lastNightMinutes?: number
-    readonly quality?: number
-  }
-  /** Límites reales del día: tiempo, equipo y energía disponibles. */
-  readonly constraints: {
-    readonly availableMinutes?: number
-    readonly availableEquipment?: readonly Equipment[]
-    readonly energyLevel?: EnergyLevel
   }
 }

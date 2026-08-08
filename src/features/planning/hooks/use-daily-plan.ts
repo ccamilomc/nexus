@@ -60,7 +60,6 @@ export function useDailyPlan(): DailyPlan {
     date: toDateKey(today),
     // El motor no lee el reloj: se le pasa el instante para que sea determinista.
     now: now.toISOString(),
-    profile: { sex: 'unspecified' },
     goals: {
       ...(nutrition.goal === undefined ? {} : { nutrition: nutrition.goal }),
       ...(sleep.targetMinutes === undefined ? {} : { sleepMinutes: sleep.targetMinutes }),
@@ -81,7 +80,6 @@ export function useDailyPlan(): DailyPlan {
     study: study.study,
     habits: habits.habits,
     sleep: sleep.sleep,
-    constraints: {},
   }
 
   // Lo descartado se filtra **después** de evaluar, no antes: el motor sigue

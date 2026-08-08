@@ -6,7 +6,6 @@ import { evaluate } from '@/decision-engine'
 const CONTEXT: DailyContext = {
   date: '2026-07-22',
   now: '2026-07-22T10:00:00.000Z',
-  profile: { sex: 'unspecified' },
   goals: {},
   plan: [],
   workout: { recentSessions: [], routineDays: [] },
@@ -19,7 +18,6 @@ const CONTEXT: DailyContext = {
   study: { weekMinutes: 0 },
   habits: { total: 0, done: 0 },
   sleep: {},
-  constraints: {},
 }
 
 function makeRecommendation(title: string, priority: Priority): Recommendation {

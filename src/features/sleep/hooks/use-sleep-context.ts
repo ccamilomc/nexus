@@ -30,9 +30,6 @@ export function useSleepContext(): SleepContext {
     isPending: isPending || goal.isPending,
     sleep: {
       ...(data ? { lastNightMinutes: data.duration_minutes } : {}),
-      ...(data?.quality_rating === null || data?.quality_rating === undefined
-        ? {}
-        : { quality: data.quality_rating }),
     },
     targetMinutes: goal.data?.target_minutes,
   }

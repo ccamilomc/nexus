@@ -1,7 +1,5 @@
 export type {
   DailyContext,
-  EnergyLevel,
-  Equipment,
   FoodSnapshot,
   LoggedFoodSnapshot,
   MacroTotals,
@@ -16,7 +14,6 @@ export type {
   RecommendationType,
   RoutineDaySnapshot,
   Rule,
-  Sex,
   WorkoutSessionSnapshot,
 } from './contracts'
 export { evaluate } from './engine'
