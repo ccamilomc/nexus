@@ -1,5 +1,6 @@
 import { InstallBanner } from '@/app/layout/InstallBanner'
 import { TodayFocus } from '@/features/planning'
+import { SleepQuickLog } from '@/features/sleep'
 
 import { DomainSummary } from '../components/DomainSummary'
 import { WaterQuickAdd } from '../components/WaterQuickAdd'
@@ -35,6 +36,12 @@ export function DashboardPage() {
 
       {/* Tras el saludo y no encima: se ofrece, no se interrumpe. */}
       <InstallBanner />
+
+      {/* Por delante de todo, pero sólo por la mañana y sólo si falta: apuntar
+          la noche cambia lo que el motor recomienda después, así que hacerlo
+          primero evita leer un plan que ya no vale. Se calla sola el resto del
+          día. */}
+      <SleepQuickLog />
 
       <TodayFocus />
 

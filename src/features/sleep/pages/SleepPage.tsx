@@ -9,6 +9,7 @@ import { SleepForm } from '../components/SleepForm'
 import { SleepGoalCard } from '../components/SleepGoalCard'
 import { SleepHistoryList } from '../components/SleepHistoryList'
 import { useLastNight, useSleepHistory } from '../hooks/use-sleep'
+import { sleepPattern } from '../utils/sleep-pattern'
 
 /**
  * El sueño: lo de anoche y cómo han ido las últimas noches.
@@ -44,6 +45,7 @@ export function SleepPage() {
           <SleepForm
             today={today}
             log={log}
+            pattern={sleepPattern(history.data?.logs ?? [])}
             onSaved={() => setIsEditing(false)}
             onCancel={log ? () => setIsEditing(false) : undefined}
           />

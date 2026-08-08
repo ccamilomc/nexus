@@ -14,15 +14,21 @@ import { QUALITY_LABELS, QUALITY_VALUES } from '../constants/sleep.constants'
 import { useLogSleep } from '../hooks/use-sleep'
 import { logSleepSchema, type LogSleepValues } from '../schemas/sleep.schema'
 import type { SleepLog } from '../types/sleep.types'
+import type { SleepPattern } from '../utils/sleep-pattern'
 import { sleepMinutes } from '../utils/sleep-time'
 
 interface SleepFormProps {
   readonly today: Date
   /** Registro de anoche, si ya existe: el formulario lo corrige. */
   readonly log: SleepLog | null
+  /** Tu horario habitual, para no empezar de cero. `null` si aún no lo hay. */
+  readonly pattern?: SleepPattern | null
   readonly onSaved: () => void
   readonly onCancel?: (() => void) | undefined
 }
+
+/** Horario de fábrica, para quien todavía no tiene costumbre registrada. */
+const FALLBACK_PATTERN: SleepPattern = { bedtime: '23:00', wakeTime: '07:00' }
 
 /**
  * Registrar la noche: a qué hora te acostaste y cuándo despertaste.
@@ -31,8 +37,11 @@ interface SleepFormProps {
  * se muestra mientras se escribe, para confirmar de un vistazo que las horas
  * son las que se querían poner.
  */
-export function SleepForm({ today, log, onSaved, onCancel }: SleepFormProps) {
+export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: SleepFormProps) {
   const logSleep = useLogSleep(today)
+  // Sin costumbre registrada se cae a un horario de fábrica; con ella, el
+  // formulario arranca donde el usuario suele estar y casi nunca hay que tocarlo.
+  const start = pattern ?? FALLBACK_PATTERN
 
   const {
     register,
@@ -43,8 +52,8 @@ export function SleepForm({ today, log, onSaved, onCancel }: SleepFormProps) {
   } = useForm<LogSleepValues>({
     resolver: zodResolver(logSleepSchema),
     defaultValues: {
-      bedtime: log?.bedtime ? formatTime(log.bedtime) : '23:00',
-      wakeTime: log?.wake_time ? formatTime(log.wake_time) : '07:00',
+      bedtime: log?.bedtime ? formatTime(log.bedtime) : start.bedtime,
+      wakeTime: log?.wake_time ? formatTime(log.wake_time) : start.wakeTime,
       ...(log?.quality_rating === null || log?.quality_rating === undefined
         ? {}
         : { qualityRating: log.quality_rating }),
