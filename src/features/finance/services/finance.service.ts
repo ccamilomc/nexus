@@ -182,12 +182,13 @@ export const financeService = {
       if (!isCurrentMonth) return []
 
       const { fromKey, toKey } = monthRange(month)
-      const [budgets, transactions] = await Promise.all([
+      const [budgets, transactions, categories] = await Promise.all([
         financeRepository.listBudgets(userId),
         financeRepository.listTransactionsBetween(userId, fromKey, toKey),
+        financeRepository.listCategories(),
       ])
 
-      return calculateBudgets(budgets, calculateByCategory(transactions))
+      return calculateBudgets(budgets, calculateByCategory(transactions), categories)
     } catch (error) {
       throw toAppError(error)
     }

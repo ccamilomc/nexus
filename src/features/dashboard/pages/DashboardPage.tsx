@@ -1,4 +1,5 @@
 import { InstallBanner } from '@/app/layout/InstallBanner'
+import { TodayFocus } from '@/features/planning'
 
 import { DomainSummary } from '../components/DomainSummary'
 import { WaterQuickAdd } from '../components/WaterQuickAdd'
@@ -10,6 +11,10 @@ import { useDashboard } from '../hooks/use-dashboard'
  * **El saludo no manda.** Era lo más grande de la pantalla y es lo que menos
  * dice; ahora comparte fila con el agua y deja el tamaño a los datos, que son
  * lo que se viene a mirar.
+ *
+ * **Lo accionable va antes que el resumen.** Los siete módulos cuentan cómo va
+ * el día; lo que hay que hacer con él lo sabe el motor, y hasta ahora sólo se
+ * veía entrando en Plan. La pregunta «¿y ahora qué?» se responde aquí.
  */
 export function DashboardPage() {
   const { name, greeting, todayLabel } = useDashboard()
@@ -30,6 +35,8 @@ export function DashboardPage() {
 
       {/* Tras el saludo y no encima: se ofrece, no se interrumpe. */}
       <InstallBanner />
+
+      <TodayFocus />
 
       <DomainSummary />
     </div>
