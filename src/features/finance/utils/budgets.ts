@@ -1,4 +1,9 @@
-import type { BudgetStatus, CategorySpend, FinanceBudget } from '../types/finance.types'
+import type {
+  BudgetStatus,
+  CategorySpend,
+  FinanceBudget,
+  FinanceCategory,
+} from '../types/finance.types'
 
 /**
  * Cuánto va del mes, de 0 a 100.
@@ -21,13 +26,18 @@ export function monthProgressPercent(today: Date): number {
  * revés, sólo verías los topes que ya empezaste a gastar.
  *
  * Lo gastado sin tope no entra aquí: eso ya lo cuenta «en qué se fue».
+ *
+ * **El nombre sale del catálogo, no del gasto.** Sacarlo del gasto dejaba sin
+ * nombre justo el caso que más importa: el tope que todavía no has empezado a
+ * gastar, que es el que aparece con todo por delante.
  */
 export function calculateBudgets(
   budgets: readonly FinanceBudget[],
   spendByCategory: readonly CategorySpend[],
+  categories: readonly FinanceCategory[],
 ): BudgetStatus[] {
   const spentById = new Map(spendByCategory.map((entry) => [entry.categoryId, entry.amount]))
-  const nameById = new Map(spendByCategory.map((entry) => [entry.categoryId, entry.name]))
+  const nameById = new Map(categories.map((category) => [category.id, category.name]))
 
   return budgets
     .map((budget) => {
@@ -36,9 +46,12 @@ export function calculateBudgets(
 
       return {
         categoryId: budget.category_id,
-        // Si no se gastó nada en ella este mes, su nombre no viene con el gasto
-        // y lo pone quien llama; aquí se deja vacío antes que inventarlo.
-        name: nameById.get(budget.category_id) ?? '',
+        // Si la categoría se archivó, su tope sigue midiendo lo gastado y hay
+        // que poder nombrarlo: se cae al nombre que traiga el gasto.
+        name:
+          nameById.get(budget.category_id) ??
+          spendByCategory.find((entry) => entry.categoryId === budget.category_id)?.name ??
+          '',
         spent,
         cap,
         // Puede pasar de 100: recortarlo escondería justo cuánto te pasaste.

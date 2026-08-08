@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CategorySpend, FinanceBudget } from '../types/finance.types'
+import type { CategorySpend, FinanceBudget, FinanceCategory } from '../types/finance.types'
 import { calculateBudgets, monthProgressPercent } from './budgets'
 
 describe('monthProgressPercent', () => {
@@ -30,11 +30,32 @@ function spend(categoryId: string, name: string, amount: number): CategorySpend 
   return { categoryId, name, amount, share: 0 }
 }
 
+function category(id: string, name: string): FinanceCategory {
+  return {
+    id,
+    name,
+    user_id: 'u-1',
+    kind: 'expense',
+    archived_at: null,
+    created_at: '2026-08-01T10:00:00Z',
+    updated_at: '2026-08-01T10:00:00Z',
+  }
+}
+
+/** El catálogo del usuario, que es de donde sale el nombre de cada tope. */
+const CATEGORIES = [
+  category('cat-1', 'Mercado'),
+  category('cat-2', 'Ocio'),
+  category('cat-3', 'Ocio'),
+  category('cat-4', 'Mercado'),
+]
+
 describe('calculateBudgets', () => {
   it('cruza lo gastado con su tope', () => {
     const [mercado] = calculateBudgets(
       [budget('cat-1', 500_000)],
       [spend('cat-1', 'Mercado', 380_000)],
+      CATEGORIES,
     )
 
     expect(mercado).toMatchObject({
@@ -50,9 +71,27 @@ describe('calculateBudgets', () => {
   it('un tope sin gastos aparece igual, con todo por gastar', () => {
     // Saber lo que queda es la mitad del sentido de poner un tope. Si sólo se
     // enseñaran los que ya se empezaron a gastar, el mes arrancaría en blanco.
-    const [ocio] = calculateBudgets([budget('cat-2', 200_000)], [])
+    const [ocio] = calculateBudgets([budget('cat-2', 200_000)], [], CATEGORIES)
 
     expect(ocio).toMatchObject({ spent: 0, remaining: 200_000, percent: 0, isExceeded: false })
+  })
+
+  it('un tope sin gastos conserva su nombre', () => {
+    // Salía vacío: el nombre se sacaba del gasto, así que faltaba justo en el
+    // caso que más importa —el tope que aún no has empezado a gastar—.
+    const [ocio] = calculateBudgets([budget('cat-2', 200_000)], [], CATEGORIES)
+
+    expect(ocio?.name).toBe('Ocio')
+  })
+
+  it('si la categoría se archivó, el nombre se rescata del gasto', () => {
+    const [huerfano] = calculateBudgets(
+      [budget('cat-borrada', 100_000)],
+      [spend('cat-borrada', 'Suscripciones', 40_000)],
+      CATEGORIES,
+    )
+
+    expect(huerfano?.name).toBe('Suscripciones')
   })
 
   it('pasarse se dice entero, no recortado al 100 %', () => {
@@ -61,6 +100,7 @@ describe('calculateBudgets', () => {
     const [arriendo] = calculateBudgets(
       [budget('cat-3', 100_000)],
       [spend('cat-3', 'Ocio', 150_000)],
+      CATEGORIES,
     )
 
     expect(arriendo?.percent).toBe(150)
@@ -72,6 +112,7 @@ describe('calculateBudgets', () => {
     const [exacto] = calculateBudgets(
       [budget('cat-4', 100_000)],
       [spend('cat-4', 'Mercado', 100_000)],
+      CATEGORIES,
     )
 
     expect(exacto?.isExceeded).toBe(false)
@@ -79,7 +120,7 @@ describe('calculateBudgets', () => {
   })
 
   it('lo gastado sin tope no entra: eso ya lo cuenta «en qué se fue»', () => {
-    const result = calculateBudgets([], [spend('cat-9', 'Regalos', 90_000)])
+    const result = calculateBudgets([], [spend('cat-9', 'Regalos', 90_000)], CATEGORIES)
 
     expect(result).toEqual([])
   })
@@ -88,6 +129,7 @@ describe('calculateBudgets', () => {
     const result = calculateBudgets(
       [budget('cat-1', 100_000), budget('cat-2', 100_000), budget('cat-3', 100_000)],
       [spend('cat-1', 'Mercado', 10_000), spend('cat-3', 'Ocio', 120_000)],
+      CATEGORIES,
     )
 
     expect(result.map(({ categoryId }) => categoryId)).toEqual(['cat-3', 'cat-1', 'cat-2'])
