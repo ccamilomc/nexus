@@ -22,3 +22,23 @@ export const logSleepSchema = z.object({
 })
 
 export type LogSleepValues = z.infer<typeof logSleepSchema>
+
+/** Por debajo de tres horas no es un objetivo de sueño, es un error al teclear. */
+const MIN_TARGET_HOURS = 3
+const MAX_TARGET_HOURS = 14
+
+/**
+ * Cuánto quieres dormir.
+ *
+ * **Se pide en horas y con decimales** («7,5»), porque así es como se piensa el
+ * sueño; la base guarda minutos, que es su unidad. La conversión la hace el
+ * servicio, igual que con el objetivo semanal de estudio.
+ */
+export const sleepGoalSchema = z.object({
+  targetHours: z
+    .number({ message: 'Escribe cuántas horas.' })
+    .min(MIN_TARGET_HOURS, 'Muy poco: revisa el número.')
+    .max(MAX_TARGET_HOURS, 'Eso es más de lo que cabe en una noche.'),
+})
+
+export type SleepGoalValues = z.infer<typeof sleepGoalSchema>

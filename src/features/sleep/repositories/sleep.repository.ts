@@ -1,9 +1,41 @@
 import { supabase, type TablesInsert } from '@/core/supabase'
 
-import type { SleepDaySample, SleepLog } from '../types/sleep.types'
+import type { SleepDaySample, SleepGoal, SleepLog } from '../types/sleep.types'
 
 /** Acceso a datos de sueño. Sólo habla con Supabase; sin reglas de negocio. */
 export const sleepRepository = {
+  /** El objetivo vigente, o `null` si el usuario no ha fijado ninguno. */
+  async findActiveGoal(userId: string): Promise<SleepGoal | null> {
+    const { data, error } = await supabase
+      .from('sleep_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
+  /** Jubila los objetivos vigentes antes de crear el nuevo. */
+  async deactivateGoals(userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('sleep_goals')
+      .update({ is_active: false })
+      .eq('user_id', userId)
+      .eq('is_active', true)
+
+    if (error) throw error
+  },
+
+  async insertGoal(input: TablesInsert<'sleep_goals'>): Promise<SleepGoal> {
+    const { data, error } = await supabase.from('sleep_goals').insert(input).select('*').single()
+
+    if (error) throw error
+    return data
+  },
+
   /** Las últimas noches, de la más reciente a la más antigua. */
   async listRecentLogs(userId: string, limit: number): Promise<SleepLog[]> {
     const { data, error } = await supabase

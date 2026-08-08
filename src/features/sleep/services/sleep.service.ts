@@ -2,8 +2,8 @@ import { createAppError, toAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
 import { sleepRepository } from '../repositories/sleep.repository'
-import type { LogSleepValues } from '../schemas/sleep.schema'
-import type { SleepHistory, SleepLog, SleepPeriodSeries } from '../types/sleep.types'
+import type { LogSleepValues, SleepGoalValues } from '../schemas/sleep.schema'
+import type { SleepGoal, SleepHistory, SleepLog, SleepPeriodSeries } from '../types/sleep.types'
 import { buildSleepHistory } from '../utils/sleep-history'
 import { buildSleepSeries } from '../utils/sleep-series'
 import { sleepInstants, sleepMinutes } from '../utils/sleep-time'
@@ -22,6 +22,38 @@ export const sleepService = {
   async getLastNight(userId: string, today: Date): Promise<SleepLog | null> {
     try {
       return await sleepRepository.findLogByDate(userId, toDateKey(today))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** El objetivo vigente, o `null` si el usuario no ha fijado ninguno. */
+  async getActiveGoal(userId: string): Promise<SleepGoal | null> {
+    try {
+      return await sleepRepository.findActiveGoal(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Guarda cuánto quieres dormir.
+   *
+   * **No se edita el vigente: se jubila y se crea otro**, igual que los
+   * objetivos de nutrición. Así queda el historial de qué perseguías en cada
+   * momento, que es para lo que el esquema previó `is_active`.
+   *
+   * El formulario habla en horas porque así se piensa el sueño; la base guarda
+   * minutos, que es su unidad.
+   */
+  async saveGoal(userId: string, values: SleepGoalValues): Promise<SleepGoal> {
+    try {
+      await sleepRepository.deactivateGoals(userId)
+
+      return await sleepRepository.insertGoal({
+        user_id: userId,
+        target_minutes: Math.round(values.targetHours * 60),
+      })
     } catch (error) {
       throw toAppError(error)
     }

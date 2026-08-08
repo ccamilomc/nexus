@@ -4,9 +4,9 @@ import type { SummaryItem } from '../constants/dashboard-items'
 import { SummaryCard } from './SummaryCard'
 import { SummaryLines } from './SummaryLines'
 
-/** Tarjeta de sueño con lo dormido anoche y la media de la semana. */
+/** Tarjeta de sueño con lo dormido anoche, su objetivo y la media de la semana. */
 export function SleepSummaryCard({ to, label, Icon, emptyLabel }: SummaryItem) {
-  const { isPending, isEmpty, lines } = useSleepSummary()
+  const { isPending, isEmpty, lines, progress } = useSleepSummary()
 
   return (
     <SummaryCard to={to} label={label} Icon={Icon}>
@@ -15,6 +15,7 @@ export function SleepSummaryCard({ to, label, Icon, emptyLabel }: SummaryItem) {
         isEmpty={isEmpty}
         emptyLabel={emptyLabel}
         lines={lines}
+        progress={progress}
         loadingLabel="Cargando tu sueño"
       />
     </SummaryCard>
