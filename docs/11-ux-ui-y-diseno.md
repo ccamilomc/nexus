@@ -26,8 +26,8 @@ importante?, ¿cuál es la siguiente acción? El usuario nunca debería pregunta
   **design tokens** (variables CSS mapeadas en Tailwind):
 
   `--background`, `--foreground`, `--card`, `--muted`, `--primary`,
-  `--secondary`, `--accent`, `--success`, `--warning`, `--danger`, `--border`,
-  `--ring`.
+  `--secondary`, `--accent`, `--success`, `--warning`, `--destructive`,
+  `--border`, `--ring`.
 
 - El tema se implementa en `core/theme`; los componentes consumen tokens, nunca
   valores crudos. Cambiar de tema no debe requerir tocar componentes.
@@ -56,6 +56,37 @@ propósito: una aplicación de siete secciones se cansa si todo grita.
 morado del sueño y quedaba casi idéntico a la marca, con el título índigo de la
 sección justo encima de esa línea. Sigue por encima del 3:1 que pide WCAG para un
 elemento gráfico (5,14:1 en claro, 8,10:1 en oscuro).
+
+### Los colores de estado se usan como texto, y por eso van oscuros en claro
+
+Verde, ámbar y rojo casi nunca son un relleno en Nexus: son **palabras**. «Te
+pasaste $175.000», «Escribe un monto», un balance en rojo, un ingreso en verde,
+una racha en ámbar. Los valores de fábrica de shadcn están pensados al revés
+—color de fondo con texto blanco encima— y eso los deja **por debajo del 4,5:1
+que WCAG AA pide para texto normal**:
+
+| Token                  | Antes      | Ahora      | Dónde fallaba                               |
+| ---------------------- | ---------- | ---------- | ------------------------------------------- |
+| `--destructive` claro  | 3,76:1     | **6,48:1** | Errores de formulario, saldos de deuda      |
+| `--destructive` oscuro | **1,83:1** | **6,10:1** | Lo mismo, y prácticamente invisible         |
+| `--warning` claro      | 2,86:1     | **4,87:1** | «Te pasaste», rachas, presupuesto de comida |
+
+La regla que lo explica todo: **en claro el color de estado va oscuro; en oscuro
+va claro con el texto oscuro encima.** `--success` ya lo cumplía (en claro es un
+verde oscuro, no uno brillante) y los otros dos se habían quedado con el valor de
+fábrica.
+
+Dos consecuencias que se aceptan a conciencia:
+
+- **El ámbar en claro se vuelve un naranja quemado** (`32 100% 34%`). Es el precio
+  de poder escribir con él, el mismo que ya pagaba el verde. Como relleno sigue
+  cumpliendo: la barra de un tope pasado queda a 4,44:1 sobre su carril, por
+  encima del 3:1 que WCAG pide a un elemento gráfico.
+- **El rojo en oscuro comparte luz y saturación con la marca** (`0 85% 68%` frente
+  a `255 85% 68%`). No es casualidad: en este tema los colores del sistema se
+  sostienen todos a la misma altura.
+
+Medido en el navegador sobre el DOM real, no calculado a mano.
 
 ### Superficies y elevación
 
