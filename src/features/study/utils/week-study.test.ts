@@ -25,6 +25,7 @@ function session(subjectId: string | null, minutes: number): StudySessionWithSub
     duration_minutes: minutes,
     started_at: '2026-07-29T14:00:00.000Z',
     ended_at: '2026-07-29T15:00:00.000Z',
+    target_minutes: null,
     focus_rating: null,
     technique: null,
     notes: null,

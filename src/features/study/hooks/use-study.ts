@@ -144,13 +144,20 @@ function useRefreshSessions() {
   }, [queryClient])
 }
 
+interface StartSessionVariables {
+  readonly subjectId: string
+  /** Duración propuesta para el bloque; `null` es un rato abierto. */
+  readonly targetMinutes: number | null
+}
+
 /** Pone el cronómetro en marcha para una materia. */
 export function useStartStudySession() {
   const { user } = useAuth()
   const refresh = useRefreshSessions()
 
-  return useMutation<StudySessionWithSubject, AppError, string>({
-    mutationFn: (subjectId) => studyService.startSession(requireUserId(user?.id), subjectId),
+  return useMutation<StudySessionWithSubject, AppError, StartSessionVariables>({
+    mutationFn: ({ subjectId, targetMinutes }) =>
+      studyService.startSession(requireUserId(user?.id), subjectId, targetMinutes),
     onSuccess: refresh,
   })
 }

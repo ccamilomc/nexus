@@ -18,6 +18,7 @@ function session(
     duration_minutes: minutes,
     started_at: '2026-07-30T14:00:00.000Z',
     ended_at: '2026-07-30T15:00:00.000Z',
+    target_minutes: null,
     focus_rating: null,
     technique: null,
     notes: null,

@@ -1337,6 +1337,7 @@ export type Database = {
           notes: string | null
           started_at: string
           subject_id: string | null
+          target_minutes: number | null
           technique: string | null
           updated_at: string
           user_id: string
@@ -1351,6 +1352,7 @@ export type Database = {
           notes?: string | null
           started_at?: string
           subject_id?: string | null
+          target_minutes?: number | null
           technique?: string | null
           updated_at?: string
           user_id: string
@@ -1365,6 +1367,7 @@ export type Database = {
           notes?: string | null
           started_at?: string
           subject_id?: string | null
+          target_minutes?: number | null
           technique?: string | null
           updated_at?: string
           user_id?: string

@@ -178,8 +178,17 @@ export const studyService = {
    * Sólo puede haber una sesión corriendo: si ya hay una, se devuelve esa misma
    * en lugar de abrir otra. Así una doble pulsación —o el móvil y el portátil a
    * la vez— nunca parten el rato de estudio en dos registros.
+   *
+   * `targetMinutes` es la duración que el usuario se propuso, y **se guarda con
+   * la sesión** por el mismo motivo que `started_at`: si viviera en la pantalla,
+   * recargar convertiría un bloque de 25 minutos en uno sin límite. `null` es un
+   * bloque abierto, que sigue siendo una opción legítima.
    */
-  async startSession(userId: string, subjectId: string): Promise<StudySessionWithSubject> {
+  async startSession(
+    userId: string,
+    subjectId: string,
+    targetMinutes: number | null,
+  ): Promise<StudySessionWithSubject> {
     try {
       const active = await studyRepository.findActiveSession(userId)
       if (active) return active
@@ -188,6 +197,7 @@ export const studyService = {
         user_id: userId,
         subject_id: subjectId,
         started_at: new Date().toISOString(),
+        target_minutes: targetMinutes,
       })
 
       // Se relee para recuperar la materia enlazada, que la inserción no trae.

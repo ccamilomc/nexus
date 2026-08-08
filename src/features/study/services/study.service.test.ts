@@ -61,6 +61,7 @@ const SAVED_SESSION: StudySession = {
   duration_minutes: 50,
   started_at: '2026-07-30T22:10:00.000Z',
   ended_at: '2026-07-30T23:00:00.000Z',
+  target_minutes: null,
   focus_rating: null,
   technique: null,
   notes: null,
@@ -180,7 +181,7 @@ describe('studyService.startSession', () => {
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(running('2026-07-30T21:00:00.000Z'))
 
-    const active = await studyService.startSession(USER_ID, CALCULO.id)
+    const active = await studyService.startSession(USER_ID, CALCULO.id, null)
 
     expect(insertSession).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: USER_ID, subject_id: CALCULO.id }),
@@ -195,7 +196,7 @@ describe('studyService.startSession', () => {
     const enCurso = running('2026-07-30T21:00:00.000Z')
     findActiveSession.mockResolvedValue(enCurso)
 
-    const active = await studyService.startSession(USER_ID, 'otra-materia')
+    const active = await studyService.startSession(USER_ID, 'otra-materia', null)
 
     expect(insertSession).not.toHaveBeenCalled()
     expect(active.id).toBe(enCurso.id)
@@ -204,7 +205,9 @@ describe('studyService.startSession', () => {
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     insertSession.mockRejectedValue(new Error('violates row-level security policy'))
 
-    const error: unknown = await studyService.startSession(USER_ID, CALCULO.id).catch((e) => e)
+    const error: unknown = await studyService
+      .startSession(USER_ID, CALCULO.id, null)
+      .catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')
