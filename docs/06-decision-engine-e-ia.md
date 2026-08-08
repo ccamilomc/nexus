@@ -32,33 +32,46 @@ El motor no conoce las features: define **contratos** que las features rellenan.
 interface DailyContext {
   date: string // ISO (día evaluado)
   now: string // ISO (momento de evaluación)
-  profile: { sex: Sex; birthDate?: string; heightCm?: number }
   goals: {
     nutrition?: NutritionGoal // macros y agua; el dinero es de finanzas
     sleepMinutes?: number
     studyWeeklyMinutes?: number
-    weightKg?: number
   }
   plan: PlanItemSnapshot[] // ítems del día y su estado
-  workout: { recentSessions: SessionSnapshot[]; activeSessionStartedAt?: string }
+  workout: {
+    recentSessions: SessionSnapshot[]
+    activeSessionStartedAt?: string
+    routineDays: RoutineDaySnapshot[] // para proponer una versión más corta
+  }
   nutrition: {
     todayIntake: MacroTotals
-    todaySpend: number
     todayWaterMl: number
     todayFoods: LoggedFoodSnapshot[] // lo comido hoy, alimento a alimento
     pantry: FoodSnapshot[] // el catálogo, para poder proponer alternativas
   }
   study: { weekMinutes: number }
   habits: { total: number; done: number }
-  sleep: { lastNightMinutes?: number; quality?: number }
-  constraints: {
-    // límites del día real
-    availableMinutes?: number
-    availableEquipment?: Equipment[]
-    energyLevel?: 'low' | 'normal' | 'high'
-  }
+  sleep: { lastNightMinutes?: number }
 }
 ```
+
+### El contrato sólo declara lo que alguna regla lee
+
+Llegó a pedir más: el **perfil** (sexo, altura, fecha de nacimiento), los
+**límites del día** (`constraints`: tiempo, equipo, energía), el **peso
+objetivo** y la **calidad del sueño**. Ninguna regla leía nada de eso.
+
+Peor: los dos primeros ni siquiera se rellenaban con datos reales. `constraints`
+se mandaba siempre `{}` y el sexo iba fijo como `'unspecified'` — un valor que el
+usuario nunca había dicho, inventado sólo para que el objeto compilara.
+
+**Un contrato que pide lo que no usa miente dos veces:** hace creer que el motor
+sabe cosas que no sabe, y obliga a quien lo rellena a inventarse valores. Cuando
+una regla nueva necesite el peso o la energía disponible, el campo entra **con
+ella** — que es cuando se sabe qué forma tiene que tener y de dónde sale.
+
+`todaySpend` se fue por otro motivo, en el mismo espíritu: el dinero lo cuenta
+finanzas (ver [04](./04-modelo-de-datos.md)).
 
 **Salida — `Recommendation`**:
 

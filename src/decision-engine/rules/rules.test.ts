@@ -15,7 +15,6 @@ import { workoutOpenSessionRule } from './workout-open-session'
 const EMPTY: DailyContext = {
   date: '2026-07-30',
   now: '2026-07-30T10:00:00.000Z',
-  profile: { sex: 'unspecified' },
   goals: {},
   plan: [],
   workout: { recentSessions: [], routineDays: [] },
@@ -28,7 +27,6 @@ const EMPTY: DailyContext = {
   study: { weekMinutes: 0 },
   habits: { total: 0, done: 0 },
   sleep: {},
-  constraints: {},
 }
 
 /** `now` a una hora local concreta del día del contexto. */
