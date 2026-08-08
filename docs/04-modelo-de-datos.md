@@ -444,6 +444,15 @@ lo proyecta.
   `exercises`. Cada una es de ingreso o de gasto.
 - **finance_transactions**: cada movimiento (`kind`, `amount`, `occurred_on`,
   `note`), con su cuenta y su categoría.
+- **finance_debts**: a quién debes y quién te debe (`direction`, `principal`,
+  `interest_kind`, `interest_rate`, `instalments`, `due_on`). Los intereses **se
+  calculan y se muestran, nunca se escriben**; un abono es un movimiento con
+  `debt_id`, así que la deuda baja sola.
+- **finance_recurring**: los pagos fijos (`frequency`, `next_due_on`,
+  `anchor_day`, `paused_at`). Avisan al vencer y se confirman de un toque; Nexus
+  **no los apunta solo**.
+- **finance_budgets**: el tope mensual de una categoría de gasto. Uno por
+  categoría, sin histórico: un tope es un ajuste vigente, no un registro.
 
 ### El importe siempre es positivo; la dirección la pone `kind`
 
@@ -456,11 +465,25 @@ por la base y un `kind` que dice si entra o sale, no cabe el caso raro.
 `occurred_on` es `date`. Un gasto pertenece a un día («el martes gasté 800»), no
 a las 21:04 UTC — el mismo criterio que hábitos y sueño (ver [La fecha es local](#la-fecha-es-local)).
 
-### Por ahora no hay traspasos entre cuentas
+### Los traspasos mueven saldo sin ser ingreso ni gasto
 
-Mover dinero de efectivo a Nequi no es ingreso ni gasto, y meterlo como tal
-inflaría los totales del mes. Se deja fuera hasta que haga falta de verdad;
-entrará como un `kind` nuevo con su cuenta destino, sin tocar lo existente.
+Mover dinero de efectivo a Nequi no es lo uno ni lo otro, y contarlo como tal
+inflaría los dos totales del mes. Entró como un `kind` propio
+(`finance_transaction_kind`, distinto del `finance_entry_kind` que comparten las
+categorías) con su `counterpart_account_id`: **no cuenta en los totales pero sí
+mueve el saldo de las dos cuentas**.
+
+### Cómo termina el mes se calcula, y separa lo sabido de lo supuesto
+
+La proyección de cierre **no se guarda en ninguna tabla**: sale de los totales
+del mes y de los `finance_recurring` que aún vencen dentro de él. Son dos cifras
+distintas a propósito —lo comprometido (fijos pendientes, un hecho con fecha) y
+lo estimado (que los días que vienen se parezcan a los que van)—, porque
+fundirlas escondería cuál de las dos puede fallar.
+
+**Sólo se proyecta el gasto variable, nunca el ingreso**: los ingresos que no son
+fijos son esporádicos, y repartirlos a tanto por día inventaría plata que nadie
+ha dicho que vaya a llegar.
 
 ### El presupuesto de comida sigue en Nutrición, de momento
 
@@ -475,8 +498,14 @@ erDiagram
     profiles ||--o{ finance_accounts : posee
     profiles ||--o{ finance_categories : personaliza
     profiles ||--o{ finance_transactions : registra
+    profiles ||--o{ finance_debts : debe
+    profiles ||--o{ finance_recurring : programa
+    profiles ||--o{ finance_budgets : limita
     finance_accounts ||--o{ finance_transactions : origina
     finance_categories ||--o{ finance_transactions : clasifica
+    finance_categories ||--o{ finance_budgets : topa
+    finance_debts ||--o{ finance_transactions : abona
+    finance_recurring ||--o{ finance_transactions : genera
 ```
 
 ## Inteligencia y comunicación
