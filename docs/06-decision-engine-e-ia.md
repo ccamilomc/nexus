@@ -34,7 +34,7 @@ interface DailyContext {
   now: string // ISO (momento de evaluación)
   profile: { sex: Sex; birthDate?: string; heightCm?: number }
   goals: {
-    nutrition?: NutritionGoal // macros + weeklyFoodBudget
+    nutrition?: NutritionGoal // macros y agua; el dinero es de finanzas
     sleepMinutes?: number
     studyWeeklyMinutes?: number
     weightKg?: number
@@ -263,8 +263,9 @@ usuario confirma antes de aplicarlo).
 
 #### 2. Cambio de comida dentro del presupuesto (`meal_swap`)
 
-**Disparador:** desvío de macros del día, o exceso respecto al
-`weekly_food_budget`, o petición explícita.
+**Disparador:** desvío de macros del día, o petición explícita. **No mira ningún
+presupuesto**: compara precios por porción, que es un atributo del alimento. El
+dinero lo cuenta finanzas (ver [04](./04-modelo-de-datos.md)).
 **Lógica:** buscar en el catálogo de `foods` (globales + propios, priorizando
 `pantry` si existe) combinaciones que **cierren el hueco de macros** minimizando
 `cost_per_serving`. Es un problema de optimización acotado (greedy/mochila

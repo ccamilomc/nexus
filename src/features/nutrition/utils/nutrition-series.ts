@@ -7,7 +7,6 @@ import type {
   WaterSample,
 } from '../types/nutrition.types'
 import { macrosForItems } from './macros'
-import { calculateSpend } from './spend'
 
 /**
  * Arma la serie de nutrición de un periodo y las cifras del tramo anterior.
@@ -37,8 +36,6 @@ export function buildNutritionSeries(
     daysLogged: current.daysLogged,
     averageWaterMl: current.averageWaterMl,
     previousAverageWaterMl: previous.averageWaterMl,
-    spend: current.spend,
-    previousSpendCop: previous.spend.totalCop,
   }
 }
 
@@ -63,7 +60,6 @@ function summarize(
   const inPeriod = new Set(days.map(toDateKey))
 
   const caloriesByDate = new Map<string, number>()
-  const periodItems: MealItemSample[] = []
 
   for (const log of mealLogs) {
     const dateKey = toDateKeyFromIso(log.logged_at)
@@ -74,7 +70,6 @@ function summarize(
     // marcaría el día a cero calorías y arrastraría la media hacia abajo.
     if (logItems.length === 0) continue
 
-    periodItems.push(...logItems)
     caloriesByDate.set(
       dateKey,
       (caloriesByDate.get(dateKey) ?? 0) + macrosForItems(logItems).calories,
@@ -108,9 +103,6 @@ function summarize(
     averageCalories: roundOrNull(seriesAverage(caloriePoints)),
     daysLogged: caloriesByDate.size,
     averageWaterMl: roundOrNull(seriesAverage(waterPoints)),
-    // El gasto sí es un total del periodo, no una media: la pregunta es cuánto
-    // se fue en comida, y para eso los días sin registrar suman cero.
-    spend: calculateSpend(periodItems),
     totalCalories: seriesTotal(caloriePoints),
   }
 }

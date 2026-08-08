@@ -1,7 +1,7 @@
 import { Apple } from 'lucide-react'
 
 import { ROUTES } from '@/app/router/routes'
-import { formatCalories, formatCop, formatVolumeMl, useNutritionSeries } from '@/features/nutrition'
+import { formatCalories, formatVolumeMl, useNutritionSeries } from '@/features/nutrition'
 import { EmptyState } from '@/shared/components/feedback'
 
 import type { PeriodWindow } from '../types/analytics.types'
@@ -19,11 +19,13 @@ interface NutritionAnalyticsProps {
 const CALORIES_IN_THOUSAND = 1000
 
 /**
- * La nutrición del periodo: calorías, agua y lo que costó.
+ * La nutrición del periodo: calorías, agua y días registrados.
  *
- * El gasto en pesos es el diferencial del producto, así que va aquí con el
- * mismo peso que las calorías. Cuando hay alimentos sin precio se dice: un
- * total que parece completo sin serlo miente.
+ * **Sin cifras de dinero.** Aquí había un «Gasto en comida» que sumaba el
+ * precio de lo comido, y no era un gasto: el dinero no sale al comer, sale al
+ * comprar. Competía con el de finanzas —que sí cuenta desembolsos— y ninguno de
+ * los dos se podía creer del todo. El dinero lo cuenta finanzas, en su propia
+ * sección.
  */
 export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
   const { isPending, isError, errorMessage, retry, data } = useNutritionSeries(
@@ -51,7 +53,9 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
         />
       ) : (
         <div className="space-y-3">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {/* Tres columnas desde que se fue el gasto: con cuatro quedaba un
+              hueco a la derecha y las tarjetas se estiraban sin motivo. */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <KpiCard
               label="Calorías por día"
               value={data.averageCalories === null ? '—' : formatCalories(data.averageCalories)}
@@ -63,16 +67,6 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
               value={data.averageWaterMl === null ? '—' : formatVolumeMl(data.averageWaterMl)}
               comparison={compareValues(data.averageWaterMl, data.previousAverageWaterMl)}
               hint={data.averageWaterMl === null ? 'Sin registros de agua' : null}
-            />
-            <KpiCard
-              label="Gasto en comida"
-              value={formatCop(data.spend.totalCop)}
-              comparison={compareValues(data.spend.totalCop, data.previousSpendCop)}
-              hint={
-                data.spend.itemsWithoutPrice > 0
-                  ? `Faltan ${formatCount(data.spend.itemsWithoutPrice, 'alimento sin precio', 'alimentos sin precio')}`
-                  : null
-              }
             />
             <KpiCard
               label="Días registrados"

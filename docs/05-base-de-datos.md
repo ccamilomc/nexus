@@ -156,7 +156,7 @@ Columnas comunes omitidas por brevedad en cada tabla:
 ### Nutrition
 
 **foods** (catálogo; `user_id` nullable): `name`, `brand null`, `serving_size numeric`, `serving_unit text`, `calories numeric`, `protein_g numeric`, `carbs_g numeric`, `fat_g numeric`, `fiber_g numeric null`, **`cost_per_serving numeric(10,2) null`**, `currency text null`.
-**nutrition_goals** (sync): `user_id`, `calories_target int`, `protein_g_target int`, `carbs_g_target int`, `fat_g_target int`, `water_ml_target int`, **`weekly_food_budget numeric(10,2) null`**, `is_active boolean`, `effective_from date`.
+**nutrition_goals** (sync): `user_id`, `calories_target int`, `protein_g_target int`, `carbs_g_target int`, `fat_g_target int`, `water_ml_target int`, `is_active boolean`, `effective_from date`. Llevó un `weekly_food_budget` que se retiró: el presupuesto de comida es el tope de su categoría en `finance_budgets`, sobre dinero real (ver [04](./04-modelo-de-datos.md)).
 **meal_plans** (sync): `user_id`, `name`, `is_active boolean`.
 **meal_plan_items**: `meal_plan_id FK cascade`, `meal_type meal_type`, `food_id FK restrict`, `servings numeric(6,2)`.
 **meal_logs** (sync): `user_id`, `logged_at timestamptz`, `meal_type meal_type`, `name text null`.

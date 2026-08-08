@@ -135,22 +135,16 @@ export interface DayWater {
 }
 
 /**
- * Gasto en comida de un periodo.
- *
- * El precio de un alimento es opcional, así que el total puede ser parcial:
- * por eso se lleva la cuenta de cuántos alimentos no lo tienen.
- */
-export interface WeeklySpend {
-  readonly totalCop: number
-  readonly itemsWithPrice: number
-  readonly itemsWithoutPrice: number
-}
-
-/**
  * La nutrición de un periodo, tal y como la consume Analytics.
  *
  * Los días sin registro son **huecos**, no ceros: nadie come cero calorías
  * (ver `buildNutritionSeries`).
+ *
+ * **Sin cifras de dinero, a propósito.** Aquí se sumaba «lo que costó lo
+ * comido» y se enseñaba como «Gasto en comida», pero el dinero no sale al
+ * comer: sale al comprar. Ese total no correspondía a ningún desembolso y
+ * competía con el de finanzas, que sí. El gasto lo cuenta finanzas; nutrición
+ * usa el precio para decidir qué comer, no para llevar cuentas (docs/04).
  */
 export interface NutritionPeriodSeries {
   /** Calorías de cada día; hueco donde no se registró nada. */
@@ -163,7 +157,4 @@ export interface NutritionPeriodSeries {
   /** Media de agua de los días con registro; `null` si no hay ninguno. */
   readonly averageWaterMl: number | null
   readonly previousAverageWaterMl: number | null
-  /** Gasto del periodo, con cuántos alimentos van sin precio. */
-  readonly spend: WeeklySpend
-  readonly previousSpendCop: number
 }

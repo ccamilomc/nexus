@@ -15,7 +15,9 @@ import { NutritionNav } from '../components/NutritionNav'
 export function NutritionLayout() {
   return (
     <>
-      <PageHeader title="Nutrición" description="Lo que comes, sus macros y su coste." />
+      {/* Ya no promete «su coste»: el dinero se cuenta en Finanzas. Aquí el
+          precio por porción sólo sirve para comparar dos alimentos. */}
+      <PageHeader title="Nutrición" description="Lo que comes, con sus macros y su agua." />
       <NutritionNav />
       <Suspense fallback={<SkeletonList label="Cargando la sección" rows={3} />}>
         <Outlet />

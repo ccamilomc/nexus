@@ -42,7 +42,6 @@ export function useNutritionContext(): NutritionContext {
         carbsG: totals?.carbsG ?? 0,
         fatG: totals?.fatG ?? 0,
       },
-      todaySpend: spentToday(day.data),
       todayWaterMl: water.data?.totalMl ?? 0,
       todayFoods: loggedFoods(day.data),
       pantry: (foods.data ?? []).map(toFoodSnapshot),
@@ -54,9 +53,6 @@ export function useNutritionContext(): NutritionContext {
           carbsG: goal.data.carbs_g_target,
           fatG: goal.data.fat_g_target,
           waterMl: goal.data.water_ml_target,
-          ...(goal.data.weekly_food_budget === null
-            ? {}
-            : { weeklyFoodBudget: goal.data.weekly_food_budget }),
         }
       : undefined,
   }
@@ -89,17 +85,6 @@ function loggedFoods(day: DayNutrition | null | undefined): readonly LoggedFoodS
         ...(cost === null ? {} : { costCop: cost * item.servings }),
       }
     }),
-  )
-}
-
-/** Lo gastado hoy; sólo suma lo que tiene precio conocido. */
-function spentToday(day: DayNutrition | null | undefined): number {
-  if (!day) return 0
-
-  return Math.round(
-    day.meals
-      .flatMap(({ items }) => items)
-      .reduce((total, item) => total + (item.food.cost_per_serving ?? 0) * item.servings, 0),
   )
 }
 

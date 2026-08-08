@@ -12,7 +12,6 @@ const CONTEXT: DailyContext = {
   workout: { recentSessions: [], routineDays: [] },
   nutrition: {
     todayIntake: { calories: 0, proteinG: 0, carbsG: 0, fatG: 0 },
-    todaySpend: 0,
     todayWaterMl: 0,
     todayFoods: [],
     pantry: [],
