@@ -196,6 +196,46 @@ describe('sleepShortRule', () => {
     expect(recommendation?.message).toMatch(/plantéate|considera/i)
     expect(recommendation?.message).not.toMatch(/debes|tienes que|necesitas/i)
   })
+
+  describe('con objetivo propio', () => {
+    const withGoal = (lastNightMinutes: number, targetMinutes: number): DailyContext => ({
+      ...EMPTY,
+      sleep: { lastNightMinutes },
+      goals: { sleepMinutes: targetMinutes },
+    })
+
+    it('avisa aunque se pasen las seis horas, si el objetivo es mayor', () => {
+      // El caso que la regla no cubría: quien necesita ocho y duerme siete no
+      // oía nada, porque seis horas era el listón de todo el mundo.
+      expect(sleepShortRule.appliesTo(withGoal(7 * 60, 8 * 60))).toBe(true)
+    })
+
+    it('calla por debajo de seis horas si eso es lo que buscabas', () => {
+      // Y al revés: a quien se apaña con cinco y media no se le avisa cada
+      // mañana de algo que decidió.
+      expect(sleepShortRule.appliesTo(withGoal(5 * 60 + 30, 5 * 60 + 30))).toBe(false)
+    })
+
+    it('media hora de menos no es dormir poco', () => {
+      // Sin tolerancia, un objetivo de 8 h haría saltar la regla casi todas las
+      // noches, y una regla que habla siempre se deja de leer.
+      expect(sleepShortRule.appliesTo(withGoal(7 * 60 + 30, 8 * 60))).toBe(false)
+      expect(sleepShortRule.appliesTo(withGoal(7 * 60 + 10, 8 * 60))).toBe(true)
+    })
+
+    it('el motivo se mide contra tu objetivo, no contra las seis horas', () => {
+      const [recommendation] = sleepShortRule.evaluate(withGoal(6 * 60 + 30, 8 * 60))
+
+      expect(recommendation?.reason).toContain('1 h 30 min menos de tu objetivo')
+      expect(recommendation?.reason).not.toContain('por debajo de las 6 h')
+    })
+
+    it('quedarse a más de una hora sube la prioridad', () => {
+      expect(sleepShortRule.evaluate(withGoal(7 * 60, 8 * 60))[0]?.priority).toBe('high')
+      // 55 min por debajo: aviso, pero sin subir el tono.
+      expect(sleepShortRule.evaluate(withGoal(7 * 60 + 5, 8 * 60))[0]?.priority).toBe('medium')
+    })
+  })
 })
 
 describe('workoutOpenSessionRule', () => {

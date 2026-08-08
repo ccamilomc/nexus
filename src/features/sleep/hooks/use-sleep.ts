@@ -5,15 +5,16 @@ import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
-import type { LogSleepValues } from '../schemas/sleep.schema'
+import type { LogSleepValues, SleepGoalValues } from '../schemas/sleep.schema'
 import { sleepService } from '../services/sleep.service'
-import type { SleepHistory, SleepLog } from '../types/sleep.types'
+import type { SleepGoal, SleepHistory, SleepLog } from '../types/sleep.types'
 
 export const sleepKeys = {
   all: ['sleep'] as const,
   lastNight: (userId: string | undefined, dayKey: string) =>
     [...sleepKeys.all, 'last-night', userId, dayKey] as const,
   history: (userId: string | undefined) => [...sleepKeys.all, 'history', userId] as const,
+  goal: (userId: string | undefined) => [...sleepKeys.all, 'goal', userId] as const,
   series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
     [...sleepKeys.all, 'series', userId, rangeKey, previousKey] as const,
 }
@@ -46,6 +47,17 @@ export function useSleepHistory() {
   })
 }
 
+/** Cuánto quiere dormir el usuario. `null` si no lo ha fijado. */
+export function useSleepGoal() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<SleepGoal | null, AppError>({
+    queryKey: sleepKeys.goal(userId),
+    queryFn: () => (userId ? sleepService.getActiveGoal(userId) : null),
+  })
+}
+
 /** Refresca el módulo entero tras cualquier cambio. */
 function useRefreshSleep() {
   const queryClient = useQueryClient()
@@ -63,6 +75,17 @@ export function useLogSleep(today: Date) {
 
   return useMutation<void, AppError, LogSleepValues>({
     mutationFn: (values) => sleepService.logSleep(requireUserId(user?.id), today, values),
+    onSuccess: refresh,
+  })
+}
+
+/** Fija cuánto quieres dormir. Jubila el objetivo anterior. */
+export function useSaveSleepGoal() {
+  const { user } = useAuth()
+  const refresh = useRefreshSleep()
+
+  return useMutation<SleepGoal, AppError, SleepGoalValues>({
+    mutationFn: (values) => sleepService.saveGoal(requireUserId(user?.id), values),
     onSuccess: refresh,
   })
 }

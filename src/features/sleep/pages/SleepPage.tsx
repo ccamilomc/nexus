@@ -6,6 +6,7 @@ import { PageHeader } from '@/shared/components/layout'
 
 import { LastNightCard } from '../components/LastNightCard'
 import { SleepForm } from '../components/SleepForm'
+import { SleepGoalCard } from '../components/SleepGoalCard'
 import { SleepHistoryList } from '../components/SleepHistoryList'
 import { useLastNight, useSleepHistory } from '../hooks/use-sleep'
 
@@ -51,6 +52,11 @@ export function SleepPage() {
         )}
 
         {history.data ? <SleepHistoryList history={history.data} /> : null}
+
+        {/* Al final: se fija una vez y no se vuelve a tocar en meses. Arriba
+            estorbaría a quien entra a apuntar la noche, que es el caso de cada
+            día. */}
+        <SleepGoalCard />
       </div>
     </>
   )

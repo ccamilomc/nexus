@@ -63,6 +63,7 @@ export function useDailyPlan(): DailyPlan {
     profile: { sex: 'unspecified' },
     goals: {
       ...(nutrition.goal === undefined ? {} : { nutrition: nutrition.goal }),
+      ...(sleep.targetMinutes === undefined ? {} : { sleepMinutes: sleep.targetMinutes }),
       ...(study.weeklyTargetMinutes === undefined
         ? {}
         : { studyWeeklyMinutes: study.weeklyTargetMinutes }),

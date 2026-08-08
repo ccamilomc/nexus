@@ -1,9 +1,9 @@
 import { useToday } from '@/core/time'
-import type { DomainSummaryData } from '@/shared/types'
+import type { DomainSummaryData, SummaryProgress } from '@/shared/types'
 import { formatMinutes } from '@/shared/utils'
 
 import { QUALITY_LABELS } from '../constants/sleep.constants'
-import { useLastNight, useSleepHistory } from './use-sleep'
+import { useLastNight, useSleepGoal, useSleepHistory } from './use-sleep'
 
 /**
  * Resumen de sueño para otras pantallas (el dashboard).
@@ -17,21 +17,44 @@ export function useSleepSummary(): SleepSummary {
   const today = useToday()
   const lastNight = useLastNight(today)
   const history = useSleepHistory()
+  const goal = useSleepGoal()
 
-  const isPending = lastNight.isPending || history.isPending
+  const isPending = lastNight.isPending || history.isPending || goal.isPending
   const log = lastNight.data ?? null
   const average = history.data?.averageMinutes ?? null
+  const target = goal.data?.target_minutes ?? null
+
+  // Sin objetivo no hay barra que pintar: tendría que inventarse el 100 %. Es
+  // la misma regla que en nutrición, donde las barras sólo salen con metas.
+  const progress: readonly SummaryProgress[] =
+    log && target !== null
+      ? [
+          {
+            label: 'Anoche',
+            value: log.duration_minutes,
+            target,
+            display: `${formatMinutes(log.duration_minutes)} de ${formatMinutes(target)}`,
+          },
+        ]
+      : []
+
+  const quality =
+    log === null || log.quality_rating === null ? null : QUALITY_LABELS[log.quality_rating]
 
   const lines = log
     ? [
-        `Anoche: ${formatMinutes(log.duration_minutes)}${
-          log.quality_rating === null ? '' : ` · ${QUALITY_LABELS[log.quality_rating]}`
-        }`,
+        // Con barra, las horas de anoche ya están dibujadas: repetirlas en texto
+        // haría leer dos veces lo mismo. Queda la calidad, que la barra no dice.
+        ...(progress.length > 0
+          ? quality === null
+            ? []
+            : [`Calidad: ${quality}`]
+          : [
+              `Anoche: ${formatMinutes(log.duration_minutes)}${quality === null ? '' : ` · ${quality}`}`,
+            ]),
         ...(average === null ? [] : [`Media: ${formatMinutes(average)}`]),
       ]
     : []
 
-  // Sin barra todavía: el objetivo de sueño existe en la base de datos pero no
-  // llega hasta aquí, y una barra sin meta tendría que inventarse el 100 %.
-  return { isPending, isEmpty: !isPending && log === null, lines, progress: [] }
+  return { isPending, isEmpty: !isPending && log === null, lines, progress }
 }
