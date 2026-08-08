@@ -1,4 +1,4 @@
-import { Check } from 'lucide-react'
+import { Check, Pencil } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -12,7 +12,10 @@ import type { RecurringWithStatus } from '../types/finance.types'
 interface RecurringCardProps {
   readonly item: RecurringWithStatus
   readonly isBusy: boolean
+  /** Se está corrigiendo ahora mismo, y se marca para no perderlo de vista. */
+  readonly isEditing: boolean
   readonly onConfirm: () => void
+  readonly onEdit: () => void
   readonly onTogglePaused: (recurringId: string, isPaused: boolean) => void
   readonly onRemove: (recurringId: string) => void
 }
@@ -46,7 +49,9 @@ function describeDue(daysLeft: number, dateKey: string): string {
 export function RecurringCard({
   item,
   isBusy,
+  isEditing,
   onConfirm,
+  onEdit,
   onTogglePaused,
   onRemove,
 }: RecurringCardProps) {
@@ -54,7 +59,7 @@ export function RecurringCard({
   const isPaused = recurring.paused_at !== null
 
   return (
-    <Card className={cn(isPaused && 'opacity-60')}>
+    <Card className={cn(isPaused && 'opacity-60', isEditing && 'ring-2 ring-ring')}>
       <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-3 p-4">
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium">{recurring.name}</p>
@@ -83,6 +88,20 @@ export function RecurringCard({
               Ya lo pagué
             </Button>
           ) : null}
+
+          {/* El nombre lleva el del fijo: en una lista de cinco, cinco botones
+              llamados «Corregir» no le dicen nada a un lector de pantalla. */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            aria-label={`Corregir ${recurring.name}`}
+            disabled={isBusy}
+            className="text-muted-foreground"
+            onClick={onEdit}
+          >
+            <Pencil aria-hidden />
+          </Button>
 
           <ConfirmButton
             label={isPaused ? 'Reanudar' : 'Pausar'}

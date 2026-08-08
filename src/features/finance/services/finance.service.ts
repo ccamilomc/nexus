@@ -65,6 +65,42 @@ function toTransactionRow(values: TransactionValues) {
   }
 }
 
+/** Traduce el formulario de una deuda a la fila de la base. */
+function toDebtRow(values: DebtValues) {
+  return {
+    counterpart: values.counterpart,
+    direction: values.direction,
+    principal: values.principal,
+    interest_kind: values.interestKind,
+    // Sin intereses no hay tasa que guardar, y la base lo exige así.
+    interest_rate: values.interestKind === 'none' ? null : values.interestRate,
+    started_on: values.startedOn,
+    due_on: values.dueOn ?? null,
+    instalments: values.instalments ?? null,
+    note: values.note?.trim() ? values.note.trim() : null,
+  }
+}
+
+/** Traduce el formulario de un pago fijo a la fila de la base. */
+function toRecurringRow(values: RecurringValues) {
+  return {
+    name: values.name,
+    kind: values.kind,
+    amount: values.amount,
+    account_id: values.accountId,
+    category_id: values.categoryId,
+    frequency: values.frequency,
+    next_due_on: values.nextDueOn,
+    note: values.note?.trim() ? values.note.trim() : null,
+  }
+}
+
+/** El día del mes de una clave `YYYY-MM-DD`. */
+function dayOf(dateKey: string): number {
+  const [, , day = 1] = dateKey.split('-').map(Number)
+  return day
+}
+
 /** Reglas de negocio de finanzas. Traduce errores técnicos a `AppError`. */
 export const financeService = {
   async getAccounts(userId: string): Promise<FinanceAccount[]> {
@@ -245,21 +281,41 @@ export const financeService = {
 
   async createRecurring(userId: string, values: RecurringValues): Promise<FinanceRecurring> {
     try {
-      const [, , day = 1] = values.nextDueOn.split('-').map(Number)
-
       return await financeRepository.insertRecurring({
         user_id: userId,
-        name: values.name,
-        kind: values.kind,
-        amount: values.amount,
-        account_id: values.accountId,
-        category_id: values.categoryId,
-        frequency: values.frequency,
-        next_due_on: values.nextDueOn,
+        ...toRecurringRow(values),
         // El día acordado sale del primer vencimiento. Guardarlo aparte es lo
         // que evita que un fijo del 31 se quede en el 28 tras pasar por febrero.
-        anchor_day: day,
-        note: values.note?.trim() ? values.note.trim() : null,
+        anchor_day: dayOf(values.nextDueOn),
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Corrige un pago fijo ya apuntado: sube el arriendo, cambia la cuenta.
+   *
+   * **El día acordado sólo se rehace si la fecha cambió**, y ahí está todo el
+   * cuidado de esta función. Un arriendo del 31 que pasó por febrero tiene su
+   * próximo vencimiento en el 28; recalcular `anchor_day` desde esa fecha al
+   * editar únicamente el monto lo dejaría anclado al 28 **para siempre**, que es
+   * exactamente el fallo que `anchor_day` vino a resolver.
+   *
+   * Los movimientos que ya confirmó no se tocan: el arriendo de julio se pagó a
+   * lo que costaba en julio, y reescribirlo cambiaría un gasto que sí ocurrió.
+   */
+  async updateRecurring(
+    recurringId: string,
+    values: RecurringValues,
+    currentNextDueOn: string,
+  ): Promise<void> {
+    try {
+      const hasMovedDate = values.nextDueOn !== currentNextDueOn
+
+      await financeRepository.updateRecurring(recurringId, {
+        ...toRecurringRow(values),
+        ...(hasMovedDate ? { anchor_day: dayOf(values.nextDueOn) } : {}),
       })
     } catch (error) {
       throw toAppError(error)
@@ -321,19 +377,26 @@ export const financeService = {
 
   async createDebt(userId: string, values: DebtValues): Promise<FinanceDebt> {
     try {
-      return await financeRepository.insertDebt({
-        user_id: userId,
-        counterpart: values.counterpart,
-        direction: values.direction,
-        principal: values.principal,
-        interest_kind: values.interestKind,
-        // Sin intereses no hay tasa que guardar, y la base lo exige así.
-        interest_rate: values.interestKind === 'none' ? null : values.interestRate,
-        started_on: values.startedOn,
-        due_on: values.dueOn ?? null,
-        instalments: values.instalments ?? null,
-        note: values.note?.trim() ? values.note.trim() : null,
-      })
+      return await financeRepository.insertDebt({ user_id: userId, ...toDebtRow(values) })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Corrige una deuda ya apuntada.
+   *
+   * **Se corrige en vez de borrarla y rehacerla**, y la diferencia no es de
+   * comodidad: los abonos son movimientos con `debt_id`, así que borrar la deuda
+   * los desvincula todos. Quien se equivocó en un cero tendría que elegir entre
+   * dejar la cifra mal o perder el rastro de lo que ya pagó.
+   *
+   * El saldo y los intereses **no se guardan**, se calculan, así que cambiar el
+   * monto o la tasa los rehace solos con los abonos que ya hay.
+   */
+  async updateDebt(debtId: string, values: DebtValues): Promise<void> {
+    try {
+      await financeRepository.updateDebt(debtId, toDebtRow(values))
     } catch (error) {
       throw toAppError(error)
     }
