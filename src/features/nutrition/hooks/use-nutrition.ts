@@ -17,7 +17,6 @@ import type {
   NutritionGoal,
   RepeatableMeals,
   RepricedFood,
-  WeeklySpend,
 } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
 
@@ -161,17 +160,6 @@ export function useSaveGoal() {
   return useMutation<NutritionGoal, AppError, NutritionGoalValues>({
     mutationFn: (values) => nutritionService.saveGoal(requireUserId(user?.id), values),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: nutritionKeys.goal(user?.id) }),
-  })
-}
-
-/** Lo gastado en comida durante la semana de `date`. */
-export function useWeekSpend(date: Date) {
-  const { user } = useAuth()
-  const userId = user?.id
-
-  return useQuery<WeeklySpend | null, AppError>({
-    queryKey: nutritionKeys.weekSpend(userId, toDateKey(date)),
-    queryFn: () => (userId ? nutritionService.getWeekSpend(userId, date) : null),
   })
 }
 

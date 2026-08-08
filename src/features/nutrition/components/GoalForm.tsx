@@ -27,11 +27,6 @@ const DEFAULT_VALUES: NutritionGoalValues = {
   waterMlTarget: 2000,
 }
 
-/** Vacío se guarda como «sin presupuesto», que no es lo mismo que cero. */
-function optionalNumber(value: string): number | undefined {
-  return value === '' ? undefined : Number(value)
-}
-
 function toFormValues(goal: NutritionGoal): NutritionGoalValues {
   return {
     caloriesTarget: goal.calories_target,
@@ -39,7 +34,6 @@ function toFormValues(goal: NutritionGoal): NutritionGoalValues {
     carbsGTarget: goal.carbs_g_target,
     fatGTarget: goal.fat_g_target,
     waterMlTarget: goal.water_ml_target,
-    ...(goal.weekly_food_budget !== null ? { weeklyFoodBudget: goal.weekly_food_budget } : {}),
   }
 }
 
@@ -128,24 +122,6 @@ export function GoalForm({ goal, onSaved, onCancel }: GoalFormProps) {
               />
             </FormField>
           </div>
-
-          <FormField
-            id="goal-budget"
-            label="Presupuesto semanal de comida (COP, opcional)"
-            error={errors.weeklyFoodBudget?.message}
-          >
-            <Input
-              id="goal-budget"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              // Importes de miles: avanzar de 0,5 en 0,5 no tendría sentido.
-              step={5000}
-              placeholder="Ej. 150000"
-              aria-invalid={Boolean(errors.weeklyFoodBudget)}
-              {...register('weeklyFoodBudget', { setValueAs: optionalNumber })}
-            />
-          </FormField>
 
           {saveGoal.isError ? <FormAlert>{saveGoal.error.message}</FormAlert> : null}
 

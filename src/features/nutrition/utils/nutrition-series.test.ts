@@ -113,20 +113,6 @@ describe('buildNutritionSeries', () => {
     expect(series.caloriePoints[0]?.value).toBe(500)
   })
 
-  it('suma el gasto y avisa de los alimentos sin precio', () => {
-    // El precio es opcional: el total puede ser parcial y hay que poder decirlo.
-    const series = buildNutritionSeries(
-      [mealLog('m1', DAYS[0] as Date)],
-      [item('m1', food(300, 4500)), item('m1', food(200, null))],
-      [],
-      DAYS,
-      [],
-    )
-
-    expect(series.spend.totalCop).toBe(4500)
-    expect(series.spend.itemsWithoutPrice).toBe(1)
-  })
-
   it('promedia el agua de los días con registro', () => {
     const series = buildNutritionSeries(
       [],
@@ -147,7 +133,5 @@ describe('buildNutritionSeries', () => {
 
     expect(series.averageCalories).toBe(800)
     expect(series.previousAverageCalories).toBe(400)
-    expect(series.spend.totalCop).toBe(5000)
-    expect(series.previousSpendCop).toBe(3000)
   })
 })

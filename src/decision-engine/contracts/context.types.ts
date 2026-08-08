@@ -26,10 +26,17 @@ export interface MacroTotals {
   readonly fatG: number
 }
 
+/**
+ * Los objetivos de nutrición.
+ *
+ * **Sin presupuesto de comida.** Lo llevaba y ninguna regla lo usaba: el dinero
+ * se cuenta en finanzas, contra el tope de su categoría y sobre lo que de
+ * verdad salió. Lo que el motor sí necesita del dinero es el **precio por
+ * porción** de cada alimento (`FoodSnapshot`), que no es contabilidad sino un
+ * atributo para comparar dos comidas.
+ */
 export interface NutritionGoalSnapshot extends MacroTotals {
   readonly waterMl: number
-  /** Presupuesto semanal de comida: base de la nutrición económica. */
-  readonly weeklyFoodBudget?: number
 }
 
 /**
@@ -131,7 +138,6 @@ export interface DailyContext {
   }
   readonly nutrition: {
     readonly todayIntake: MacroTotals
-    readonly todaySpend: number
     /** Agua bebida hoy, en mililitros. */
     readonly todayWaterMl: number
     /** Lo comido hoy, alimento a alimento. Vacío si no se ha registrado nada. */

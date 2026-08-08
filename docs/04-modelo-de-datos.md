@@ -152,17 +152,34 @@ La regla anterior se mantiene: un ejercicio prescrito **no forma parte** de la
 sesión hasta que tiene series. Si no se hace, simplemente no aparece en el
 historial; no hace falta "saltarlo" de forma explícita.
 
-## Nutrition (económica)
+## Nutrition
 
 - **foods**: catálogo (global o personal) con macros por porción **y
-  `cost_per_serving`** (clave para la nutrición económica).
+  `cost_per_serving`**.
 - **nutrition_goals**: objetivos activos del usuario (calorías, proteína, carbos,
-  grasa, `water_ml_target` y **`weekly_food_budget`**). Historial vía
-  `is_active` + `effective_from`.
+  grasa, `water_ml_target`). Historial vía `is_active` + `effective_from`.
 - **meal_plans / meal_plan_items**: plan de comidas planificado.
-- **meal_logs / meal_log_items**: comidas realmente registradas; los macros y el
-  coste se derivan de los items (cantidad × alimento).
+- **meal_logs / meal_log_items**: comidas realmente registradas; los macros se
+  derivan de los items (cantidad × alimento).
 - **water_logs**: registros de hidratación (`amount_ml`, `logged_at`).
+
+### El precio es un atributo del alimento, no contabilidad
+
+`cost_per_serving` responde **«¿qué me sale caro por ración?»** — una decisión de
+qué comer, igual que las calorías. Sostiene la regla `meal_swap` del Decision
+Engine («cámbialo por atún y ahorras $3.400 sin perder proteína»).
+
+**Lo que nutrición NO hace es sumar precios como si fueran gasto.** Lo hacía:
+`nutrition_goals` llevaba un `weekly_food_budget` y Analytics enseñaba un «Gasto
+en comida» que salía de multiplicar el precio por las porciones consumidas. Pero
+**el dinero no sale al comer, sale al comprar**: ese total no correspondía a
+ningún desembolso y competía con el de finanzas, que sí.
+
+La regla, desde entonces: **el dinero se cuenta donde ocurre —al pagar— y se
+cuenta una sola vez.** El presupuesto de comida es el tope de su categoría en
+`finance_budgets`. El puente entre los dos dominios va en un solo sentido y está
+descrito en [02 · Arquitectura](./02-arquitectura.md): apuntar el mercado (hecho
+contable) pone al día el precio por porción (atributo).
 
 ```mermaid
 erDiagram
@@ -497,21 +514,15 @@ viejos el coste por porción deja de ser un dato y pasa a ser un recuerdo.
 RLS impide escribirlo, porque un precio es de quien lo paga: el pollo no cuesta
 lo mismo en cada ciudad.
 
-### Ojo: hay dos cifras de dinero de comida, y no son la misma
+### Todo el dinero de comida se cuenta aquí
 
-|           | Nutrición                                                          | Finanzas                             |
-| --------- | ------------------------------------------------------------------ | ------------------------------------ |
-| Qué mide  | Coste **imputado** de lo comido (`precio por porción × porciones`) | Dinero **que salió** (el movimiento) |
-| Cuándo    | El día que lo comes                                                | El día que pagas                     |
-| Exactitud | Parcial: hay alimentos sin precio                                  | Completa                             |
+Hubo dos cifras: la de finanzas (lo que salió del bolsillo) y una de nutrición
+(el coste de lo comido). **No se podían sumar sin contar dos veces** y competían
+por responder la misma pregunta, así que la de nutrición se retiró — ver
+[El precio es un atributo del alimento](#el-precio-es-un-atributo-del-alimento-no-contabilidad).
 
-**No se suman: sería contar dos veces.** Sirven para preguntas distintas —«¿qué
-me sale caro de lo que como?» frente a «¿cuánto se me fue este mes?»— y por eso
-viven en pantallas distintas.
-
-`nutrition_goals.weekly_food_budget` sigue existiendo aparte del tope de la
-categoría de finanzas. Es una duplicación conocida y pendiente de resolver: el
-presupuesto debería ser uno, sobre el dinero real.
+Queda una sola verdad: **cuánto salió, cuándo y contra qué tope.** El presupuesto
+de comida es el tope de su categoría, con la misma mecánica que cualquier otro.
 
 ```mermaid
 erDiagram

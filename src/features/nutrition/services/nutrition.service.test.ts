@@ -375,13 +375,18 @@ describe('nutritionService.saveGoal', () => {
     expect(order).toEqual(['deactivate', 'insert'])
   })
 
-  it('sin presupuesto guarda ausencia de dato, no cero pesos', async () => {
+  it('no guarda ninguna cifra de dinero: eso es de finanzas', async () => {
+    // Aquí vivía un presupuesto semanal de comida, medido sobre el coste de lo
+    // comido. Competía con el tope de categoría de finanzas, que mide lo que de
+    // verdad salió, y ninguna regla del motor lo usaba.
     insertGoal.mockResolvedValue(SAVED_GOAL)
 
     await nutritionService.saveGoal(USER_ID, GOAL_VALUES)
 
-    expect(insertGoal).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: USER_ID, weekly_food_budget: null }),
+    const [row] = insertGoal.mock.calls[0] ?? []
+    expect(row).not.toHaveProperty('weekly_food_budget')
+    expect(row).toEqual(
+      expect.objectContaining({ user_id: USER_ID, calories_target: GOAL_VALUES.caloriesTarget }),
     )
   })
 })
@@ -468,24 +473,6 @@ describe('nutritionService.repriceFoods', () => {
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('connection')
-  })
-})
-
-describe('nutritionService.getWeekSpend', () => {
-  it('suma la semana de lunes a domingo y avisa de lo que no tiene precio', async () => {
-    listMealLogsBetween.mockResolvedValue([mealLog('l1', 'lunch')])
-    listItemsByMealLogs.mockResolvedValue([
-      item('i1', 'l1', 2),
-      item('i2', 'l1', 1, { ...CHICKEN, id: 'food-sin-precio', cost_per_serving: null }),
-    ])
-
-    const spend = await nutritionService.getWeekSpend(USER_ID, DATE)
-
-    const [, fromIso, toIso] = listMealLogsBetween.mock.calls[0] ?? []
-    // El 29 de julio de 2026 es miércoles: la semana arranca el lunes 27.
-    expect(fromIso).toBe(new Date(2026, 6, 27).toISOString())
-    expect(toIso).toBe(new Date(2026, 7, 3).toISOString())
-    expect(spend).toEqual({ totalCop: 8000, itemsWithPrice: 1, itemsWithoutPrice: 1 })
   })
 })
 

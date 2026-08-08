@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { type DayRange, dayRange, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -14,12 +14,10 @@ import type {
   NutritionPeriodSeries,
   RepeatableMeals,
   RepricedFood,
-  WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { buildNutritionSeries } from '../utils/nutrition-series'
 import { pricePerServing } from '../utils/pricing'
-import { calculateSpend } from '../utils/spend'
 import { sumWaterMl } from '../utils/water'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
@@ -316,23 +314,7 @@ export const nutritionService = {
         carbs_g_target: values.carbsGTarget,
         fat_g_target: values.fatGTarget,
         water_ml_target: values.waterMlTarget,
-        // Sin presupuesto se guarda `null`: no es lo mismo que un presupuesto
-        // de cero pesos.
-        weekly_food_budget: values.weeklyFoodBudget ?? null,
       })
-    } catch (error) {
-      throw toAppError(error)
-    }
-  },
-
-  /** Lo gastado en comida durante la semana (de lunes a domingo) de `date`. */
-  async getWeekSpend(userId: string, date: Date): Promise<WeeklySpend> {
-    try {
-      const { fromIso, toIso } = weekRange(date)
-      const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
-      const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
-
-      return calculateSpend(items)
     } catch (error) {
       throw toAppError(error)
     }
