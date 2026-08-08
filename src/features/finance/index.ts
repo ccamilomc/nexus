@@ -1,3 +1,5 @@
+export type { FinanceSeries } from './hooks/use-finance-series'
+export { useFinanceSeries } from './hooks/use-finance-series'
 export { useFinanceSummary } from './hooks/use-finance-summary'
 export { AccountsPage } from './pages/AccountsPage'
 export { CategoriesPage } from './pages/CategoriesPage'

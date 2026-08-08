@@ -34,7 +34,11 @@ export function KpiCard({ label, value, comparison, hint }: KpiCardProps) {
         <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {label}
         </h3>
-        <p className="text-2xl font-semibold tabular-nums">{value}</p>
+        {/* Un punto más pequeña en pantallas estrechas. A 320 px la tarjeta deja
+            104 px útiles y una cifra en pesos —«-$ 380.000»— pedía 115: se
+            comía el último dígito sin que la página desbordara, así que no se
+            veía sin medir el `scrollWidth`. */}
+        <p className="text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>
 
         {comparison && Icon ? (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">

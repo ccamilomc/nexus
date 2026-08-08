@@ -1,5 +1,6 @@
 import { PageHeader } from '@/shared/components/layout'
 
+import { FinanceAnalytics } from '../components/FinanceAnalytics'
 import { HabitsAnalytics } from '../components/HabitsAnalytics'
 import { HealthAnalytics } from '../components/HealthAnalytics'
 import { NutritionAnalytics } from '../components/NutritionAnalytics'
@@ -29,6 +30,7 @@ export function AnalyticsPage() {
         {/* El mismo orden que la navegación, para que la página no obligue a
             buscar. Salud va al final: es la única sección que no compara ni
             opina, y cierra sin arrastrar ese tono a las demás. */}
+        <FinanceAnalytics window={window} />
         <WorkoutAnalytics window={window} />
         <NutritionAnalytics window={window} />
         <HabitsAnalytics window={window} />

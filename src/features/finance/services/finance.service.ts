@@ -18,12 +18,14 @@ import type {
   FinanceCategory,
   FinanceDebt,
   FinanceMonth,
+  FinancePeriodSeries,
   FinanceRecurring,
   FinanceTransactionWithNames,
   RecurringWithStatus,
 } from '../types/finance.types'
 import { calculateBudgets } from '../utils/budgets'
 import { calculateDebtBalance } from '../utils/debt-balance'
+import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { daysUntil, nextDueDate } from '../utils/recurrence'
 
@@ -138,6 +140,37 @@ export const financeService = {
         byCategory: calculateByCategory(transactions),
         recent: transactions.slice(0, RECENT_LIMIT),
       }
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Las finanzas de un periodo y las del tramo anterior, para Analytics.
+   *
+   * **Una sola consulta para los dos tramos**, que son contiguos: pedirlos por
+   * separado serían dos viajes para lo que cabe en un rango. Se agrega en el
+   * cliente, con el mismo criterio que el resto de Analytics
+   * ([ADR-0006](../../../../docs/adr/0006-analytics-agrega-en-el-cliente.md)).
+   */
+  async getSeries(
+    userId: string,
+    days: readonly Date[],
+    previousDays: readonly Date[],
+  ): Promise<FinancePeriodSeries> {
+    try {
+      const all = [...previousDays, ...days]
+      const first = all[0]
+      const last = all[all.length - 1]
+      if (!first || !last) return buildFinanceSeries([], days, previousDays)
+
+      const transactions = await financeRepository.listTransactionsBetween(
+        userId,
+        toDateKey(first),
+        toDateKey(last),
+      )
+
+      return buildFinanceSeries(transactions, days, previousDays)
     } catch (error) {
       throw toAppError(error)
     }
