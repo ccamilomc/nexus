@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react'
+
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -29,6 +31,8 @@ export function RecurringPage() {
   const confirm = useConfirmRecurring()
   const pause = usePauseRecurring()
   const remove = useRemoveRecurring()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const formRef = useRef<HTMLDivElement>(null)
 
   const isBusy = confirm.isPending || pause.isPending || remove.isPending
   const all = items.data ?? []
@@ -47,10 +51,21 @@ export function RecurringPage() {
     )
     .reduce((sum, { recurring }) => sum + recurring.amount, 0)
 
+  // Se busca en lo cargado: si el fijo se borra mientras se corrige, la edición
+  // se cae sola en vez de quedar apuntando a algo que ya no está.
+  const editing = all.find(({ recurring }) => recurring.id === editingId)?.recurring ?? null
+
   const handlers = {
     onTogglePaused: (recurringId: string, isPaused: boolean) =>
       pause.mutate({ recurringId, isPaused }),
     onRemove: (recurringId: string) => remove.mutate(recurringId),
+  }
+
+  const startEditing = (recurringId: string) => {
+    setEditingId(recurringId)
+    // El formulario está al final de la página: sin bajar, al pulsar «corregir»
+    // no pasaría nada visible y parecería que el botón no funciona.
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }
 
   return (
@@ -91,7 +106,9 @@ export function RecurringPage() {
                     key={item.recurring.id}
                     item={item}
                     isBusy={isBusy}
+                    isEditing={editingId === item.recurring.id}
                     onConfirm={() => confirm.mutate(item.recurring)}
+                    onEdit={() => startEditing(item.recurring.id)}
                     {...handlers}
                   />
                 ))}
@@ -103,7 +120,9 @@ export function RecurringPage() {
                 key={item.recurring.id}
                 item={item}
                 isBusy={isBusy}
+                isEditing={editingId === item.recurring.id}
                 onConfirm={() => confirm.mutate(item.recurring)}
+                onEdit={() => startEditing(item.recurring.id)}
                 {...handlers}
               />
             ))}
@@ -125,7 +144,9 @@ export function RecurringPage() {
                     key={item.recurring.id}
                     item={item}
                     isBusy={isBusy}
+                    isEditing={editingId === item.recurring.id}
                     onConfirm={() => confirm.mutate(item.recurring)}
+                    onEdit={() => startEditing(item.recurring.id)}
                     {...handlers}
                   />
                 ))}
@@ -135,10 +156,17 @@ export function RecurringPage() {
         )}
 
         {accounts.data && accounts.data.length > 0 ? (
-          <Card>
+          <Card ref={formRef}>
             <CardContent className="space-y-4 p-5">
-              <h2 className="text-sm font-medium">Apuntar un pago fijo</h2>
-              <RecurringForm accounts={accounts.data} categories={categories.data ?? []} />
+              <h2 className="text-sm font-medium">
+                {editing ? `Corregir ${editing.name}` : 'Apuntar un pago fijo'}
+              </h2>
+              <RecurringForm
+                accounts={accounts.data}
+                categories={categories.data ?? []}
+                editing={editing}
+                onFinishEditing={() => setEditingId(null)}
+              />
             </CardContent>
           </Card>
         ) : null}

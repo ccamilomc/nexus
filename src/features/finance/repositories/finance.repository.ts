@@ -200,6 +200,13 @@ export const financeRepository = {
     return data
   },
 
+  /** Corrige una deuda ya apuntada. Sus abonos siguen apuntando a ella. */
+  async updateDebt(debtId: string, patch: TablesUpdate<'finance_debts'>): Promise<void> {
+    const { error } = await supabase.from('finance_debts').update(patch).eq('id', debtId)
+
+    if (error) throw error
+  },
+
   /**
    * Borrado lógico de una deuda apuntada por error.
    *

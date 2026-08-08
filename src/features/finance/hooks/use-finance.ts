@@ -267,6 +267,30 @@ export function useCreateRecurring() {
   })
 }
 
+interface UpdateRecurringVariables {
+  readonly recurringId: string
+  readonly values: RecurringValues
+  /**
+   * La fecha que tenía antes de editar.
+   *
+   * Va aquí porque el servicio la necesita para saber si el día acordado se
+   * rehace: pedírsela a la base otra vez sería un viaje para un dato que quien
+   * abre el formulario ya tiene delante.
+   */
+  readonly currentNextDueOn: string
+}
+
+/** Corrige un pago fijo ya apuntado. */
+export function useUpdateRecurring() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, UpdateRecurringVariables>({
+    mutationFn: ({ recurringId, values, currentNextDueOn }) =>
+      financeService.updateRecurring(recurringId, values, currentNextDueOn),
+    onSuccess: refresh,
+  })
+}
+
 /** Confirma que un fijo se pagó: lo apunta y lo mueve al siguiente. */
 export function useConfirmRecurring() {
   const { user } = useAuth()
@@ -313,6 +337,21 @@ export function useCreateDebt() {
 
   return useMutation<FinanceDebt, AppError, DebtValues>({
     mutationFn: (values) => financeService.createDebt(requireUserId(user?.id), values),
+    onSuccess: refresh,
+  })
+}
+
+interface UpdateDebtVariables {
+  readonly debtId: string
+  readonly values: DebtValues
+}
+
+/** Corrige una deuda ya apuntada. Sus abonos siguen contando. */
+export function useUpdateDebt() {
+  const refresh = useRefreshMovements()
+
+  return useMutation<void, AppError, UpdateDebtVariables>({
+    mutationFn: ({ debtId, values }) => financeService.updateDebt(debtId, values),
     onSuccess: refresh,
   })
 }

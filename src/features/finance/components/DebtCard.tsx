@@ -1,3 +1,6 @@
+import { Pencil } from 'lucide-react'
+
+import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { Progress } from '@/shared/components/ui/progress'
@@ -10,6 +13,9 @@ import type { DebtWithBalance } from '../types/finance.types'
 interface DebtCardProps {
   readonly item: DebtWithBalance
   readonly isBusy: boolean
+  /** Se está corrigiendo ahora mismo, y se marca para no perderla de vista. */
+  readonly isEditing: boolean
+  readonly onEdit: () => void
   readonly onToggleSettled: (debtId: string, isSettled: boolean) => void
   readonly onRemove: (debtId: string) => void
 }
@@ -37,7 +43,14 @@ function formatDay(dateKey: string): string {
  * cifra. Ver «debes 1.220.000» sin saber que 220.000 son intereses esconde
  * justo lo que hay que mirar antes de firmar el siguiente préstamo.
  */
-export function DebtCard({ item, isBusy, onToggleSettled, onRemove }: DebtCardProps) {
+export function DebtCard({
+  item,
+  isBusy,
+  isEditing,
+  onEdit,
+  onToggleSettled,
+  onRemove,
+}: DebtCardProps) {
   const { debt, balance } = item
   const isSettled = debt.settled_at !== null
   const total = balance.principal + balance.interest
@@ -45,7 +58,7 @@ export function DebtCard({ item, isBusy, onToggleSettled, onRemove }: DebtCardPr
   const iOwe = debt.direction === 'i_owe'
 
   return (
-    <Card className={cn(isSettled && 'opacity-60')}>
+    <Card className={cn(isSettled && 'opacity-60', isEditing && 'ring-2 ring-ring')}>
       <CardContent className="space-y-3 p-5">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0">
@@ -58,6 +71,20 @@ export function DebtCard({ item, isBusy, onToggleSettled, onRemove }: DebtCardPr
           </div>
 
           <div className="flex shrink-0 gap-1">
+            {/* El nombre lleva el de la contraparte: en una lista, varios
+                botones «Corregir» no le dicen nada a un lector de pantalla. */}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label={`Corregir la deuda de ${debt.counterpart}`}
+              disabled={isBusy}
+              className="text-muted-foreground"
+              onClick={onEdit}
+            >
+              <Pencil aria-hidden />
+            </Button>
+
             <ConfirmButton
               label={isSettled ? 'Reabrir' : 'Saldada'}
               confirmLabel={isSettled ? 'Sí, reabrir' : 'Sí, saldada'}

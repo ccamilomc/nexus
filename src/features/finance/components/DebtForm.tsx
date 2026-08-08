@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Plus } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { useToday } from '@/core/time'
@@ -11,8 +12,15 @@ import { Select } from '@/shared/components/ui/select'
 import { toDateKey } from '@/shared/utils'
 
 import { INTEREST_KIND_LABELS } from '../constants/finance.constants'
-import { useCreateDebt } from '../hooks/use-finance'
+import { useCreateDebt, useUpdateDebt } from '../hooks/use-finance'
 import { debtSchema, type DebtValues } from '../schemas/finance.schema'
+import type { FinanceDebt } from '../types/finance.types'
+
+interface DebtFormProps {
+  /** La deuda que se está corrigiendo, o `null` para apuntar una nueva. */
+  readonly editing?: FinanceDebt | null
+  readonly onFinishEditing?: () => void
+}
 
 /**
  * Apuntar una deuda.
@@ -20,10 +28,28 @@ import { debtSchema, type DebtValues } from '../schemas/finance.schema'
  * **La tasa sólo se pide cuando hay intereses.** La mayoría de las deudas
  * personales no los tienen —lo que le prestas a un hermano no cobra 2 %— y
  * enseñar un campo vacío invita a rellenarlo con cualquier cosa.
+ *
+ * **El mismo formulario corrige**, y aquí importa más que en ningún otro sitio:
+ * los abonos son movimientos con `debt_id`, así que borrar la deuda para
+ * rehacerla los desvincula todos. Quien se equivocó en un cero tendría que
+ * elegir entre la cifra mal o perder el rastro de lo que ya pagó.
  */
-export function DebtForm() {
+export function DebtForm({ editing = null, onFinishEditing }: DebtFormProps) {
   const today = useToday()
   const create = useCreateDebt()
+  const update = useUpdateDebt()
+
+  const blankValues: DebtValues = {
+    counterpart: '',
+    direction: 'i_owe',
+    principal: Number.NaN,
+    interestKind: 'none',
+    interestRate: null,
+    startedOn: toDateKey(today),
+    dueOn: null,
+    instalments: null,
+    note: '',
+  }
 
   const {
     register,
@@ -34,20 +60,47 @@ export function DebtForm() {
     formState: { errors, isSubmitting },
   } = useForm<DebtValues>({
     resolver: zodResolver(debtSchema),
-    defaultValues: {
-      direction: 'i_owe',
-      interestKind: 'none',
-      interestRate: null,
-      startedOn: toDateKey(today),
-      dueOn: null,
-      instalments: null,
-    },
+    defaultValues: blankValues,
   })
+
+  // Depende de `editing.id` y no del objeto: los datos se refrescan tras
+  // guardar y un objeto nuevo con el mismo contenido reharía el formulario
+  // encima de lo que se estuviera escribiendo.
+  const editingId = editing?.id ?? null
+  useEffect(() => {
+    if (!editing) return
+
+    reset({
+      counterpart: editing.counterpart,
+      direction: editing.direction,
+      principal: editing.principal,
+      interestKind: editing.interest_kind,
+      interestRate: editing.interest_rate,
+      startedOn: editing.started_on,
+      dueOn: editing.due_on,
+      instalments: editing.instalments,
+      note: editing.note ?? '',
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ver el comentario
+  }, [editingId, reset])
 
   const interestKind = watch('interestKind')
   const hasInterest = interestKind !== 'none'
 
   const onSubmit = handleSubmit((values) => {
+    if (editing) {
+      update.mutate(
+        { debtId: editing.id, values },
+        {
+          onSuccess: () => {
+            reset(blankValues)
+            onFinishEditing?.()
+          },
+        },
+      )
+      return
+    }
+
     create.mutate(values, {
       onSuccess: () => {
         // `reset()` **sin argumentos**, que vuelve a los valores por defecto y
@@ -61,6 +114,9 @@ export function DebtForm() {
       },
     })
   })
+
+  const pending = create.isPending || update.isPending
+  const failure = create.error ?? update.error
 
   /**
    * Un campo numérico vacío significa «no lo puse», y hay que decirlo entero.
@@ -175,12 +231,28 @@ export function DebtForm() {
         {errors.note ? <FormAlert>{errors.note.message}</FormAlert> : null}
       </div>
 
-      <Button type="submit" disabled={isSubmitting || create.isPending}>
-        <Plus aria-hidden />
-        {create.isPending ? 'Guardando…' : 'Apuntar la deuda'}
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button type="submit" disabled={isSubmitting || pending}>
+          {editing ? <Check aria-hidden /> : <Plus aria-hidden />}
+          {pending ? 'Guardando…' : editing ? 'Guardar cambios' : 'Apuntar la deuda'}
+        </Button>
 
-      {create.error ? <FormAlert>{create.error.message}</FormAlert> : null}
+        {editing ? (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={pending}
+            onClick={() => {
+              reset(blankValues)
+              onFinishEditing?.()
+            }}
+          >
+            Cancelar
+          </Button>
+        ) : null}
+      </div>
+
+      {failure ? <FormAlert>{failure.message}</FormAlert> : null}
     </form>
   )
 }

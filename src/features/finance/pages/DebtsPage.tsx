@@ -1,3 +1,5 @@
+import { useRef, useState } from 'react'
+
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -13,9 +15,22 @@ export function DebtsPage() {
   const debts = useDebts()
   const settle = useSettleDebt()
   const remove = useRemoveDebt()
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const formRef = useRef<HTMLDivElement>(null)
 
   const vivas = (debts.data ?? []).filter(({ debt }) => debt.settled_at === null)
   const saldadas = (debts.data ?? []).filter(({ debt }) => debt.settled_at !== null)
+
+  // Se busca en lo cargado: si la deuda se borra mientras se corrige, la edición
+  // se cae sola en vez de quedar apuntando a algo que ya no está.
+  const editing = (debts.data ?? []).find(({ debt }) => debt.id === editingId)?.debt ?? null
+
+  const startEditing = (debtId: string) => {
+    setEditingId(debtId)
+    // El formulario está al final de la página: sin bajar, al pulsar «corregir»
+    // no pasaría nada visible y parecería que el botón no funciona.
+    formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   // Sólo lo vivo entra en el resumen: sumar lo ya saldado diría que debes algo
   // que no debes.
@@ -64,6 +79,8 @@ export function DebtsPage() {
                 key={item.debt.id}
                 item={item}
                 isBusy={settle.isPending || remove.isPending}
+                isEditing={editingId === item.debt.id}
+                onEdit={() => startEditing(item.debt.id)}
                 onToggleSettled={(debtId, isSettled) => settle.mutate({ debtId, isSettled })}
                 onRemove={(debtId) => remove.mutate(debtId)}
               />
@@ -86,6 +103,8 @@ export function DebtsPage() {
                     key={item.debt.id}
                     item={item}
                     isBusy={settle.isPending || remove.isPending}
+                    isEditing={editingId === item.debt.id}
+                    onEdit={() => startEditing(item.debt.id)}
                     onToggleSettled={(debtId, isSettled) => settle.mutate({ debtId, isSettled })}
                     onRemove={(debtId) => remove.mutate(debtId)}
                   />
@@ -95,10 +114,12 @@ export function DebtsPage() {
           </>
         )}
 
-        <Card>
+        <Card ref={formRef}>
           <CardContent className="space-y-4 p-5">
-            <h2 className="text-sm font-medium">Apuntar una deuda</h2>
-            <DebtForm />
+            <h2 className="text-sm font-medium">
+              {editing ? `Corregir la deuda de ${editing.counterpart}` : 'Apuntar una deuda'}
+            </h2>
+            <DebtForm editing={editing} onFinishEditing={() => setEditingId(null)} />
           </CardContent>
         </Card>
       </div>
