@@ -12,9 +12,11 @@ import type {
   DayNutrition,
   DayWater,
   Food,
+  FoodPurchase,
   MealType,
   NutritionGoal,
   RepeatableMeals,
+  RepricedFood,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
@@ -66,6 +68,21 @@ export function useUpdateFood() {
 
   return useMutation<Food, AppError, UpdateFoodVariables>({
     mutationFn: ({ foodId, values }) => nutritionService.updateFood(foodId, values),
+    onSuccess: refresh,
+  })
+}
+
+/**
+ * Pone al día el precio de varios alimentos a partir de lo que se pagó.
+ *
+ * Es lo que finanzas invoca al apuntar el mercado. Refresca también lo comido,
+ * porque un precio nuevo cambia lo que costó el día.
+ */
+export function useRepriceFoods() {
+  const refresh = useRefreshFoods()
+
+  return useMutation<RepricedFood[], AppError, readonly FoodPurchase[]>({
+    mutationFn: (purchases) => nutritionService.repriceFoods(purchases),
     onSuccess: refresh,
   })
 }

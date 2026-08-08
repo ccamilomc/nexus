@@ -91,6 +91,32 @@ export default tseslint.config(
     },
   },
   {
+    // `finance` depende de `nutrition` para poner los precios al día al apuntar
+    // el mercado (docs/02). Esa dependencia va **en un solo sentido**: el día que
+    // nutrición importe finanzas habrá un ciclo, y los dos dejarán de poder
+    // evolucionar por separado. Se impide aquí en vez de confiar en recordarlo.
+    files: ['src/features/nutrition/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/features/*/*'],
+              message:
+                'Una feature sólo se importa desde su barrel público: @/features/<nombre>. Dentro de la propia feature usa rutas relativas.',
+            },
+            {
+              group: ['@/features/finance'],
+              message:
+                'nutrition no puede depender de finance: la dependencia va sólo de finance a nutrition (docs/02). Al revés sería un ciclo.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/shared/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [

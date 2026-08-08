@@ -8,14 +8,17 @@ import type {
   DayNutrition,
   DayWater,
   Food,
+  FoodPurchase,
   MealType,
   NutritionGoal,
   NutritionPeriodSeries,
   RepeatableMeals,
+  RepricedFood,
   WeeklySpend,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { buildNutritionSeries } from '../utils/nutrition-series'
+import { pricePerServing } from '../utils/pricing'
 import { calculateSpend } from '../utils/spend'
 import { sumWaterMl } from '../utils/water'
 
@@ -110,6 +113,54 @@ export const nutritionService = {
   async updateFood(foodId: string, values: CreateFoodValues): Promise<Food> {
     try {
       return await nutritionRepository.updateFood(foodId, toFoodRow(values))
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Pone al día el precio de varios alimentos a partir de lo que se pagó.
+   *
+   * **Es el puente con finanzas**, y por eso recibe lo que dice el recibo
+   * —cuánto y por cuánto— en vez de un precio por porción ya calculado: quien
+   * apunta el mercado no debería tener que dividir de cabeza, y ese cálculo es
+   * justo lo que hacía que los precios se quedaran viejos.
+   *
+   * **Sólo toca los alimentos propios.** El catálogo global de Nexus no lleva
+   * precio y la RLS impide escribirlo, porque un precio es de quien lo paga: el
+   * pollo no cuesta lo mismo en cada ciudad. Los que no lo son se saltan en vez
+   * de reventar; la interfaz no los ofrece, así que aquí es sólo una red.
+   *
+   * Devuelve **lo que cambió de verdad**, con el precio anterior, para poder
+   * decir cuánto subió sin volver a consultar.
+   */
+  async repriceFoods(purchases: readonly FoodPurchase[]): Promise<RepricedFood[]> {
+    try {
+      const foods = await nutritionRepository.listFoods()
+      const byId = new Map(foods.map((food) => [food.id, food]))
+      const repriced: RepricedFood[] = []
+
+      for (const purchase of purchases) {
+        const food = byId.get(purchase.foodId)
+        if (!food || !food.is_custom) continue
+
+        const nextCop = pricePerServing(purchase.paidCop, purchase.quantity, food.serving_size)
+        if (nextCop === null) continue
+
+        await nutritionRepository.updateFood(food.id, {
+          cost_per_serving: nextCop,
+          currency: CURRENCY_COP,
+        })
+
+        repriced.push({
+          foodId: food.id,
+          name: food.name,
+          previousCop: food.cost_per_serving,
+          nextCop,
+        })
+      }
+
+      return repriced
     } catch (error) {
       throw toAppError(error)
     }
