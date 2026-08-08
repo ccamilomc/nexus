@@ -485,13 +485,33 @@ fundirlas escondería cuál de las dos puede fallar.
 fijos son esporádicos, y repartirlos a tanto por día inventaría plata que nadie
 ha dicho que vaya a llegar.
 
-### El presupuesto de comida sigue en Nutrición, de momento
+### El mercado pone al día el precio por porción
 
-`nutrition_goals.weekly_food_budget` y el coste por porción **no se tocan en esta
-fase**. La integración —que registrar el mercado alimente macros y gasto a la
-vez— es el motivo por el que finanzas vive dentro de Nexus y no en otra app, pero
-hacerla antes de que el registro básico funcione sería construir el puente antes
-que las orillas.
+Apuntar un gasto permite decir **qué se compró y por cuánto**, y de ahí sale el
+`foods.cost_per_serving` de esos alimentos: se manda lo que dice el recibo —un
+kilo por $18.000— y nutrición reparte entre las porciones. Esa división de
+cabeza era justo lo que hacía que los precios se quedaran viejos, y con precios
+viejos el coste por porción deja de ser un dato y pasa a ser un recuerdo.
+
+**Sólo se tocan los alimentos propios.** El catálogo global no lleva precio y la
+RLS impide escribirlo, porque un precio es de quien lo paga: el pollo no cuesta
+lo mismo en cada ciudad.
+
+### Ojo: hay dos cifras de dinero de comida, y no son la misma
+
+|           | Nutrición                                                          | Finanzas                             |
+| --------- | ------------------------------------------------------------------ | ------------------------------------ |
+| Qué mide  | Coste **imputado** de lo comido (`precio por porción × porciones`) | Dinero **que salió** (el movimiento) |
+| Cuándo    | El día que lo comes                                                | El día que pagas                     |
+| Exactitud | Parcial: hay alimentos sin precio                                  | Completa                             |
+
+**No se suman: sería contar dos veces.** Sirven para preguntas distintas —«¿qué
+me sale caro de lo que como?» frente a «¿cuánto se me fue este mes?»— y por eso
+viven en pantallas distintas.
+
+`nutrition_goals.weekly_food_budget` sigue existiendo aparte del tope de la
+categoría de finanzas. Es una duplicación conocida y pendiente de resolver: el
+presupuesto debería ser uno, sobre el dinero real.
 
 ```mermaid
 erDiagram

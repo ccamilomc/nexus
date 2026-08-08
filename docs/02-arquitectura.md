@@ -95,8 +95,29 @@ flowchart LR
     N["nutrition"] -->|index.ts| APP
     S["study"] -->|index.ts| APP
     APP --> E["decision-engine (contratos)"]
-    W -.->|❌ prohibido| N
+    F["finance"] -->|index.ts| N
+    W -.->|❌ archivos internos| N
 ```
+
+### Un dominio puede depender de otro, pero sólo en un sentido
+
+Lo habitual es que quien consume a varios dominios sea una feature compositora
+(`dashboard`, `planning`, `analytics`). **`finance → nutrition` es el primer caso
+de dominio a dominio**, y se permite con tres condiciones:
+
+1. **Sólo por el barrel.** Lo hace cumplir ESLint (`@/features/*/*` está
+   prohibido), no la buena voluntad.
+2. **Un solo sentido, sin ciclos.** `finance` conoce a `nutrition`; `nutrition`
+   no sabe que `finance` existe. También lo fija ESLint, con una regla que impide
+   el import de vuelta.
+3. **Contrato explícito y mínimo.** Cruzan la frontera un tipo (`FoodPurchase`),
+   una mutación (`useRepriceFoods`) y un bloque de interfaz
+   (`FoodPurchaseFields`). Finanzas pone el **cuándo** —apuntar un gasto— y
+   nutrición el **cómo**: qué es una porción y qué se escribe en `foods`.
+
+El motivo es de producto: apuntar el mercado tiene que dejar los precios al día
+sin obligar a repetir el registro en dos sitios. Sin este puente, el precio por
+porción —la base de la nutrición económica— envejece hasta volverse ficción.
 
 ### Los tres hooks que expone un dominio
 

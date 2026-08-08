@@ -35,6 +35,30 @@ export type FoodRef = Pick<
 export type MealLogItemWithFood = MealLogItem & { readonly food: FoodRef }
 
 /**
+ * Una compra: cuánto trajiste de un alimento y lo que pagaste por ello.
+ *
+ * **Es el contrato público con finanzas.** Apuntar el mercado deja los precios
+ * al día sin que finanzas tenga que saber qué es una porción ni tocar `foods`:
+ * manda lo que dice el recibo y nutrición hace el resto.
+ */
+export interface FoodPurchase {
+  readonly foodId: string
+  /** Cuánto compraste, en la unidad del alimento (g, ml, unidades). */
+  readonly quantity: number
+  /** Lo que pagaste por esa cantidad, en COP. */
+  readonly paidCop: number
+}
+
+/** Lo que cambió al repreciar, para poder contarlo sin volver a consultar. */
+export interface RepricedFood {
+  readonly foodId: string
+  readonly name: string
+  /** Lo que costaba antes; `null` si es la primera vez que se le pone precio. */
+  readonly previousCop: number | null
+  readonly nextCop: number
+}
+
+/**
  * Lo mínimo de una comida y de sus alimentos para agregar un periodo.
  *
  * Analytics recorre meses, no un día: aquí sólo bajan las columnas que se

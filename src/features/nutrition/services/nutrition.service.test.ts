@@ -48,6 +48,8 @@ const insertMealLog = vi.mocked(nutritionRepository.insertMealLog)
 const insertMealLogItem = vi.mocked(nutritionRepository.insertMealLogItem)
 const insertFood = vi.mocked(nutritionRepository.insertFood)
 const deleteFood = vi.mocked(nutritionRepository.deleteFood)
+const listFoods = vi.mocked(nutritionRepository.listFoods)
+const updateFood = vi.mocked(nutritionRepository.updateFood)
 const deactivateGoals = vi.mocked(nutritionRepository.deactivateGoals)
 const insertGoal = vi.mocked(nutritionRepository.insertGoal)
 
@@ -381,6 +383,91 @@ describe('nutritionService.saveGoal', () => {
     expect(insertGoal).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: USER_ID, weekly_food_budget: null }),
     )
+  })
+})
+
+describe('nutritionService.repriceFoods', () => {
+  /** El pollo del usuario: porción de 100 g, a $4.000 desde la última compra. */
+  const OWN_CHICKEN: Food = { ...SAVED_FOOD }
+
+  /** Del catálogo de Nexus: sin precio y de nadie. */
+  const GLOBAL_RICE: Food = {
+    ...SAVED_FOOD,
+    id: 'food-rice',
+    name: 'Arroz blanco cocido',
+    cost_per_serving: null,
+    currency: null,
+    is_custom: false,
+    user_id: null,
+  }
+
+  beforeEach(() => {
+    listFoods.mockResolvedValue([OWN_CHICKEN, GLOBAL_RICE])
+    updateFood.mockResolvedValue(SAVED_FOOD)
+  })
+
+  it('reparte lo pagado entre las porciones y guarda el precio nuevo', async () => {
+    // Un kilo por $18.000, con la porción en 100 g: $1.800 por porción.
+    await nutritionService.repriceFoods([
+      { foodId: OWN_CHICKEN.id, quantity: 1000, paidCop: 18_000 },
+    ])
+
+    expect(updateFood).toHaveBeenCalledWith(OWN_CHICKEN.id, {
+      cost_per_serving: 1800,
+      currency: 'COP',
+    })
+  })
+
+  it('devuelve el precio anterior para poder decir cuánto cambió', async () => {
+    const [change] = await nutritionService.repriceFoods([
+      { foodId: OWN_CHICKEN.id, quantity: 1000, paidCop: 18_000 },
+    ])
+
+    expect(change).toEqual({
+      foodId: OWN_CHICKEN.id,
+      name: OWN_CHICKEN.name,
+      previousCop: 4000,
+      nextCop: 1800,
+    })
+  })
+
+  it('no toca el catálogo de Nexus: un precio es de quien lo paga', async () => {
+    // La RLS lo rechazaría de todas formas; aquí se evita el error técnico.
+    const changes = await nutritionService.repriceFoods([
+      { foodId: GLOBAL_RICE.id, quantity: 1000, paidCop: 5_000 },
+    ])
+
+    expect(updateFood).not.toHaveBeenCalled()
+    expect(changes).toEqual([])
+  })
+
+  it('se salta lo que no da un precio con sentido en vez de escribir basura', async () => {
+    const changes = await nutritionService.repriceFoods([
+      { foodId: OWN_CHICKEN.id, quantity: 0, paidCop: 18_000 },
+    ])
+
+    expect(updateFood).not.toHaveBeenCalled()
+    expect(changes).toEqual([])
+  })
+
+  it('un alimento que ya no existe no revienta la compra entera', async () => {
+    const changes = await nutritionService.repriceFoods([
+      { foodId: 'food-borrado', quantity: 500, paidCop: 9_000 },
+      { foodId: OWN_CHICKEN.id, quantity: 1000, paidCop: 18_000 },
+    ])
+
+    expect(changes.map(({ foodId }) => foodId)).toEqual([OWN_CHICKEN.id])
+  })
+
+  it('un fallo al escribir llega como error de dominio, sin detalles técnicos', async () => {
+    updateFood.mockRejectedValue(new Error('connection terminated unexpectedly'))
+
+    const error: unknown = await nutritionService
+      .repriceFoods([{ foodId: OWN_CHICKEN.id, quantity: 1000, paidCop: 18_000 }])
+      .catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).not.toContain('connection')
   })
 })
 

@@ -1,9 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { useToday } from '@/core/time'
+import { type FoodPurchase, useRepriceFoods } from '@/features/nutrition'
 import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
@@ -21,6 +22,7 @@ import type {
   FinanceTransactionWithNames,
 } from '../types/finance.types'
 import { AccountField } from './AccountField'
+import { FoodPricingSection } from './FoodPricingSection'
 
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
@@ -56,6 +58,11 @@ export function TransactionForm({
   const today = useToday()
   const create = useCreateTransaction()
   const update = useUpdateTransaction()
+  const reprice = useRepriceFoods()
+  // Lo comprado, si el gasto vino del supermercado. Vacío es el caso normal.
+  const [purchases, setPurchases] = useState<readonly FoodPurchase[]>([])
+  // Sube tras guardar para vaciar los campos de la compra remontándolos.
+  const [purchaseReset, setPurchaseReset] = useState(0)
 
   const blankValues: TransactionValues = {
     kind: 'expense',
@@ -149,12 +156,27 @@ export function TransactionForm({
         // apuntar el siguiente igual y el mismo día.
         resetField('amount')
         resetField('note')
+
+        if (purchases.length === 0) return
+
+        // **El gasto primero y los precios después, en ese orden.** Sin
+        // transacciones desde el cliente, si falla lo segundo el dinero ya
+        // quedó apuntado —que es lo que no se puede perder— y los precios se
+        // reintentan sin coste, con los campos todavía llenos. Al revés se
+        // perdería el gasto por no haber podido actualizar un precio.
+        reprice.mutate(purchases, {
+          onSuccess: () => {
+            setPurchases([])
+            setPurchaseReset((key) => key + 1)
+          },
+        })
       },
     })
   })
 
-  const pending = create.isPending || update.isPending
+  const pending = create.isPending || update.isPending || reprice.isPending
   const failure = create.error ?? update.error
+  const repriced = reprice.data ?? []
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -175,6 +197,11 @@ export function TransactionForm({
                 // con la cuenta destino de otro tipo.
                 setValue('categoryId', null)
                 setValue('toAccountId', null)
+                // La compra también: el bloque desaparece al salir de «gasto»,
+                // pero lo escrito seguía en memoria y se habría aplicado al
+                // guardar un ingreso, que es justo lo que nadie espera.
+                setPurchases([])
+                setPurchaseReset((key) => key + 1)
               }}
               className={cn('min-w-24 flex-1')}
             >
@@ -284,6 +311,13 @@ export function TransactionForm({
         {errors.note ? <FormAlert>{errors.note.message}</FormAlert> : null}
       </div>
 
+      {/* Sólo al apuntar un gasto nuevo. Corregir un movimiento de hace tres
+          semanas no es venir del supermercado, y repreciar entonces pondría el
+          precio de entonces como si fuera el de hoy. */}
+      {kind === 'expense' && !editing ? (
+        <FoodPricingSection onChange={setPurchases} resetKey={purchaseReset} />
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={isSubmitting || pending}>
           <Check aria-hidden />
@@ -306,6 +340,23 @@ export function TransactionForm({
       </div>
 
       {failure ? <FormAlert>{failure.message}</FormAlert> : null}
+
+      {/* El fallo de los precios se cuenta aparte del de arriba, y diciendo que
+          el gasto sí quedó: si no, parecería que se perdió todo. */}
+      {reprice.isError ? (
+        <FormAlert>
+          El gasto quedó apuntado, pero no se pudieron actualizar los precios.{' '}
+          {reprice.error.message}
+        </FormAlert>
+      ) : null}
+
+      {repriced.length > 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {repriced.length === 1
+            ? `Precio de ${repriced[0]?.name} puesto al día.`
+            : `Precio de ${repriced.length} alimentos puesto al día.`}
+        </p>
+      ) : null}
     </form>
   )
 }
