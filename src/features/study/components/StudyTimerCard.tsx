@@ -5,8 +5,10 @@ import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
+import { Progress } from '@/shared/components/ui/progress'
 import { Select } from '@/shared/components/ui/select'
 import { useElapsedSeconds } from '@/shared/hooks'
+import { cn } from '@/shared/lib/utils'
 import { formatElapsed } from '@/shared/utils'
 
 import {
@@ -15,6 +17,7 @@ import {
   useStartStudySession,
 } from '../hooks/use-study'
 import type { StudySessionWithSubject, Subject } from '../types/study.types'
+import { BLOCK_OPTIONS, blockProgress } from '../utils/study-block'
 
 interface StudyTimerCardProps {
   readonly subjects: readonly Subject[]
@@ -30,6 +33,9 @@ interface StudyTimerCardProps {
  */
 export function StudyTimerCard({ subjects, active }: StudyTimerCardProps) {
   const [subjectId, setSubjectId] = useState(subjects[0]?.id ?? '')
+  // Sin límite por defecto: es como funcionaba y no todo rato de estudio se
+  // planea. Elegir bloque es una decisión, no un trámite obligatorio.
+  const [targetMinutes, setTargetMinutes] = useState<number | null>(null)
   const start = useStartStudySession()
   const finish = useFinishStudySession()
   const discard = useDiscardStudySession()
@@ -53,31 +59,60 @@ export function StudyTimerCard({ subjects, active }: StudyTimerCardProps) {
             onDiscard={() => discard.mutate(active.id)}
           />
         ) : (
-          <div className="flex flex-wrap items-end gap-2">
-            <div className="min-w-0 flex-1">
-              <label htmlFor="timer-subject" className="mb-1 block text-sm font-medium">
-                Materia
-              </label>
-              <Select
-                id="timer-subject"
-                value={subjectId}
-                onChange={(event) => setSubjectId(event.target.value)}
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-end gap-2">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="timer-subject" className="mb-1 block text-sm font-medium">
+                  Materia
+                </label>
+                <Select
+                  id="timer-subject"
+                  value={subjectId}
+                  onChange={(event) => setSubjectId(event.target.value)}
+                >
+                  {subjects.map((subject) => (
+                    <option key={subject.id} value={subject.id}>
+                      {subject.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <Button
+                type="button"
+                disabled={start.isPending}
+                onClick={() => start.mutate({ subjectId, targetMinutes })}
               >
-                {subjects.map((subject) => (
-                  <option key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </option>
-                ))}
-              </Select>
+                <Play aria-hidden />
+                {start.isPending ? 'Empezando…' : 'Empezar'}
+              </Button>
             </div>
-            <Button
-              type="button"
-              disabled={start.isPending}
-              onClick={() => start.mutate(subjectId)}
-            >
-              <Play aria-hidden />
-              {start.isPending ? 'Empezando…' : 'Empezar'}
-            </Button>
+
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-medium">¿Cuánto quieres que dure?</legend>
+              <div className="flex flex-wrap gap-2">
+                {BLOCK_OPTIONS.map(({ minutes, label }) => (
+                  <Button
+                    key={minutes}
+                    type="button"
+                    size="sm"
+                    variant={targetMinutes === minutes ? 'default' : 'outline'}
+                    aria-pressed={targetMinutes === minutes}
+                    onClick={() => setTargetMinutes(minutes)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={targetMinutes === null ? 'default' : 'outline'}
+                  aria-pressed={targetMinutes === null}
+                  onClick={() => setTargetMinutes(null)}
+                >
+                  Sin límite
+                </Button>
+              </div>
+            </fieldset>
           </div>
         )}
 
@@ -97,6 +132,7 @@ interface RunningSessionProps {
 /** La sesión en marcha: qué se estudia, cuánto lleva y cómo terminarla. */
 function RunningSession({ active, isBusy, onFinish, onDiscard }: RunningSessionProps) {
   const seconds = useElapsedSeconds(active.started_at)
+  const block = blockProgress(seconds, active.target_minutes)
 
   return (
     <div className="space-y-3">
@@ -118,6 +154,24 @@ function RunningSession({ active, isBusy, onFinish, onDiscard }: RunningSessionP
           {formatElapsed(seconds)}
         </span>
       </div>
+
+      {/* El bloque no corta la sesión al cumplirse: se avisa y se sigue
+          contando. Nexus propone una duración, no la impone. */}
+      {block ? (
+        <div className="space-y-1.5">
+          <Progress
+            value={block.percent}
+            label={`Bloque de ${active.target_minutes} min: ${Math.round(block.percent)} %`}
+          />
+          <p className={cn('text-xs', block.isDone ? 'text-success' : 'text-muted-foreground')}>
+            {block.isDone
+              ? block.overtimeSeconds > 0
+                ? `Bloque de ${active.target_minutes} min cumplido, y llevas ${formatElapsed(block.overtimeSeconds)} de más.`
+                : `Bloque de ${active.target_minutes} min cumplido. Puedes parar o seguir.`
+              : `Quedan ${formatElapsed(block.remainingSeconds)} de tu bloque de ${active.target_minutes} min.`}
+          </p>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button type="button" disabled={isBusy} onClick={onFinish}>

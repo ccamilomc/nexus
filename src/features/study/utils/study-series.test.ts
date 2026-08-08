@@ -21,6 +21,7 @@ function session(
     started_at: started.toISOString(),
     ended_at: new Date(started.getTime() + minutes * 60_000).toISOString(),
     duration_minutes: minutes,
+    target_minutes: null,
     focus_rating: null,
     technique: null,
     notes: null,
