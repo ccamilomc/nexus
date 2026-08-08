@@ -89,7 +89,6 @@ const SAVED_GOAL: NutritionGoal = {
   carbs_g_target: 220,
   fat_g_target: 70,
   water_ml_target: 2500,
-  weekly_food_budget: null,
   is_active: true,
   effective_from: '2026-07-29',
   created_at: '2026-07-29T17:00:00.000Z',

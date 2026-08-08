@@ -895,7 +895,6 @@ export type Database = {
           updated_at: string
           user_id: string
           water_ml_target: number
-          weekly_food_budget: number | null
         }
         Insert: {
           calories_target: number
@@ -910,7 +909,6 @@ export type Database = {
           updated_at?: string
           user_id: string
           water_ml_target?: number
-          weekly_food_budget?: number | null
         }
         Update: {
           calories_target?: number
@@ -925,7 +923,6 @@ export type Database = {
           updated_at?: string
           user_id?: string
           water_ml_target?: number
-          weekly_food_budget?: number | null
         }
         Relationships: []
       }
