@@ -196,7 +196,9 @@ export function RecurringForm({
         </div>
       </div>
 
-      <div>
+      {/* Una fecha no necesita 935 px de ancho. El resto de campos de este
+          formulario ya comparten fila; éste se había quedado suelto. */}
+      <div className="sm:max-w-xs">
         <Label htmlFor="recurring-next">¿Cuándo toca el siguiente?</Label>
         <Input id="recurring-next" type="date" {...register('nextDueOn')} />
         {/* De esta fecha sale el día acordado, y por eso importa: un arriendo

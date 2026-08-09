@@ -51,31 +51,35 @@ export function StudyLogForm({ subjects }: StudyLogFormProps) {
     <Card>
       <CardContent className="p-4">
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <FormField id="study-subject" label="Materia" error={errors.subjectId?.message}>
-            <Select
-              id="study-subject"
-              aria-invalid={Boolean(errors.subjectId)}
-              {...register('subjectId')}
-            >
-              {subjects.map((subject) => (
-                <option key={subject.id} value={subject.id}>
-                  {subject.name}
-                </option>
-              ))}
-            </Select>
-          </FormField>
+          {/* Comparten fila desde `sm`: sueltos ocupaban 943 px cada uno para
+              una materia y un número de dos cifras. En móvil se apilan. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField id="study-subject" label="Materia" error={errors.subjectId?.message}>
+              <Select
+                id="study-subject"
+                aria-invalid={Boolean(errors.subjectId)}
+                {...register('subjectId')}
+              >
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </Select>
+            </FormField>
 
-          <FormField id="study-minutes" label="Minutos" error={errors.minutes?.message}>
-            <Input
-              id="study-minutes"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              placeholder="Ej. 50"
-              aria-invalid={Boolean(errors.minutes)}
-              {...register('minutes', { valueAsNumber: true })}
-            />
-          </FormField>
+            <FormField id="study-minutes" label="Minutos" error={errors.minutes?.message}>
+              <Input
+                id="study-minutes"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                placeholder="Ej. 50"
+                aria-invalid={Boolean(errors.minutes)}
+                {...register('minutes', { valueAsNumber: true })}
+              />
+            </FormField>
+          </div>
 
           <div className="flex flex-wrap gap-2">
             {QUICK_MINUTES.map((minutes) => (

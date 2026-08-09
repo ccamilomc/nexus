@@ -75,10 +75,14 @@ export function SleepGoalCard() {
     <Card>
       <CardContent className="p-5">
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          {/* Un campo corto no se estira: en escritorio ocupaba 935 px para
+              teclear «8». La regla vale para números, fechas, horas y
+              desplegables; el texto libre sí puede ir a ancho completo. */}
           <FormField
             id="sleep-target"
             label="¿Cuántas horas quieres dormir?"
             error={errors.targetHours?.message}
+            className="sm:max-w-xs"
           >
             <Input
               id="sleep-target"
