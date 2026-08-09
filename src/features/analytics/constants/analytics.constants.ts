@@ -33,7 +33,7 @@ export const DEFAULT_PERIOD_ID: AnalyticsPeriodId = '30d'
  * voz. La comparación calla en vez de inventar un porcentaje (ver
  * `compareValues`).
  */
-export const NO_PREVIOUS_PERIOD_HINT = 'Sin periodo anterior con que comparar'
+export const NO_PREVIOUS_PERIOD_HINT = 'Sin periodo anterior con qué comparar'
 
 /**
  * Días con registro que hacen falta para dibujar una tendencia.

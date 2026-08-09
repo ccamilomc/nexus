@@ -59,32 +59,25 @@ export function StudyTimerCard({ subjects, active }: StudyTimerCardProps) {
             onDiscard={() => discard.mutate(active.id)}
           />
         ) : (
+          // Se elige antes de empezar, y ese orden importa: con el botón
+          // arriba, quien pulsaba «Empezar» arrancaba sin límite sin haber
+          // llegado a ver que podía elegir cuánto durar.
           <div className="space-y-3">
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="min-w-0 flex-1">
-                <label htmlFor="timer-subject" className="mb-1 block text-sm font-medium">
-                  Materia
-                </label>
-                <Select
-                  id="timer-subject"
-                  value={subjectId}
-                  onChange={(event) => setSubjectId(event.target.value)}
-                >
-                  {subjects.map((subject) => (
-                    <option key={subject.id} value={subject.id}>
-                      {subject.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <Button
-                type="button"
-                disabled={start.isPending}
-                onClick={() => start.mutate({ subjectId, targetMinutes })}
+            <div className="max-w-sm">
+              <label htmlFor="timer-subject" className="mb-1 block text-sm font-medium">
+                Materia
+              </label>
+              <Select
+                id="timer-subject"
+                value={subjectId}
+                onChange={(event) => setSubjectId(event.target.value)}
               >
-                <Play aria-hidden />
-                {start.isPending ? 'Empezando…' : 'Empezar'}
-              </Button>
+                {subjects.map((subject) => (
+                  <option key={subject.id} value={subject.id}>
+                    {subject.name}
+                  </option>
+                ))}
+              </Select>
             </div>
 
             <fieldset>
@@ -113,6 +106,15 @@ export function StudyTimerCard({ subjects, active }: StudyTimerCardProps) {
                 </Button>
               </div>
             </fieldset>
+
+            <Button
+              type="button"
+              disabled={start.isPending}
+              onClick={() => start.mutate({ subjectId, targetMinutes })}
+            >
+              <Play aria-hidden />
+              {start.isPending ? 'Empezando…' : 'Empezar'}
+            </Button>
           </div>
         )}
 

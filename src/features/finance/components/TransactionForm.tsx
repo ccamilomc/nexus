@@ -211,19 +211,31 @@ export function TransactionForm({
         </div>
       </fieldset>
 
-      <div>
-        <Label htmlFor="finance-amount">Monto</Label>
-        <Input
-          id="finance-amount"
-          type="number"
-          inputMode="numeric"
-          step={1}
-          min={1}
-          placeholder="12500"
-          autoFocus
-          {...register('amount', { valueAsNumber: true })}
-        />
-        {errors.amount ? <FormAlert>{errors.amount.message}</FormAlert> : null}
+      {/* Monto y fecha comparten fila en pantalla ancha. Sueltos ocupaban el
+          ancho entero de la tarjeta —casi 900 px para teclear cinco dígitos—,
+          que es lo que pasa cuando un diseño móvil no se adapta al escritorio.
+          No se ve midiendo: no hay desbordamiento, sólo desproporción. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <Label htmlFor="finance-amount">Monto</Label>
+          <Input
+            id="finance-amount"
+            type="number"
+            inputMode="numeric"
+            step={1}
+            min={1}
+            placeholder="12500"
+            autoFocus
+            {...register('amount', { valueAsNumber: true })}
+          />
+          {errors.amount ? <FormAlert>{errors.amount.message}</FormAlert> : null}
+        </div>
+
+        <div>
+          <Label htmlFor="finance-date">Fecha</Label>
+          <Input id="finance-date" type="date" {...register('occurredOn')} />
+          {errors.occurredOn ? <FormAlert>{errors.occurredOn.message}</FormAlert> : null}
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -298,12 +310,6 @@ export function TransactionForm({
           </Select>
         </div>
       ) : null}
-
-      <div>
-        <Label htmlFor="finance-date">Fecha</Label>
-        <Input id="finance-date" type="date" {...register('occurredOn')} />
-        {errors.occurredOn ? <FormAlert>{errors.occurredOn.message}</FormAlert> : null}
-      </div>
 
       <div>
         <Label htmlFor="finance-note">Nota (opcional)</Label>
