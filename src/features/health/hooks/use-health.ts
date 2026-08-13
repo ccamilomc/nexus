@@ -7,10 +7,13 @@ import { type AppError, createAppError } from '@/core/error'
 import type { LogMetricValues } from '../schemas/health.schema'
 import type { HealthOverview } from '../services/health.service'
 import { healthService } from '../services/health.service'
+import type { BodyMetricType, MetricHistory } from '../types/health.types'
 
 export const healthKeys = {
   all: ['health'] as const,
   overview: (userId: string | undefined) => [...healthKeys.all, 'overview', userId] as const,
+  history: (userId: string | undefined, metricType: string) =>
+    [...healthKeys.all, 'history', userId, metricType] as const,
   weightSeries: (userId: string | undefined, rangeKey: string) =>
     [...healthKeys.all, 'weight-series', userId, rangeKey] as const,
 }
@@ -29,6 +32,23 @@ export function useHealthOverview() {
   return useQuery<HealthOverview | null, AppError>({
     queryKey: healthKeys.overview(userId),
     queryFn: () => (userId ? healthService.getOverview(userId) : null),
+  })
+}
+
+/**
+ * Cómo ha ido una medida. **Sólo se pide cuando se abre.**
+ *
+ * Con `null` la consulta ni se lanza: son ocho medidas y traerlas todas al
+ * cargar la pantalla serían ocho viajes para enseñar uno.
+ */
+export function useMetricHistory(metricType: BodyMetricType | null) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<MetricHistory | null, AppError>({
+    queryKey: healthKeys.history(userId, metricType ?? 'ninguna'),
+    queryFn: () => (userId && metricType ? healthService.getHistory(userId, metricType) : null),
+    enabled: metricType !== null,
   })
 }
 
