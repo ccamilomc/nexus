@@ -31,7 +31,7 @@ const HISTORY_CHUNK_DAYS = 365
 const MAX_HISTORY_CHUNKS = 10
 
 /** Días que se muestran en el mini-calendario de cada hábito. */
-export const RECENT_DAYS = 7
+const RECENT_DAYS = 7
 
 /**
  * Ventana de la constancia.
@@ -39,7 +39,7 @@ export const RECENT_DAYS = 7
  * 30 días son el mes «rodante» con el que la gente juzga si mantiene un hábito,
  * y salen de los registros que ya se traen: no cuesta ninguna consulta extra.
  */
-export const CONSISTENCY_DAYS = 30
+const CONSISTENCY_DAYS = 30
 
 /**
  * Registros necesarios para pintar la pantalla y calcular las rachas.

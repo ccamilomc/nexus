@@ -4,13 +4,7 @@ import type { DayRange } from '@/shared/utils'
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
 import type { LogMetricValues } from '../schemas/health.schema'
-import type {
-  Bmi,
-  BodyMetric,
-  BodyMetricType,
-  MetricSummary,
-  WeightPeriodSeries,
-} from '../types/health.types'
+import type { Bmi, MetricSummary, WeightPeriodSeries } from '../types/health.types'
 import { calculateBmi } from '../utils/bmi'
 import { buildMetricSummaries } from '../utils/metric-summary'
 import { buildWeightSeries } from '../utils/weight-series'
@@ -22,9 +16,6 @@ import { buildWeightSeries } from '../utils/weight-series'
  * cada una, que es lo que el resumen necesita.
  */
 const RECENT_LIMIT = 40
-
-/** Mediciones que se muestran en el histórico de una medida. */
-export const HISTORY_LIMIT = 20
 
 /** Lo que la pantalla de salud necesita saber de una vez. */
 export interface HealthOverview {
@@ -57,15 +48,6 @@ export const healthService = {
         bmi: weight ? calculateBmi(weight.latest.value, heightCm) : null,
         heightCm,
       }
-    } catch (error) {
-      throw toAppError(error)
-    }
-  },
-
-  /** El histórico de una medida, de la más reciente a la más antigua. */
-  async getHistory(userId: string, metricType: BodyMetricType): Promise<BodyMetric[]> {
-    try {
-      return await healthRepository.listMetricHistory(userId, metricType, HISTORY_LIMIT)
     } catch (error) {
       throw toAppError(error)
     }

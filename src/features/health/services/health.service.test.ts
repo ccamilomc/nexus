@@ -14,7 +14,6 @@ import { healthService } from './health.service'
 vi.mock('../repositories/health.repository', () => ({
   healthRepository: {
     listRecentMetrics: vi.fn(),
-    listMetricHistory: vi.fn(),
     insertMetric: vi.fn(),
     softDeleteMetric: vi.fn(),
     findHeightCm: vi.fn(),

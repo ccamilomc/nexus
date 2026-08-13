@@ -18,25 +18,6 @@ export const healthRepository = {
     return data ?? []
   },
 
-  /** El histórico de una medida concreta. */
-  async listMetricHistory(
-    userId: string,
-    metricType: BodyMetricType,
-    limit: number,
-  ): Promise<BodyMetric[]> {
-    const { data, error } = await supabase
-      .from('body_metrics')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('metric_type', metricType)
-      .is('deleted_at', null)
-      .order('measured_at', { ascending: false })
-      .limit(limit)
-
-    if (error) throw error
-    return data ?? []
-  },
-
   /** Las mediciones de una medida dentro de un rango, de la más antigua a la más nueva. */
   async listMetricsBetween(
     userId: string,
