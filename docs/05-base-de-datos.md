@@ -300,6 +300,40 @@ lo dejó en 316 KB **sin cambiar ninguna cifra en pantalla**.
 Es la lección que conviene recordar antes de sospechar de la arquitectura: el
 problema no era agregar en el cliente, era traer columnas que nadie suma.
 
+## Vaciar una cuenta sin borrarla
+
+`scripts/reset-user-data.mjs` deja una cuenta como recién estrenada. Existe para
+un momento concreto: cuando los datos de prueba dejen de hacer falta y empiece el
+uso de verdad.
+
+```bash
+node scripts/reset-user-data.mjs            # dice qué se iría, sin tocar nada
+node scripts/reset-user-data.mjs --borrar   # lo borra
+```
+
+**El orden no es alfabético, y por eso el script existe.** Seis claves foráneas
+son `restrict` y bloquean el borrado si se hace al revés: las comidas y los planes
+sujetan a los alimentos, las rutinas y los entrenamientos sujetan a los
+ejercicios, y los movimientos y los fijos sujetan a las cuentas. La actividad se
+vacía primero y los catálogos después. Lo que cuelga de esas tablas —series,
+alimentos de una comida, días de una rutina— se va **en cascada** y no se
+enumera.
+
+Tres decisiones que lo hacen seguro:
+
+- **Por defecto no borra.** Sin `--borrar` sólo cuenta. Es una operación que no se
+  deshace: tiene que costar dos intentos.
+- **Entra con la sesión del usuario, no con la `service_role`.** Con la RLS activa,
+  un fallo en el script no puede tocar otra cuenta aunque se equivoque de filtro.
+  La seguridad no depende de que el archivo esté bien escrito.
+- **No toca la cuenta, ni su perfil, ni los catálogos del sistema.** Se sigue
+  entrando igual y los alimentos y ejercicios que trae Nexus siguen ahí.
+
+Para comprobar que el orden es correcto sin borrar nada, se ejecutan los `delete`
+dentro de un `begin … rollback`: si alguno violara una clave foránea, la
+transacción aborta con un `23503` y se ve. Probado en los dos sentidos — con el
+orden bueno pasa entero, y borrando `foods` primero falla como debe.
+
 ## Migraciones
 
 - Toda modificación de esquema es una **migración** en `supabase/migrations/`.
