@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import type { AppError } from '@/core/error'
 
+import type { PastSessionValues } from '../schemas/workout.schema'
 import { workoutService } from '../services/workout.service'
 import type { LastPerformance, SessionDetail } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
@@ -62,6 +63,17 @@ export function useStartSession() {
   })
 }
 
+/** Abre un entrenamiento que ya se hizo, para apuntarlo después. */
+export function useStartPastSession() {
+  const { user } = useAuth()
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<SessionDetail, AppError, PastSessionValues>({
+    mutationFn: (values) => workoutService.startPastSession(requireUserId(user?.id), values),
+    onSuccess: refreshSessions,
+  })
+}
+
 /** Inicia un entrenamiento siguiendo un día de rutina. */
 export function useStartSessionFromRoutineDay() {
   const { user } = useAuth()
@@ -74,12 +86,19 @@ export function useStartSessionFromRoutineDay() {
   })
 }
 
+/** Lo que hace falta para cerrar: el fin ya puesto se respeta. */
+interface FinishSessionInput {
+  readonly sessionId: string
+  /** Fin que la sesión ya traía; `null` en un entrenamiento en directo. */
+  readonly endedAt: string | null
+}
+
 /** Cierra el entrenamiento: pasa al historial. */
 export function useFinishSession() {
   const refreshSessions = useRefreshSessions()
 
-  return useMutation<void, AppError, string>({
-    mutationFn: (sessionId) => workoutService.finishSession(sessionId),
+  return useMutation<void, AppError, FinishSessionInput>({
+    mutationFn: ({ sessionId, endedAt }) => workoutService.finishSession(sessionId, endedAt),
     onSuccess: refreshSessions,
   })
 }

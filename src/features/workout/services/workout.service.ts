@@ -6,6 +6,7 @@ import { workoutRepository } from '../repositories/workout.repository'
 import type {
   CreateExerciseValues,
   CreateRoutineValues,
+  PastSessionValues,
   RoutineExerciseTargetsValues,
 } from '../schemas/workout.schema'
 import type {
@@ -23,6 +24,7 @@ import type {
 } from '../types/workout.types'
 import { buildExerciseProgress } from '../utils/exercise-progress'
 import { buildLastPerformances } from '../utils/last-performance'
+import { toPastSessionRange } from '../utils/past-session'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
@@ -165,6 +167,43 @@ export const workoutService = {
   },
 
   /**
+   * Abre un entrenamiento que ya se hizo, para apuntarlo después.
+   *
+   * Existe porque no siempre se entrena con el teléfono delante: se va sin él,
+   * se queda sin batería o el gimnasio no tiene cobertura. Sin esto, ese día se
+   * perdía. Estudio y sueño ya se podían registrar a posteriori; entrenamiento
+   * era el único que obligaba a estar conectado mientras.
+   *
+   * **La sesión nace con su fin ya puesto** y sigue en curso hasta que se cierra.
+   * Así la duración que se tecleó sobrevive a una recarga: no hace falta volver
+   * a preguntarla al terminar, ni guardarla en la pantalla.
+   *
+   * Como al empezar en directo, si ya hay un entrenamiento abierto se devuelve
+   * ese: nunca se pisa lo que se esté haciendo.
+   */
+  async startPastSession(userId: string, values: PastSessionValues): Promise<SessionDetail> {
+    try {
+      const active = await workoutRepository.findActiveSession(userId)
+      if (active) return await loadSessionDetail(active)
+
+      const range = toPastSessionRange(values)
+      if (!range) {
+        throw createAppError('validation', 'Revisa el día y la hora: no se entienden.')
+      }
+
+      return toSessionDetail(
+        await workoutRepository.insertSession(userId, {
+          startedAt: range.startedAt,
+          endedAt: range.endedAt,
+        }),
+        [],
+      )
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
    * Inicia un entrenamiento siguiendo un día de rutina.
    *
    * La sesión queda enlazada al día (`routine_day_id`), de donde salen los
@@ -176,7 +215,7 @@ export const workoutService = {
       const active = await workoutRepository.findActiveSession(userId)
       if (active) return await loadSessionDetail(active)
 
-      const session = await workoutRepository.insertSession(userId, routineDayId)
+      const session = await workoutRepository.insertSession(userId, { routineDayId })
       return await loadSessionDetail(session)
     } catch (error) {
       throw toAppError(error)
@@ -210,11 +249,18 @@ export const workoutService = {
   },
 
   /** Cierra el entrenamiento y lo deja disponible en el historial. */
-  async finishSession(sessionId: string): Promise<void> {
+  /**
+   * Cierra el entrenamiento.
+   *
+   * `endedAt` sólo llega cuando la sesión ya traía su fin puesto —un
+   * entrenamiento apuntado después—, y entonces se respeta: la duración es la
+   * que se tecleó, no el rato que se tardó en escribir las series.
+   */
+  async finishSession(sessionId: string, endedAt?: string | null): Promise<void> {
     try {
       await workoutRepository.updateSession(sessionId, {
         status: 'completed',
-        ended_at: new Date().toISOString(),
+        ended_at: endedAt ?? new Date().toISOString(),
       })
     } catch (error) {
       throw toAppError(error)

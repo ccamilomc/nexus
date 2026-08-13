@@ -158,9 +158,11 @@ beforeEach(() => {
   listSetsBySessions.mockResolvedValue([])
   listExercisesByDays.mockResolvedValue([])
   findRoutineDay.mockResolvedValue(ROUTINE_DAY)
-  insertSession.mockImplementation(async (_userId, routineDayId) =>
-    session('nueva', routineDayId ?? null),
-  )
+  insertSession.mockImplementation(async (_userId, input) => ({
+    ...session('nueva', input?.routineDayId ?? null),
+    ...(input?.startedAt ? { started_at: input.startedAt } : {}),
+    ...(input?.endedAt ? { ended_at: input.endedAt } : {}),
+  }))
 })
 
 describe('workoutService.startSessionFromRoutineDay', () => {
@@ -169,7 +171,7 @@ describe('workoutService.startSessionFromRoutineDay', () => {
 
     const detail = await workoutService.startSessionFromRoutineDay(USER_ID, DAY_ID)
 
-    expect(insertSession).toHaveBeenCalledExactlyOnceWith(USER_ID, DAY_ID)
+    expect(insertSession).toHaveBeenCalledExactlyOnceWith(USER_ID, { routineDayId: DAY_ID })
     expect(detail.session.routine_day_id).toBe(DAY_ID)
     expect(detail.plan?.day).toEqual(ROUTINE_DAY)
     expect(detail.plan?.exercises).toEqual([PRESCRIBED])
@@ -196,6 +198,43 @@ describe('workoutService.startSessionFromRoutineDay', () => {
     expect(insertSession).not.toHaveBeenCalled()
     expect(detail.session.id).toBe('libre')
     expect(detail.plan).toBeNull()
+  })
+})
+
+describe('workoutService.startPastSession', () => {
+  const AYER = { date: '2026-08-12', startTime: '07:15', durationMinutes: 75 }
+
+  it('nace con su fin ya puesto, para que la duración sobreviva a una recarga', async () => {
+    const detail = await workoutService.startPastSession(USER_ID, AYER)
+
+    const { startedAt, endedAt } = (insertSession.mock.calls[0]?.[1] ?? {}) as {
+      startedAt?: string
+      endedAt?: string
+    }
+    const duracion =
+      (new Date(endedAt ?? '').getTime() - new Date(startedAt ?? '').getTime()) / 60_000
+
+    expect(duracion).toBe(75)
+    expect(detail.session.ended_at).toBe(endedAt)
+  })
+
+  it('no pisa un entrenamiento en curso', async () => {
+    // Quien está entrenando y se pone a apuntar otro no debería perder el suyo.
+    findActiveSession.mockResolvedValue(session('en-curso'))
+
+    const detail = await workoutService.startPastSession(USER_ID, AYER)
+
+    expect(insertSession).not.toHaveBeenCalled()
+    expect(detail.session.id).toBe('en-curso')
+  })
+
+  it('avisa en vez de inventarse una fecha que no se entiende', async () => {
+    const error: unknown = await workoutService
+      .startPastSession(USER_ID, { ...AYER, date: '' })
+      .catch((e: unknown) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect(insertSession).not.toHaveBeenCalled()
   })
 
   it('la sesión sigue siendo válida si el día de rutina ya no existe', async () => {
