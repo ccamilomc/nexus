@@ -379,20 +379,23 @@ async function ensureSubjects() {
 
   // Objetivos alcanzables: puestos altos, el avance semanal sale siempre en
   // rojo y deja de informar. Se busca que se cumplan a ratos, no nunca.
+  // Con color propio cada una: es lo que distingue las materias en la lista, en
+  // el avance semanal y en el cronómetro, y sembrarlas del mismo color dejaba el
+  // punto sin decir nada. Salen de `SUBJECT_COLORS` (features/study/constants).
   const wanted = [
-    ['Física', 180],
-    ['Programación', 240],
+    ['Física', 180, '#8b5cf6'],
+    ['Programación', 240, '#2563eb'],
   ]
   const known = new Set(existing.map(({ name }) => name))
   const missing = wanted.filter(([name]) => !known.has(name))
 
   if (missing.length > 0) {
     const { error } = await supabase.from('subjects').insert(
-      missing.map(([name, target]) => ({
+      missing.map(([name, target, color]) => ({
         user_id: userId,
         name,
         weekly_target_minutes: target,
-        color: '#2563eb',
+        color,
       })),
     )
     if (error) throw error

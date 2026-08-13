@@ -1,6 +1,7 @@
 import { createAppError, toAppError } from '@/core/error'
 import { type DayRange, dayRange, weekRange } from '@/shared/utils'
 
+import { nextSubjectColor } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
 import type {
@@ -32,12 +33,22 @@ export const studyService = {
     }
   },
 
+  /**
+   * Crea una materia y **le pone un color que no esté cogido**.
+   *
+   * Cuesta una consulta más, y sale a cuenta: crear una materia se hace muy de
+   * vez en cuando, y sin esto todas salían del color por defecto de la columna,
+   * con lo que el punto que las distingue en cuatro pantallas no distinguía nada.
+   */
   async createSubject(userId: string, values: CreateSubjectValues): Promise<Subject> {
     try {
+      const existing = await studyRepository.listSubjects(userId)
+
       return await studyRepository.insertSubject({
         user_id: userId,
         name: values.name,
         weekly_target_minutes: toWeeklyTargetMinutes(values),
+        color: nextSubjectColor(existing.map(({ color }) => color)),
       })
     } catch (error) {
       throw toAppError(error)
