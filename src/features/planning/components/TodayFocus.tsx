@@ -65,7 +65,7 @@ export function TodayFocus() {
               <li key={recommendation.key}>
                 <RecommendationCard
                   recommendation={recommendation}
-                  onDismiss={() => dismiss.mutate(recommendation)}
+                  onDismiss={() => dismiss.mutateAsync(recommendation)}
                   isDismissing={dismiss.isPending}
                 />
               </li>

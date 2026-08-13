@@ -19,9 +19,15 @@ dependencias.
 | **React Hook Form**     | Formularios           | Rendimiento (no re-render por tecla) y ergonomía.                          |
 | **Zod**                 | Validación & esquemas | Fuente única de verdad de la validación; infiere tipos TS.                 |
 | **Zustand**             | Estado global de UI   | Ligero, sin boilerplate. **Sólo** estado de UI, no server state.           |
-| **Framer Motion**       | Animaciones           | Animaciones declarativas; degradables sin romper funcionalidad.            |
 | **Lucide React**        | Iconografía           | **Única** librería de iconos, para consistencia visual.                    |
 | **Recharts**            | Gráficas              | Declarativo sobre SVG; suficiente para Analytics.                          |
+
+Las **animaciones no llevan librería**: salen de los tokens de `globals.css`
+(`--duration-fast`, `--duration-base`, `--duration-slow`, `--ease-out`), de las
+utilidades de Tailwind y de `tailwindcss-animate`. `framer-motion` estuvo en el
+stack y se retiró sin llegar a usarse — costaba 40,65 KB gzip en la pantalla de
+entrada, y el único caso que la justificaba se resolvió sin ella
+([ADR-0009](adr/0009-sin-framer-motion.md)).
 
 ## Backend
 

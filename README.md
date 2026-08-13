@@ -39,8 +39,8 @@ npm run dev
 ## Stack
 
 React · Vite · TypeScript (strict) · Tailwind CSS · shadcn/ui · React Router ·
-TanStack Query · React Hook Form · Zod · Zustand · Framer Motion · Lucide ·
-Recharts · Supabase. Detalle y justificación en
+TanStack Query · React Hook Form · Zod · Zustand · Lucide · Recharts ·
+Supabase. Detalle y justificación en
 [`docs/10-stack-tecnologico.md`](./docs/10-stack-tecnologico.md).
 
 ## Arquitectura
