@@ -9,7 +9,7 @@ import { buildSleepSeries } from '../utils/sleep-series'
 import { sleepInstants, sleepMinutes } from '../utils/sleep-time'
 
 /** Noches que se traen para el historial y su media. */
-export const HISTORY_NIGHTS = 7
+const HISTORY_NIGHTS = 7
 
 /** Reglas de negocio de sueño. Traduce errores técnicos a `AppError`. */
 export const sleepService = {

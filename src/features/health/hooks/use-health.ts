@@ -7,13 +7,10 @@ import { type AppError, createAppError } from '@/core/error'
 import type { LogMetricValues } from '../schemas/health.schema'
 import type { HealthOverview } from '../services/health.service'
 import { healthService } from '../services/health.service'
-import type { BodyMetric, BodyMetricType } from '../types/health.types'
 
 export const healthKeys = {
   all: ['health'] as const,
   overview: (userId: string | undefined) => [...healthKeys.all, 'overview', userId] as const,
-  history: (userId: string | undefined, metricType: string) =>
-    [...healthKeys.all, 'history', userId, metricType] as const,
   weightSeries: (userId: string | undefined, rangeKey: string) =>
     [...healthKeys.all, 'weight-series', userId, rangeKey] as const,
 }
@@ -32,18 +29,6 @@ export function useHealthOverview() {
   return useQuery<HealthOverview | null, AppError>({
     queryKey: healthKeys.overview(userId),
     queryFn: () => (userId ? healthService.getOverview(userId) : null),
-  })
-}
-
-/** El histórico de una medida. Sólo se pide cuando se abre. */
-export function useMetricHistory(metricType: BodyMetricType | null) {
-  const { user } = useAuth()
-  const userId = user?.id
-
-  return useQuery<BodyMetric[], AppError>({
-    queryKey: healthKeys.history(userId, metricType ?? 'none'),
-    queryFn: () => (userId && metricType ? healthService.getHistory(userId, metricType) : []),
-    enabled: metricType !== null,
   })
 }
 

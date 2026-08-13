@@ -13,7 +13,3 @@ export const QUALITY_LABELS: Readonly<Record<number, string>> = {
 }
 
 export const QUALITY_VALUES = [1, 2, 3, 4, 5] as const
-
-/** Horas típicas, para no teclear en el móvil recién despierto. */
-export const COMMON_BEDTIMES = ['22:00', '23:00', '00:00'] as const
-export const COMMON_WAKE_TIMES = ['06:00', '07:00', '08:00'] as const
