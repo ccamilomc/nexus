@@ -13,7 +13,9 @@
  *    coherencia el motor de decisiones aprendería a razonar sobre un mundo que
  *    no existe.
  * 2. **No pisa nada.** Antes de escribir un día comprueba si ya hay registro y
- *    lo respeta. Se puede volver a ejecutar sin duplicar.
+ *    lo respeta. Se puede volver a ejecutar sin duplicar. La única excepción son
+ *    los duplicados de catálogo que dejan las pruebas a mano —dos «Nequi», tres
+ *    «Mi hermano»—, que se apartan con el mismo `deleted_at` de la app.
  *
  * Deja el día de hoy a medias a propósito (desayuno y algo de agua, sin
  * entrenamiento) para que el Plan del día tenga algo que recomendar.
@@ -794,6 +796,439 @@ async function seedWeight(story) {
   console.log(`Salud: ${rows.length} pesajes.`)
 }
 
+// ─── Finanzas ───────────────────────────────────────────────────────────────
+
+/**
+ * Dónde vive el dinero.
+ *
+ * El saldo inicial es de cuando se empezó a apuntar, no de hoy: lo de hoy sale
+ * de sumarle los movimientos. Cinco cuentas de cinco clases distintas, para que
+ * los selectores y los traspasos tengan entre qué elegir.
+ */
+const ACCOUNTS = [
+  ['Efectivo', 'cash', 150_000],
+  ['Nequi', 'wallet', 320_000],
+  ['Bancolombia', 'bank', 2_400_000],
+  ['Tarjeta Visa', 'credit_card', 0],
+  ['Ahorros', 'savings', 5_000_000],
+]
+
+/**
+ * Topes por categoría, elegidos para que la pantalla enseñe **todos** sus
+ * estados y no sólo el bonito.
+ *
+ * Restaurantes se pasa a propósito: si ningún tope revienta nunca, el aviso de
+ * exceso no se puede mirar. Y Ropa se queda sin gastar, que es el otro extremo.
+ */
+const BUDGETS = [
+  ['Mercado', 620_000],
+  ['Restaurantes', 150_000],
+  ['Transporte', 220_000],
+  ['Ocio', 150_000],
+  ['Ropa', 150_000],
+]
+
+/** Lo que se repite cada mes: nombre, tipo, importe, categoría y día. */
+const RECURRING = [
+  ['Arriendo', 'expense', 1_200_000, 'Arriendo', 1],
+  ['Gimnasio', 'expense', 150_000, 'Gimnasio', 5],
+  ['Internet', 'expense', 120_000, 'Servicios', 8],
+  ['Suscripciones', 'expense', 22_900, 'Suscripciones', 12],
+  ['Salario', 'income', 3_500_000, 'Salario', 30],
+]
+
+/**
+ * Deja una fila por nombre y aparta las repetidas.
+ *
+ * Probar los formularios a mano dejó tres «Mi hermano» y dos «Gimnasio», y una
+ * pantalla así parece rota aunque el código esté bien. Se conserva la más usada
+ * —no la más antigua: la vieja puede ser el primer intento— y **los movimientos
+ * de las otras se repuntan a ella** antes de apartarlas, para que ningún apunte
+ * quede señalando a algo que ya no se ve.
+ *
+ * Aparta, no borra: es el mismo `deleted_at` que usa la app.
+ *
+ * `hiddenColumns` son las otras formas que tiene una fila de estar fuera de
+ * juego —una cuenta archivada, una deuda saldada—. Hay que mirarlas: si aquí
+ * cuenta como candidata algo que la app ya no enseña, se conserva la fila
+ * invisible y luego se crea otra igual, que es justo lo que pasó la primera vez.
+ */
+async function keepOnePerName({ table, nameColumn, linkColumn, hiddenColumns = [] }) {
+  let query = supabase
+    .from(table)
+    .select(`id, ${nameColumn}`)
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  for (const column of hiddenColumns) query = query.is(column, null)
+
+  const { data: rows, error } = await query.order('created_at', { ascending: true })
+  if (error) throw error
+
+  const { data: links } = await supabase
+    .from('finance_transactions')
+    .select(linkColumn)
+    .eq('user_id', userId)
+    .not(linkColumn, 'is', null)
+
+  const uses = new Map()
+  for (const link of links ?? []) {
+    const id = link[linkColumn]
+    uses.set(id, (uses.get(id) ?? 0) + 1)
+  }
+
+  const keepers = new Map()
+  for (const row of rows) {
+    const current = keepers.get(row[nameColumn])
+    if (!current || (uses.get(row.id) ?? 0) > (uses.get(current.id) ?? 0)) {
+      keepers.set(row[nameColumn], row)
+    }
+  }
+
+  const extras = rows.filter((row) => keepers.get(row[nameColumn]).id !== row.id)
+  if (extras.length === 0) return keepers
+
+  for (const extra of extras) {
+    const keeper = keepers.get(extra[nameColumn])
+    await supabase
+      .from('finance_transactions')
+      .update({ [linkColumn]: keeper.id })
+      .eq(linkColumn, extra.id)
+  }
+
+  const { error: closeError } = await supabase
+    .from(table)
+    .update({ deleted_at: new Date().toISOString() })
+    .in(
+      'id',
+      extras.map(({ id }) => id),
+    )
+  if (closeError) throw closeError
+
+  console.log(`${table}: ${extras.length} repetidas apartadas.`)
+  return keepers
+}
+
+async function ensureAccounts() {
+  await keepOnePerName({
+    table: 'finance_accounts',
+    nameColumn: 'name',
+    linkColumn: 'account_id',
+    hiddenColumns: ['archived_at'],
+  })
+
+  const { data: existing } = await supabase
+    .from('finance_accounts')
+    .select('id, name')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .is('archived_at', null)
+
+  const known = new Set(existing.map(({ name }) => name))
+  const missing = ACCOUNTS.filter(([name]) => !known.has(name))
+
+  if (missing.length > 0) {
+    const { error } = await supabase.from('finance_accounts').insert(
+      missing.map(([name, kind, initial]) => ({
+        user_id: userId,
+        name,
+        kind,
+        initial_balance: initial,
+      })),
+    )
+    if (error) throw error
+    console.log(`Cuentas: ${missing.length} creadas.`)
+  }
+
+  const { data: all } = await supabase
+    .from('finance_accounts')
+    .select('id, name')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .is('archived_at', null)
+
+  return new Map(all.map(({ id, name }) => [name, id]))
+}
+
+/** El catálogo de categorías es de la migración; aquí sólo se lee. */
+async function loadCategories() {
+  const { data, error } = await supabase
+    .from('finance_categories')
+    .select('id, name')
+    .is('archived_at', null)
+  if (error) throw error
+
+  return new Map(data.map(({ id, name }) => [name, id]))
+}
+
+async function ensureBudgets(categories) {
+  const { data: existing } = await supabase
+    .from('finance_budgets')
+    .select('category_id')
+    .eq('user_id', userId)
+
+  const known = new Set(existing.map(({ category_id }) => category_id))
+  const rows = BUDGETS.filter(
+    ([name]) => categories.has(name) && !known.has(categories.get(name)),
+  ).map(([name, amount]) => ({
+    user_id: userId,
+    category_id: categories.get(name),
+    amount,
+  }))
+
+  await insert('finance_budgets', rows)
+  if (rows.length > 0) console.log(`Topes: ${rows.length} puestos.`)
+}
+
+/** El próximo día `anchor` que todavía no ha pasado. */
+function nextDue(anchorDay) {
+  const today = dayAgo(0)
+  const due = new Date(today.getFullYear(), today.getMonth(), anchorDay, 12)
+  if (due < today) due.setMonth(due.getMonth() + 1)
+
+  return dateKey(due)
+}
+
+async function ensureRecurring(accounts, categories) {
+  await keepOnePerName({
+    table: 'finance_recurring',
+    nameColumn: 'name',
+    linkColumn: 'recurring_id',
+  })
+
+  const { data: existing } = await supabase
+    .from('finance_recurring')
+    .select('id, name')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  const known = new Set(existing.map(({ name }) => name))
+  const missing = RECURRING.filter(([name]) => !known.has(name))
+
+  if (missing.length > 0) {
+    const { error } = await supabase.from('finance_recurring').insert(
+      missing.map(([name, kind, amount, category, anchorDay]) => ({
+        user_id: userId,
+        name,
+        kind,
+        amount,
+        // El salario entra al banco; los pagos salen de ahí también.
+        account_id: accounts.get('Bancolombia'),
+        category_id: categories.get(category) ?? null,
+        frequency: 'monthly',
+        anchor_day: anchorDay,
+        next_due_on: nextDue(anchorDay),
+      })),
+    )
+    if (error) throw error
+    console.log(`Fijos: ${missing.length} creados.`)
+  }
+
+  const { data: all } = await supabase
+    .from('finance_recurring')
+    .select('id, name, kind, amount, category_id, anchor_day')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  return all
+}
+
+/**
+ * Una deuda a medio pagar.
+ *
+ * A medias y no recién puesta: con cero abonos no se ve nada de lo que la
+ * pantalla sabe hacer —lo que queda, el ritmo, cuánto falta—, y liquidada
+ * tampoco.
+ */
+async function ensureDebt() {
+  await keepOnePerName({
+    table: 'finance_debts',
+    nameColumn: 'counterpart',
+    linkColumn: 'debt_id',
+    hiddenColumns: ['settled_at'],
+  })
+
+  const { data: existing } = await supabase
+    .from('finance_debts')
+    .select('id, counterpart, principal')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+    .is('settled_at', null)
+
+  if (existing.length > 0) return existing[0]
+
+  const { data, error } = await supabase
+    .from('finance_debts')
+    .insert({
+      user_id: userId,
+      counterpart: 'Mi hermano',
+      direction: 'i_owe',
+      principal: 1_500_000,
+      interest_kind: 'none',
+      started_on: dateKey(dayAgo(DAYS_BACK)),
+      note: 'Parte de la moto.',
+    })
+    .select('id, counterpart, principal')
+    .single()
+  if (error) throw error
+
+  console.log('Deudas: 1 creada.')
+  return data
+}
+
+/**
+ * Los movimientos de las últimas diez semanas.
+ *
+ * Se apoya en la misma historia que el resto: el mercado cae en sábado, el
+ * transporte sólo los días laborables y el gimnasio se cobra aunque esa semana
+ * se entrenara poco. Un día que ya tenga movimientos se respeta entero.
+ *
+ * **Cada decisión sale de un hash del día, no del dado corrido**, igual que los
+ * hábitos. Es lo que hace que volver a ejecutarlo no duplique: un día en el que
+ * no se gastó nada no deja rastro en la base, así que se vuelve a visitar, y con
+ * el dado corrido salía distinto porque la secuencia ya había avanzado de otra
+ * forma. Con el hash, un día vacío vuelve a salir vacío.
+ */
+async function seedFinance(story, accounts, categories, recurring, debt) {
+  const { data: existing } = await supabase
+    .from('finance_transactions')
+    .select('occurred_on, recurring_id')
+    .eq('user_id', userId)
+    .is('deleted_at', null)
+
+  const taken = new Set(existing.map(({ occurred_on }) => occurred_on))
+
+  // Los fijos se comprueban por mes y no por día, y no es lo mismo: el mes en
+  // curso puede tener ya movimientos sueltos apuntados a mano y aun así faltarle
+  // el arriendo. Mirando sólo el día se quedaría cojo justo el mes que se mira.
+  const fixedDone = new Set(
+    existing
+      .filter(({ recurring_id }) => recurring_id)
+      .map(({ recurring_id, occurred_on }) => `${recurring_id}|${occurred_on.slice(0, 7)}`),
+  )
+
+  const cat = (name) => categories.get(name) ?? null
+  const rows = []
+
+  /** Sale siempre lo mismo para el mismo concepto y el mismo día. */
+  const roll = (concept, day) => dailyRoll(concept, dateKey(day))
+  const span = (concept, day, min, max) => min + roll(`${concept}$`, day) * (max - min)
+
+  const spend = (day, account, category, amount, note) => {
+    rows.push({
+      user_id: userId,
+      account_id: accounts.get(account),
+      category_id: cat(category),
+      kind: 'expense',
+      amount: Math.round(amount / 100) * 100,
+      occurred_on: dateKey(day),
+      note,
+    })
+  }
+
+  for (const { day, isWeekend, isToday } of story) {
+    const dayOfMonth = day.getDate()
+
+    // Los fijos se apuntan el día que les toca, con su `recurring_id` puesto:
+    // es lo que deja separar el gasto que se decide del que ya estaba decidido.
+    for (const fixed of recurring) {
+      if (fixed.anchor_day !== dayOfMonth) continue
+      if (fixedDone.has(`${fixed.id}|${dateKey(day).slice(0, 7)}`)) continue
+
+      rows.push({
+        user_id: userId,
+        account_id: accounts.get('Bancolombia'),
+        category_id: fixed.category_id,
+        recurring_id: fixed.id,
+        kind: fixed.kind,
+        amount: fixed.amount,
+        occurred_on: dateKey(day),
+        note: fixed.name,
+      })
+    }
+
+    if (taken.has(dateKey(day))) continue
+
+    // Mercado el sábado. Es el gasto variable más grande y el que sostiene lo
+    // que se come: sin él, el coste por porción de nutrición no cuadraría.
+    if (day.getDay() === 6) {
+      spend(
+        day,
+        'Bancolombia',
+        'Mercado',
+        span('mercado', day, 118_000, 168_000),
+        'Mercado de la semana',
+      )
+    }
+
+    // Transporte entre semana, salvo los días que se queda en casa.
+    if (!isWeekend && !isToday && roll('transporte', day) < 0.75) {
+      spend(day, 'Nequi', 'Transporte', span('transporte', day, 5_000, 14_000), null)
+    }
+
+    if (roll('restaurante', day) < 0.22) {
+      spend(day, 'Nequi', 'Restaurantes', span('restaurante', day, 18_000, 48_000), null)
+    }
+    if (isWeekend && roll('ocio', day) < 0.3) {
+      spend(day, 'Efectivo', 'Ocio', span('ocio', day, 25_000, 90_000), null)
+    }
+    if (roll('salud', day) < 0.04) {
+      spend(day, 'Bancolombia', 'Salud', span('salud', day, 30_000, 120_000), 'Droguería')
+    }
+    if (roll('ropa', day) < 0.03) {
+      spend(day, 'Tarjeta Visa', 'Ropa', span('ropa', day, 60_000, 180_000), null)
+    }
+
+    // Agua y luz llegan juntas a mitad de mes.
+    if (dayOfMonth === 10) {
+      spend(day, 'Bancolombia', 'Servicios', span('servicios', day, 180_000, 260_000), 'Agua y luz')
+    }
+
+    // Un trabajo suelto de vez en cuando: el ingreso no es sólo la nómina.
+    if (dayOfMonth === 18 && roll('freelance', day) < 0.6) {
+      rows.push({
+        user_id: userId,
+        account_id: accounts.get('Nequi'),
+        category_id: cat('Freelance'),
+        kind: 'income',
+        amount: Math.round(span('freelance', day, 400_000, 900_000) / 1000) * 1000,
+        occurred_on: dateKey(day),
+        note: 'Trabajo suelto',
+      })
+    }
+
+    // Lo que se aparta al empezar el mes, y el abono al hermano. El traspaso no
+    // es gasto ni ingreso: mueve dinero entre cuentas propias.
+    if (dayOfMonth === 2) {
+      rows.push({
+        user_id: userId,
+        account_id: accounts.get('Bancolombia'),
+        counterpart_account_id: accounts.get('Ahorros'),
+        kind: 'transfer',
+        amount: 500_000,
+        occurred_on: dateKey(day),
+        note: 'Lo que se aparta',
+      })
+    }
+
+    if (dayOfMonth === 20 && debt) {
+      rows.push({
+        user_id: userId,
+        account_id: accounts.get('Bancolombia'),
+        category_id: cat('Otros gastos'),
+        debt_id: debt.id,
+        kind: 'expense',
+        amount: 200_000,
+        occurred_on: dateKey(day),
+        note: 'Abono a mi hermano',
+      })
+    }
+  }
+
+  await insert('finance_transactions', rows)
+  console.log(`Finanzas: ${rows.length} movimientos.`)
+}
+
 // ─── Ejecución ──────────────────────────────────────────────────────────────
 
 console.log('Sesión iniciada (la RLS sigue activa).\n')
@@ -810,5 +1245,12 @@ await seedNutrition(story, pantry)
 await seedStudy(story, subjects)
 await seedHabits(story, habits)
 await seedWeight(story)
+
+const accounts = await ensureAccounts()
+const categories = await loadCategories()
+await ensureBudgets(categories)
+const recurring = await ensureRecurring(accounts, categories)
+const debt = await ensureDebt()
+await seedFinance(story, accounts, categories, recurring, debt)
 
 console.log('\nListo. Hoy queda a medias a propósito, para que el Plan tenga qué decir.')
