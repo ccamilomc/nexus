@@ -198,18 +198,49 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 > animaciones de las gráficas ya estaban apagadas. El aviso del build sobre los
 > 500 KB va sobre el tamaño **sin comprimir**; la cifra honesta son 176 KB gzip.
 >
-> **Un pendiente con evidencia a medias:** cambiar Analytics a 90 días bloquea el
-> hilo **2.774 ms** (la peor tarea, 700 ms) sin ninguna petición de red — es
-> cálculo y pintado. Pero está medido **en desarrollo**, donde React va sin
-> minimizar y `StrictMode` renderiza dos veces; el build servido no se puede
-> medir porque exige una sesión real. No se optimiza sobre esa cifra: por
-> [CLAUDE.md](../CLAUDE.md) se optimiza con evidencia, y ésta no lo es todavía.
+> **Analytics montaba los siete dominios de golpe**, con uno y medio en pantalla.
+> Resuelto: cada sección espera a acercarse (`useNearViewport`). Medido en Chrome
+> a 90 días, **3.462 → 1.584 nodos, 7 → 3 gráficas y 630 → 270 filas** de la tabla
+> que leen los lectores de pantalla.
+>
+> El **tiempo** de bloqueo no llegó a medirse bien y no merece más intentos: los
+> 2.774 ms que se habían apuntado eran del panel de vista previa, que es otro
+> entorno, y en Chrome real dieron cero. Con la ventana en segundo plano el
+> navegador frena los temporizadores, así que cualquier cronómetro mide el freno
+> y no el trabajo. Lo que sí está medido es lo estructural de arriba.
+>
+> **Con esto el Sprint 16 queda cerrado.**
 
 ### Sprint 17 — Fase 17 · Revisión final y Release 1.0 · **M**
 
 - Eliminar código muerto/duplicado y deuda técnica, revisar arquitectura,
   actualizar toda la documentación, preparar `release/1.0.0`.
 - **DoD:** Release 1.0 estable, documentada y desplegada.
+
+> **Código muerto: barrido y casi vacío.** No hay ni un `TODO`, `FIXME`, `HACK`,
+> `@ts-ignore` ni un `any` en todo `src`. Lo que salió fue el historial de una
+> medida de salud —hook, servicio, consulta y constante, cuatro capas que nadie
+> llamaba— y dos constantes de sueño que el atajo de «apuntar la noche» ya había
+> dejado atrás.
+>
+> **Duplicación: un solo caso real.** Las pestañas de módulo eran el mismo
+> componente copiado cuatro veces, y ya habían empezado a separarse: sólo una
+> usaba los tokens de movimiento. Ahora son `SectionTabs`. **El resto de lo que
+> parecía duplicado no lo era**, y conviene dejarlo escrito para no «arreglarlo»
+> luego: las siete tarjetas del panel llaman cada una a su propio hook y
+> parametrizarlo rompería las reglas de React; `.eq('user_id', userId)` en los
+> repositorios y `catch → toAppError` en los servicios son el patrón del
+> proyecto. Repetir un patrón es consistencia, no deuda.
+>
+> **Dependencias:** se retiró `framer-motion`, que llevaba diecisiete sprints
+> instalada sin una sola importación ([ADR-0009](adr/0009-sin-framer-motion.md)).
+>
+> **Multiusuario.** Al saberse que van a ser **dos cuentas con sesiones
+> distintas**, se auditó la RLS contra la base real: cero tablas sin políticas y
+> cero políticas que no filtren por `auth.uid()`. Lo que faltaba era el disco: la
+> caché persistida **lleva ahora firmado su dueño** y se tira si no coincide, en
+> vez de fiarse de haber pasado por «cerrar sesión». Queda **probarlo con dos
+> sesiones reales**, que necesita una segunda cuenta.
 
 ## Dependencias entre sprints
 

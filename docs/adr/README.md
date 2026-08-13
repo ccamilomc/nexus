@@ -22,3 +22,5 @@ decisión tomada, sus consecuencias y las alternativas descartadas.
 | [0006](./0006-analytics-agrega-en-el-cliente.md)    | Analytics agrega en el cliente, no en vistas SQL     | Aceptado |
 | [0007](./0007-cache-persistente-en-localstorage.md) | La caché se persiste en `localStorage`               | Aceptado |
 | [0008](./0008-notificaciones-aplazadas.md)          | Las notificaciones se aplazan hasta que haya push    | Aceptado |
+| [0009](./0009-sin-framer-motion.md)                 | El movimiento se hace con CSS, no con framer-motion  | Aceptado |
+| [0010](./0010-la-cache-lleva-firmado-su-dueno.md)   | La caché guardada lleva firmado su dueño             | Aceptado |

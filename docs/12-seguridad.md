@@ -6,11 +6,31 @@ valida también en el backend.
 
 ## Modelo de amenaza (v1)
 
-- App de un solo usuario en su navegador, datos personales de salud/hábitos.
-- Riesgos principales: acceso a datos de otro usuario (multiusuario futuro),
-  filtración de secretos (API keys), XSS, y pérdida/corrupción de datos en sync.
+- App con **dos cuentas**, cada una con su sesión, en sus navegadores; datos
+  personales de salud y hábitos. Desde el 2026-08-13 el multiusuario dejó de ser
+  hipótesis: son dos personas reales que pueden compartir un ordenador.
+- Riesgos principales: acceso a datos de la otra cuenta, filtración de secretos
+  (API keys), XSS, y pérdida/corrupción de datos en sync.
 - Mitigaciones: RLS estricta, secretos sólo en servidor, validación doble,
   sanitización, y diseño de sincronización con conflictos resueltos.
+- **El adversario no es un atacante con el dispositivo en la mano**, sino el
+  descuido: que lo de uno se quede a la vista del otro. Eso cambia qué vale la
+  pena — cifrar la caché no, saber de quién es sí
+  ([ADR-0010](./adr/0010-la-cache-lleva-firmado-su-dueno.md)).
+
+## Lo que se guarda en el dispositivo
+
+La RLS protege el servidor, **no el disco**. La caché de consultas se persiste en
+`localStorage` ([ADR-0007](./adr/0007-cache-persistente-en-localstorage.md)) con
+datos de salud en claro, así que:
+
+- Se borra al quedarse sin sesión.
+- **Lleva firmado su dueño** y se tira si no coincide con quien tiene la sesión,
+  en vez de fiarse de haber pasado por «cerrar sesión»
+  ([ADR-0010](./adr/0010-la-cache-lleva-firmado-su-dueno.md)).
+
+Comprobado en el navegador: con un dato reconocible dentro de la caché y la firma
+cambiada, al recargar el dato desaparece.
 
 ## Autenticación
 
