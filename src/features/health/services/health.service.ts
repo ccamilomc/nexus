@@ -4,8 +4,15 @@ import type { DayRange } from '@/shared/utils'
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
 import type { LogMetricValues } from '../schemas/health.schema'
-import type { Bmi, MetricSummary, WeightPeriodSeries } from '../types/health.types'
+import type {
+  Bmi,
+  BodyMetricType,
+  MetricHistory,
+  MetricSummary,
+  WeightPeriodSeries,
+} from '../types/health.types'
 import { calculateBmi } from '../utils/bmi'
+import { buildMetricHistory } from '../utils/metric-history'
 import { buildMetricSummaries } from '../utils/metric-summary'
 import { buildWeightSeries } from '../utils/weight-series'
 
@@ -16,6 +23,16 @@ import { buildWeightSeries } from '../utils/weight-series'
  * cada una, que es lo que el resumen necesita.
  */
 const RECENT_LIMIT = 40
+
+/**
+ * Cuántas lecturas se traen al abrir una medida.
+ *
+ * Veinte cubren de sobra lo que se mira: con el peso, dos meses y medio pesándose
+ * cada cuatro días; con la cinta métrica, casi dos años. Más allá, la pregunta
+ * deja de ser «cómo voy» y pasa a ser un histórico, que no es lo que hace esta
+ * pantalla.
+ */
+const HISTORY_LIMIT = 20
 
 /** Lo que la pantalla de salud necesita saber de una vez. */
 export interface HealthOverview {
@@ -48,6 +65,22 @@ export const healthService = {
         bmi: weight ? calculateBmi(weight.latest.value, heightCm) : null,
         heightCm,
       }
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cómo ha ido una medida.
+   *
+   * Se pide sólo cuando alguien abre una: son ocho medidas y traerlas todas al
+   * cargar la pantalla sería pagar ocho consultas para enseñar una.
+   */
+  async getHistory(userId: string, metricType: BodyMetricType): Promise<MetricHistory> {
+    try {
+      const metrics = await healthRepository.listMetricHistory(userId, metricType, HISTORY_LIMIT)
+
+      return buildMetricHistory(metricType, metrics)
     } catch (error) {
       throw toAppError(error)
     }
