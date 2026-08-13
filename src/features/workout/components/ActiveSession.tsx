@@ -6,7 +6,11 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 
-import { useDiscardSession, useFinishSession } from '../hooks/use-active-session'
+import {
+  useDiscardSession,
+  useFinishSession,
+  useLastPerformances,
+} from '../hooks/use-active-session'
 import type { Exercise, SessionDetail } from '../types/workout.types'
 import { formatOptionalTargets } from '../utils/format'
 import { buildSessionItems } from '../utils/session-items'
@@ -29,6 +33,7 @@ interface ActiveSessionProps {
  */
 export function ActiveSession({ detail }: ActiveSessionProps) {
   const { session, exercises, stats, plan } = detail
+  const { data: lastPerformances } = useLastPerformances()
   const [drafts, setDrafts] = useState<readonly Exercise[]>([])
   // Con un plan detrás no hace falta abrir el selector: ya hay qué hacer.
   const [isPickerOpen, setIsPickerOpen] = useState(() => exercises.length === 0 && plan === null)
@@ -108,6 +113,9 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
                   onSetLogged={() => forgetDraft(exercise.id)}
                   onRemove={canRemove ? () => forgetDraft(exercise.id) : undefined}
                   {...(target ? { target } : {})}
+                  lastPerformance={lastPerformances?.find(
+                    ({ exerciseId }) => exerciseId === exercise.id,
+                  )}
                 />
               </li>
             )

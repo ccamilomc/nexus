@@ -53,6 +53,28 @@ export interface SessionStats {
   readonly durationMinutes: number | null
 }
 
+/** Una serie tal como se compara con la de otro día: sin adornos. */
+export interface PerformedSet {
+  readonly reps: number
+  readonly weightKg: number
+}
+
+/**
+ * Lo que se hizo la última vez en un ejercicio.
+ *
+ * Es la referencia con la que se decide el peso de hoy. Sale de la última sesión
+ * **en la que apareció ese ejercicio**, que no tiene por qué ser la última
+ * sesión: en una rutina por días, el press de banca no se toca desde hace tres.
+ */
+export interface LastPerformance {
+  readonly exerciseId: string
+  readonly performedAt: string
+  /** Series de trabajo, en el orden en que se hicieron. Sin calentamiento. */
+  readonly sets: readonly PerformedSet[]
+  /** La más pesada de aquel día: lo que hay que superar. */
+  readonly topSet: PerformedSet | null
+}
+
 /** Sesión con sus series agrupadas por ejercicio y su resumen. */
 export interface SessionDetail {
   readonly session: WorkoutSession
