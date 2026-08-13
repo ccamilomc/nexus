@@ -101,10 +101,20 @@ export const workoutRepository = {
     return data
   },
 
-  async insertSession(userId: string, routineDayId?: string): Promise<WorkoutSession> {
+  async insertSession(
+    userId: string,
+    input: { routineDayId?: string; startedAt?: string; endedAt?: string } = {},
+  ): Promise<WorkoutSession> {
     const { data, error } = await supabase
       .from('workout_sessions')
-      .insert({ user_id: userId, ...(routineDayId ? { routine_day_id: routineDayId } : {}) })
+      .insert({
+        user_id: userId,
+        ...(input.routineDayId ? { routine_day_id: input.routineDayId } : {}),
+        // Sin fecha, la base pone el ahora: es el caso de entrenar con la
+        // aplicación delante.
+        ...(input.startedAt ? { started_at: input.startedAt } : {}),
+        ...(input.endedAt ? { ended_at: input.endedAt } : {}),
+      })
       .select('*')
       .single()
 

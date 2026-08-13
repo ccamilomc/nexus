@@ -1,10 +1,12 @@
 import { Check, Plus } from 'lucide-react'
 import { useState } from 'react'
 
+import { useNow } from '@/core/time'
 import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
+import { formatMinutes } from '@/shared/utils'
 
 import {
   useDiscardSession,
@@ -12,7 +14,7 @@ import {
   useLastPerformances,
 } from '../hooks/use-active-session'
 import type { Exercise, SessionDetail } from '../types/workout.types'
-import { formatOptionalTargets } from '../utils/format'
+import { formatOptionalTargets, formatSessionDate } from '../utils/format'
 import { buildSessionItems } from '../utils/session-items'
 import { ExercisePicker } from './ExercisePicker'
 import { SessionExerciseCard } from './SessionExerciseCard'
@@ -34,6 +36,7 @@ interface ActiveSessionProps {
 export function ActiveSession({ detail }: ActiveSessionProps) {
   const { session, exercises, stats, plan } = detail
   const { data: lastPerformances } = useLastPerformances()
+  const now = useNow()
   const [drafts, setDrafts] = useState<readonly Exercise[]>([])
   // Con un plan detrás no hace falta abrir el selector: ya hay qué hacer.
   const [isPickerOpen, setIsPickerOpen] = useState(() => exercises.length === 0 && plan === null)
@@ -41,6 +44,16 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
   const discardSession = useDiscardSession()
 
   const items = buildSessionItems(exercises, plan, drafts)
+
+  // Una sesión con el fin ya puesto es un entrenamiento que se está apuntando
+  // después: la duración se tecleó al abrirla y no se vuelve a preguntar.
+  const isPast = session.ended_at !== null
+  const pastDurationMinutes = isPast
+    ? Math.round(
+        (new Date(session.ended_at ?? '').getTime() - new Date(session.started_at).getTime()) /
+          60_000,
+      )
+    : 0
 
   const forgetDraft = (exerciseId: string) =>
     setDrafts((current) => current.filter((exercise) => exercise.id !== exerciseId))
@@ -54,10 +67,19 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
           <div className="space-y-3">
             <div>
               <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
-                Entrenamiento en curso
+                {isPast ? 'Apuntando lo que hiciste' : 'Entrenamiento en curso'}
               </h2>
               {plan ? <p className="text-sm font-medium">{plan.day.name}</p> : null}
-              <SessionTimer startedAt={session.started_at} />
+              {/* Con la fecha ya fijada, un cronómetro contaría el rato que se
+                  tarda en teclear las series, que no es lo que duró nada. */}
+              {isPast ? (
+                <p className="text-sm text-muted-foreground">
+                  {formatSessionDate(session.started_at, now)} ·{' '}
+                  {formatMinutes(pastDurationMinutes)}
+                </p>
+              ) : (
+                <SessionTimer startedAt={session.started_at} />
+              )}
             </div>
             <SessionSummary stats={stats} />
           </div>
@@ -71,14 +93,16 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
             <Button
               type="button"
               disabled={!hasSets || finishSession.isPending}
-              onClick={() => finishSession.mutate(session.id)}
+              onClick={() =>
+                finishSession.mutate({ sessionId: session.id, endedAt: session.ended_at })
+              }
             >
               <Check aria-hidden />
-              {finishSession.isPending ? 'Guardando…' : 'Terminar'}
+              {finishSession.isPending ? 'Guardando…' : isPast ? 'Guardar' : 'Terminar'}
             </Button>
             {hasSets ? null : (
               <p className="max-w-40 text-xs text-muted-foreground">
-                Registra una serie para poder terminar.
+                Registra una serie para poder {isPast ? 'guardar' : 'terminar'}.
               </p>
             )}
             <ConfirmButton
