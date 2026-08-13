@@ -47,8 +47,48 @@ cambiada, al recargar el dato desaparece.
   propiedad a través de su agregado raíz. Plantillas y ejemplos en
   [05 · Base de datos](./05-base-de-datos.md#row-level-security).
 - Catálogos globales: lectura pública autenticada; escritura sólo de filas propias.
-- **Verificación obligatoria** en el Sprint 3: probar que un usuario B no puede
-  leer ni escribir datos del usuario A.
+
+### Cómo se prueba el aislamiento sin crear una segunda cuenta
+
+No hace falta registrar a nadie: se le pregunta a la base **haciéndose pasar por
+otro usuario**, dentro de una transacción que se deshace al terminar. Es más
+riguroso que iniciar sesión dos veces, porque prueba la frontera donde de verdad
+está —la política— y no el camino que lleva hasta ella.
+
+```sql
+begin;
+  select set_config(
+    'request.jwt.claims',
+    json_build_object('sub', '<un uuid cualquiera>', 'role', 'authenticated')::text,
+    true
+  );
+  set local role authenticated;   -- sin esto se consulta como postgres, que se salta la RLS
+
+  select count(*) from finance_transactions;   -- debe dar 0
+rollback;
+```
+
+**El `set local role` es lo que importa.** `supabase db query --linked` entra como
+`postgres`, que ignora la RLS: sin cambiar de rol, la prueba sale «bien» siempre y
+no demuestra nada.
+
+Resultado del 2026-08-13, con la base sembrada:
+
+| Como…                     | Movimientos | Medidas | Comidas | Alimentos |
+| ------------------------- | ----------- | ------- | ------- | --------- |
+| `postgres` (salta la RLS) | 130         | 31      | 289     | 33        |
+| Otro usuario autenticado  | **0**       | **0**   | **0**   | **15**    |
+
+Los 15 alimentos que sí ve son **los del sistema** (`user_id` nulo); los 18
+personales quedan invisibles, que es justo lo que deben hacer los catálogos
+compartidos. Igual con ejercicios (13) y categorías de finanzas (15).
+
+Y en escritura, intentando modificar y borrar filas ajenas: **0 movimientos
+cambiados, 0 medidas borradas, 0 comidas borradas**. No da error de permisos:
+sencillamente no hay ninguna fila que le pertenezca sobre la que actuar.
+
+**Lo que esta prueba no cubre** es el flujo de registro y entrada de la segunda
+persona, que es la interfaz de siempre. Para eso sí hace falta una cuenta real.
 
 ## Validación en dos capas
 
