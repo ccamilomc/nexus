@@ -246,11 +246,11 @@ Zod
 
 Zustand
 
-Framer Motion
-
 Lucide React
 
 Recharts
+
+Framer Motion se retiró el 2026-08-13 sin haberse llegado a usar: costaba 40,65 KB gzip en la pantalla de entrada y el único caso que la justificaba —la salida de una recomendación al descartarla— se resolvió con CSS. El movimiento va con los tokens de globals.css y tailwindcss-animate. Ver docs/adr/0009-sin-framer-motion.md, que explica también qué haría falta para volver a traerla.
 
 Backend
 
@@ -1646,7 +1646,6 @@ Crear:
 - Zustand
 - React Hook Form
 - Zod
-- Framer Motion
 - Lucide
 - Recharts
 - Supabase

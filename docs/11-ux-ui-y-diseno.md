@@ -136,10 +136,16 @@ que "cambió de aplicación" al pasar de Workout a Nutrition.
 
 ## Animaciones
 
-- Con **Framer Motion**. Deben **guiar, explicar y suavizar**; nunca distraer ni
-  ralentizar.
+- **Sin librería**: tokens de `globals.css`, utilidades de Tailwind y
+  `tailwindcss-animate` ([ADR-0009](adr/0009-sin-framer-motion.md)). Deben
+  **guiar, explicar y suavizar**; nunca distraer ni ralentizar.
 - Toda animación puede eliminarse sin romper la funcionalidad y respeta
   `prefers-reduced-motion`.
+- **Animar la salida de algo exige retener el nodo a mano.** React lo desmonta
+  antes del primer fotograma, así que la transición no llega a verse: hay que
+  esperar a que termine y **luego** hacer lo que lo quita. Con movimiento
+  reducido no se espera — no hay nada que esperar (`prefersReducedMotion()`, en
+  `shared/utils`). Está resuelto así en `RecommendationCard`.
 
 ### Movimiento reducido
 

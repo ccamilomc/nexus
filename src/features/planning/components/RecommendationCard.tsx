@@ -7,14 +7,17 @@ import {
   Repeat,
   X,
 } from 'lucide-react'
+import { useState } from 'react'
 
 import type { PlanItemDomain, Priority, Recommendation } from '@/decision-engine'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { cn } from '@/shared/lib/utils'
+import { prefersReducedMotion } from '@/shared/utils'
 
 interface RecommendationCardProps {
   readonly recommendation: Recommendation
-  readonly onDismiss: () => void
+  /** Rechaza si no se pudo guardar el descarte, y entonces la tarjeta vuelve. */
+  readonly onDismiss: () => Promise<void>
   readonly isDismissing: boolean
 }
 
@@ -27,6 +30,15 @@ const DOMAIN_ICONS: Readonly<Record<PlanItemDomain, LucideIcon>> = {
   sleep: AlertTriangle,
   health: AlertTriangle,
 }
+
+/**
+ * Lo que dura la salida, en milisegundos.
+ *
+ * **Tiene que coincidir con `--duration-base`**, y por eso está aquí escrito y
+ * no calculado: leer el token del DOM para esto sería más código y una lectura
+ * de estilos por cada descarte.
+ */
+const LEAVE_MS = 200
 
 /** Sólo lo urgente se resalta; si todo llama la atención, nada la llama. */
 const PRIORITY_STYLES: Readonly<Record<Priority, string>> = {
@@ -45,6 +57,10 @@ const PRIORITY_STYLES: Readonly<Record<Priority, string>> = {
  * Y decidir incluye decir que no: se puede descartar hasta mañana. Una
  * sugerencia que vuelve después de haberla rechazado deja de ser un consejo y
  * pasa a ser una insistencia.
+ *
+ * **Al descartarla se va, no se esfuma.** Desaparecer de golpe deja al de al
+ * lado dando un salto y sin saber qué se fue; apartándose se entiende. Es CSS y
+ * los tokens de siempre, así que con `prefers-reduced-motion` se quita solo.
  */
 export function RecommendationCard({
   recommendation,
@@ -53,9 +69,38 @@ export function RecommendationCard({
 }: RecommendationCardProps) {
   const { domain, priority, title, message, reason } = recommendation
   const Icon = domain ? DOMAIN_ICONS[domain] : AlertTriangle
+  const [isLeaving, setIsLeaving] = useState(false)
+
+  async function handleDismiss() {
+    setIsLeaving(true)
+
+    // Se espera a que termine de irse **antes** de guardar. Sin esta pausa no se
+    // ve nada: al guardar se refresca el plan, la tarjeta desaparece del listado
+    // y React la desmonta antes de que el navegador llegue a pintar el primer
+    // fotograma de la transición. Comprobado en el navegador: cero eventos de
+    // transición. Quien pide menos movimiento no espera, porque no hay nada que
+    // esperar.
+    if (!prefersReducedMotion()) {
+      await new Promise((resolve) => setTimeout(resolve, LEAVE_MS))
+    }
+
+    try {
+      await onDismiss()
+    } catch {
+      // Si no se pudo guardar, la tarjeta vuelve: irse de la pantalla sin
+      // haberse descartado de verdad sería mentir, y mañana reaparecería sin
+      // explicación.
+      setIsLeaving(false)
+    }
+  }
 
   return (
-    <Card>
+    <Card
+      className={cn(
+        'transition-[opacity,transform] duration-base ease-out',
+        isLeaving && 'pointer-events-none translate-x-3 opacity-0',
+      )}
+    >
       <CardContent className="flex items-start gap-3 p-4">
         <span
           className={cn(
@@ -77,8 +122,8 @@ export function RecommendationCard({
         </div>
         <button
           type="button"
-          onClick={onDismiss}
-          disabled={isDismissing}
+          onClick={handleDismiss}
+          disabled={isDismissing || isLeaving}
           // El nombre incluye el título: en una lista de cinco tarjetas, cinco
           // botones llamados «Descartar» no le dicen nada a un lector de
           // pantalla.

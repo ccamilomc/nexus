@@ -11,6 +11,7 @@ export { formatElapsed, formatMinutes } from './format-duration'
 export { formatCop } from './format-money'
 export { formatTime } from './format-time'
 export { calculateProgress, type GoalProgress } from './goal-progress'
+export { prefersReducedMotion } from './reduced-motion'
 export { matchesQuery } from './search'
 export {
   buildDailySeries,

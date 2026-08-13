@@ -60,6 +60,8 @@ Una funcionalidad **sólo** está terminada si cumple **todo** esto:
   Commitlint, lint-staged, Vitest.
 - Router, TanStack Query, Zustand, RHF, Zod, Framer Motion, Lucide, Recharts,
   cliente Supabase, lectura tipada de env.
+  - `Framer Motion` se instaló aquí y **se retiró en el Sprint 17** sin haberse
+    llegado a usar ([ADR-0009](adr/0009-sin-framer-motion.md)).
 - CI en GitHub Actions (typecheck + lint + build + test). Deploy base en Vercel.
 - **DoD:** el proyecto arranca, compila, linta y despliega un "hola Nexus". Sin
   features todavía.
