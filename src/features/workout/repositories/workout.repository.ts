@@ -2,6 +2,7 @@ import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Exercise,
+  ExerciseSetSample,
   Routine,
   RoutineDay,
   RoutineExercise,
@@ -179,6 +180,32 @@ export const workoutRepository = {
       .select('session_id, reps, weight, is_warmup, completed')
       .in('session_id', sessionIds)
       .is('deleted_at', null)
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Todas las series de **un** ejercicio, con la fecha de su entrenamiento.
+   *
+   * Trae el historial entero de ese ejercicio y no un tramo: un récord personal
+   * que se olvida de lo de hace seis meses no es un récord. Son las series de un
+   * solo ejercicio, así que la cifra se mantiene pequeña —unas pocas por sesión—
+   * y sólo se pide al abrirlo.
+   *
+   * El `!inner` sobre la sesión es lo que deja filtrar por su estado: sin él
+   * entrarían los entrenamientos descartados y a medias.
+   */
+  async listSetsForExercise(userId: string, exerciseId: string): Promise<ExerciseSetSample[]> {
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .select('reps, weight, is_warmup, session:workout_sessions!inner(id, started_at, ended_at)')
+      .eq('exercise_id', exerciseId)
+      .is('deleted_at', null)
+      .eq('session.user_id', userId)
+      .eq('session.status', 'completed')
+      .is('session.deleted_at', null)
+      .order('created_at', { ascending: true })
 
     if (error) throw error
     return data ?? []

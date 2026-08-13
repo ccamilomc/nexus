@@ -5,7 +5,7 @@ import type { AppError } from '@/core/error'
 
 import type { CreateExerciseValues } from '../schemas/workout.schema'
 import { workoutService } from '../services/workout.service'
-import type { Exercise } from '../types/workout.types'
+import type { Exercise, ExerciseProgress } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
@@ -14,6 +14,24 @@ export function useExercises() {
   return useQuery<Exercise[], AppError>({
     queryKey: workoutKeys.exercises(),
     queryFn: () => workoutService.getExercises(),
+  })
+}
+
+/**
+ * Lo mejor que se ha hecho en un ejercicio. **Sólo se pide al abrirlo.**
+ *
+ * Con `null` la consulta ni se lanza: son dieciséis ejercicios y traerlos todos
+ * al listar serían dieciséis viajes para enseñar uno.
+ */
+export function useExerciseProgress(exerciseId: string | null) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<ExerciseProgress | null, AppError>({
+    queryKey: workoutKeys.exerciseProgress(userId, exerciseId ?? 'ninguno'),
+    queryFn: () =>
+      userId && exerciseId ? workoutService.getExerciseProgress(userId, exerciseId) : null,
+    enabled: exerciseId !== null,
   })
 }
 
