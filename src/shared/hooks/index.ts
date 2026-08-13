@@ -5,4 +5,5 @@ export {
   useInstallPrompt,
 } from './use-install-prompt'
 export { useIsOnline } from './use-is-online'
+export { useNearViewport } from './use-near-viewport'
 export { type SeriesQuery, useSeriesQuery } from './use-series-query'
