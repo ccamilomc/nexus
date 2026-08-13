@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+import { ChevronRight, Pencil } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
@@ -6,6 +6,7 @@ import { cn } from '@/shared/lib/utils'
 
 import { EQUIPMENT_LABELS, MUSCLE_GROUP_LABELS } from '../constants/workout.constants'
 import type { Exercise } from '../types/workout.types'
+import { ExerciseProgressPanel } from './ExerciseProgressPanel'
 
 interface ExerciseListProps {
   readonly exercises: readonly Exercise[]
@@ -71,6 +72,22 @@ export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: Exercise
                 ) : (
                   <div className={itemClassName}>
                     <ExerciseSummary exercise={exercise} />
+
+                    {/* Sólo fuera del selector: durante el entrenamiento la
+                        referencia útil es «la última vez», no el récord. */}
+                    <details className="group mt-2">
+                      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                        <ChevronRight
+                          aria-hidden
+                          className="h-3.5 w-3.5 transition-transform duration-fast ease-out group-open:rotate-90"
+                        />
+                        Tus marcas
+                      </summary>
+                      <div className="mt-2">
+                        <ExerciseProgressPanel exerciseId={exercise.id} name={exercise.name} />
+                      </div>
+                    </details>
+
                     {hasActions && exercise.is_custom ? (
                       <div className="mt-2 flex flex-wrap items-center gap-1">
                         {onEdit ? (

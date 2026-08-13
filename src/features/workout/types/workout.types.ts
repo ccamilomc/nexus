@@ -53,6 +53,19 @@ export interface SessionStats {
   readonly durationMinutes: number | null
 }
 
+/**
+ * Una serie con el día en que se hizo, para mirar la historia de un ejercicio.
+ *
+ * Sólo lo que se agrega: sin el nombre del ejercicio —ya se sabe cuál es— ni las
+ * columnas que nadie suma.
+ */
+export interface ExerciseSetSample {
+  readonly reps: number | null
+  readonly weight: number | null
+  readonly is_warmup: boolean
+  readonly session: SessionSample
+}
+
 /** Una serie tal como se compara con la de otro día: sin adornos. */
 export interface PerformedSet {
   readonly reps: number
@@ -73,6 +86,31 @@ export interface LastPerformance {
   readonly sets: readonly PerformedSet[]
   /** La más pesada de aquel día: lo que hay que superar. */
   readonly topSet: PerformedSet | null
+}
+
+/**
+ * Lo mejor que se ha hecho en un ejercicio, y cómo se llegó ahí.
+ *
+ * **Sin estimar nada.** Hay fórmulas para calcular un «máximo teórico a una
+ * repetición» a partir de una serie de ocho, y son eso: una fórmula. Aquí sólo
+ * hay pesos que se levantaron de verdad, con su fecha, porque un récord que la
+ * aplicación se inventó no es un récord.
+ */
+export interface ExerciseProgress {
+  readonly exerciseId: string
+  /** El peso más alto levantado, con las repeticiones y el día en que fue. */
+  readonly heaviest: { readonly set: PerformedSet; readonly performedAt: string } | null
+  /** La serie de más volumen (peso × repeticiones), que no siempre es la más pesada. */
+  readonly bestVolume: { readonly set: PerformedSet; readonly performedAt: string } | null
+  /** El mejor peso de cada entrenamiento, del más antiguo al más reciente. */
+  readonly topWeightBySession: readonly {
+    readonly performedAt: string
+    readonly weightKg: number
+  }[]
+  /** Entrenamientos en los que aparece. */
+  readonly sessionCount: number
+  /** Series de trabajo acumuladas. */
+  readonly setCount: number
 }
 
 /** Sesión con sus series agrupadas por ejercicio y su resumen. */

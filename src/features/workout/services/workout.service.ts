@@ -10,6 +10,7 @@ import type {
 } from '../schemas/workout.schema'
 import type {
   Exercise,
+  ExerciseProgress,
   LastPerformance,
   LogSetInput,
   Routine,
@@ -20,6 +21,7 @@ import type {
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
+import { buildExerciseProgress } from '../utils/exercise-progress'
 import { buildLastPerformances } from '../utils/last-performance'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
@@ -275,6 +277,22 @@ export const workoutService = {
       const sets = await workoutRepository.listSetsBySessions(sessions.map(({ id }) => id))
 
       return buildLastPerformances(sessions, sets)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Lo mejor que se ha hecho en un ejercicio, y cómo se llegó ahí.
+   *
+   * Se pide sólo al abrir un ejercicio: son dieciséis en el catálogo y traerlos
+   * todos al listar sería pagar dieciséis consultas para enseñar una.
+   */
+  async getExerciseProgress(userId: string, exerciseId: string): Promise<ExerciseProgress> {
+    try {
+      const samples = await workoutRepository.listSetsForExercise(userId, exerciseId)
+
+      return buildExerciseProgress(exerciseId, samples)
     } catch (error) {
       throw toAppError(error)
     }
