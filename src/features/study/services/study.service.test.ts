@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isAppError } from '@/core/error'
 
+import { SUBJECT_COLORS } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
 import type {
   StudySession,
@@ -98,11 +99,23 @@ beforeEach(() => {
 })
 
 describe('studyService.createSubject', () => {
-  it('traduce el objetivo de horas a los minutos que guarda la base', () => {
-    void studyService.createSubject(USER_ID, { name: 'Cálculo', weeklyTargetHours: 7.5 })
+  it('traduce el objetivo de horas a los minutos que guarda la base', async () => {
+    await studyService.createSubject(USER_ID, { name: 'Cálculo', weeklyTargetHours: 7.5 })
 
     expect(insertSubject).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: USER_ID, name: 'Cálculo', weekly_target_minutes: 450 }),
+    )
+  })
+
+  it('le pone un color que no tenga ninguna otra materia', async () => {
+    // El punto de color es lo que distingue las materias en cuatro pantallas;
+    // si se repite, deja de distinguir.
+    listSubjects.mockResolvedValue([{ ...SAVED_SUBJECT, color: SUBJECT_COLORS[0] }])
+
+    await studyService.createSubject(USER_ID, { name: 'Historia' })
+
+    expect(insertSubject).toHaveBeenCalledWith(
+      expect.objectContaining({ color: SUBJECT_COLORS[1] }),
     )
   })
 
