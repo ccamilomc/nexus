@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 
 import { LoadFailure, Skeleton } from '@/shared/components/feedback'
 import { WIDE_TAP_AREA } from '@/shared/constants'
+import { useNearViewport } from '@/shared/hooks'
 import { cn } from '@/shared/lib/utils'
 
 interface AnalyticsSectionProps {
@@ -25,6 +26,16 @@ interface AnalyticsSectionProps {
  * Centraliza los estados de carga y de error para que cada dominio se ocupe
  * sólo de lo suyo. El estado «aún no hay bastante» lo decide cada dominio,
  * porque el umbral y las palabras dependen de lo que se esté midiendo.
+ *
+ * **Lo pesado no se monta hasta que la sección se acerca a la pantalla.** Con
+ * siete dominios y 90 días, pintarlas todas de golpe eran siete gráficas y 630
+ * filas de tabla accesible —más de la mitad del DOM de la página— por un
+ * trabajo que el usuario no ve: sólo cabe una sección y media en pantalla.
+ *
+ * La cabecera **sí se pinta siempre**, así que la página conserva su estructura
+ * y su altura mientras se recorre. Y el hueco lo ocupa el mismo esqueleto que
+ * la carga: desde fuera, «todavía no se ve» y «todavía no ha llegado» son lo
+ * mismo, y así no hay dos maneras distintas de esperar.
  */
 export function AnalyticsSection({
   title,
@@ -37,9 +48,10 @@ export function AnalyticsSection({
   children,
 }: AnalyticsSectionProps) {
   const headingId = `analytics-${to.replace(/\W/g, '-')}`
+  const { ref, isNear } = useNearViewport<HTMLElement>()
 
   return (
-    <section aria-labelledby={headingId} className="space-y-3">
+    <section ref={ref} aria-labelledby={headingId} className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <h2
           id={headingId}
@@ -62,7 +74,7 @@ export function AnalyticsSection({
         </Link>
       </div>
 
-      {isPending ? (
+      {isPending || !isNear ? (
         <div role="status" aria-label={`Cargando ${title.toLowerCase()}`} className="space-y-3">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Skeleton className="h-20" />
