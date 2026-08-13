@@ -39,18 +39,12 @@ enchufado con `@tanstack/react-query-persist-client`.
   números dicen que no existe**, a cambio de una dependencia más y de volver
   asíncrona la hidratación.
 
-Cuatro detalles que la hacen segura:
+Tres detalles que la hacen segura:
 
 - **Se borra al cerrar sesión.** La caché guarda datos de salud en claro en el
   dispositivo; si sobreviviera al logout, la siguiente persona que entrase en ese
   navegador vería el historial de la anterior. La RLS protege el servidor, no el
-  disco.
-- **Lleva firmado de quién es** (`nexus.cache-owner`), y si no coincide con quien
-  tiene la sesión se tira antes de tocarla. Añadido cuando se supo que iban a ser
-  **dos cuentas** —una por persona, sesiones distintas—, quizá en un mismo
-  ordenador. Borrar al cerrar sesión da por hecho que siempre se pasa por ahí;
-  esto no supone nada sobre el orden de los eventos, sólo pregunta de quién es lo
-  que hay. Con un único usuario la diferencia era invisible.
+  disco. Reforzado después por [ADR-0010](./0010-la-cache-lleva-firmado-su-dueno.md).
 - **`maxAge` de 7 días.** Es seguro porque las claves de lo que cambia a diario
   llevan la fecha dentro (`day(userId, '2026-08-05')`): una caché vieja no puede
   hacerse pasar por la de hoy, simplemente no existe para la clave de hoy. Lo que
