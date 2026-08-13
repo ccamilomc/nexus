@@ -59,6 +59,36 @@ export function formatOptionalTargets(
   return parts.length > 0 ? parts.join(' · ') : null
 }
 
+/**
+ * Las series de un día, agrupando las que se repiten: `3×8 · 70 kg`,
+ * `8, 7, 6 · 70 kg`, `10 · 60 kg y 8 · 70 kg`.
+ *
+ * Se agrupa por peso porque es como se cuenta un entrenamiento en voz alta —«tres
+ * por ocho con setenta»— y porque una lista de cinco series iguales ocupa una
+ * línea para decir lo mismo cinco veces.
+ */
+export function formatPerformedSets(
+  sets: readonly { readonly reps: number; readonly weightKg: number }[],
+): string {
+  if (sets.length === 0) return '—'
+
+  const byWeight: { weightKg: number; reps: number[] }[] = []
+  for (const { reps, weightKg } of sets) {
+    const last = byWeight[byWeight.length - 1]
+    if (last && last.weightKg === weightKg) last.reps.push(reps)
+    else byWeight.push({ weightKg, reps: [reps] })
+  }
+
+  return byWeight
+    .map(({ weightKg, reps }) => {
+      const allEqual = reps.every((value) => value === reps[0])
+      const count = allEqual && reps.length > 1 ? `${reps.length}×${reps[0]}` : reps.join(', ')
+
+      return `${count} · ${formatWeight(weightKg)}`
+    })
+    .join(' y ')
+}
+
 function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&

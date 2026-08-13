@@ -5,7 +5,7 @@ import { useAuth } from '@/core/auth'
 import type { AppError } from '@/core/error'
 
 import { workoutService } from '../services/workout.service'
-import type { SessionDetail } from '../types/workout.types'
+import type { LastPerformance, SessionDetail } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
@@ -32,6 +32,22 @@ export function useActiveSession() {
   return useQuery<SessionDetail | null, AppError>({
     queryKey: workoutKeys.activeSession(userId),
     queryFn: () => (userId ? workoutService.getActiveSession(userId) : null),
+  })
+}
+
+/**
+ * Qué se hizo la última vez en cada ejercicio.
+ *
+ * Se pide una sola vez para toda la sesión, no por ejercicio: con cinco
+ * ejercicios en pantalla serían cinco viajes para responder la misma pregunta.
+ */
+export function useLastPerformances() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<readonly LastPerformance[], AppError>({
+    queryKey: workoutKeys.lastPerformances(userId),
+    queryFn: () => (userId ? workoutService.getLastPerformances(userId) : []),
   })
 }
 

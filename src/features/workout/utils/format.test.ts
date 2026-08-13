@@ -2,11 +2,52 @@ import { describe, expect, it } from 'vitest'
 
 import {
   formatOptionalTargets,
+  formatPerformedSets,
   formatSessionDate,
   formatTargets,
   formatVolume,
   formatWeight,
 } from './format'
+
+describe('formatPerformedSets', () => {
+  it('agrupa las series iguales, como se cuentan en voz alta', () => {
+    expect(
+      formatPerformedSets([
+        { reps: 8, weightKg: 70 },
+        { reps: 8, weightKg: 70 },
+        { reps: 8, weightKg: 70 },
+      ]),
+    ).toBe('3×8 · 70 kg')
+  })
+
+  it('con repeticiones distintas las enumera', () => {
+    expect(
+      formatPerformedSets([
+        { reps: 8, weightKg: 70 },
+        { reps: 7, weightKg: 70 },
+        { reps: 6, weightKg: 70 },
+      ]),
+    ).toBe('8, 7, 6 · 70 kg')
+  })
+
+  it('separa los tramos cuando cambia el peso', () => {
+    expect(
+      formatPerformedSets([
+        { reps: 10, weightKg: 60 },
+        { reps: 8, weightKg: 70 },
+        { reps: 8, weightKg: 70 },
+      ]),
+    ).toBe('10 · 60 kg y 2×8 · 70 kg')
+  })
+
+  it('el peso corporal se dice con palabras', () => {
+    expect(formatPerformedSets([{ reps: 12, weightKg: 0 }])).toBe('12 · peso corporal')
+  })
+
+  it('sin series no inventa nada', () => {
+    expect(formatPerformedSets([])).toBe('—')
+  })
+})
 
 describe('formatWeight', () => {
   it('omite los decimales innecesarios', () => {

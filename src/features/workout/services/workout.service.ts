@@ -10,6 +10,7 @@ import type {
 } from '../schemas/workout.schema'
 import type {
   Exercise,
+  LastPerformance,
   LogSetInput,
   Routine,
   RoutineDayDetail,
@@ -19,10 +20,19 @@ import type {
   WorkoutSession,
   WorkoutSetWithExercise,
 } from '../types/workout.types'
+import { buildLastPerformances } from '../utils/last-performance'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 import { buildWorkoutSeries } from '../utils/workout-series'
+
+/**
+ * Cuántas sesiones atrás se busca la última vez que se hizo cada ejercicio.
+ *
+ * Doce cubren un mes de una rutina de tres días. Un ejercicio que no aparece en
+ * un mes no da una referencia útil: el peso de entonces ya no dice qué poner hoy.
+ */
+const LOOKBACK_SESSIONS = 12
 
 /** Músculos secundarios sin el primario: un grupo no es secundario de sí mismo. */
 function secondaryMuscles(values: CreateExerciseValues) {
@@ -241,6 +251,30 @@ export const workoutService = {
       return sessions.map((session) =>
         toSessionDetail(session, setsBySession.get(session.id) ?? []),
       )
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Qué se hizo la última vez en cada ejercicio.
+   *
+   * Se miran las últimas `LOOKBACK_SESSIONS` sesiones y no todo el historial: es
+   * una consulta acotada que cubre de sobra una rutina por días —con tres días
+   * distintos, doce sesiones son un mes— y un ejercicio que no sale en un mes no
+   * tiene una referencia útil que dar.
+   *
+   * Reutiliza las dos consultas del historial en vez de una nueva: es la misma
+   * pregunta con otro corte.
+   */
+  async getLastPerformances(userId: string): Promise<LastPerformance[]> {
+    try {
+      const sessions = await workoutRepository.listCompletedSessions(userId, LOOKBACK_SESSIONS)
+      if (sessions.length === 0) return []
+
+      const sets = await workoutRepository.listSetsBySessions(sessions.map(({ id }) => id))
+
+      return buildLastPerformances(sessions, sets)
     } catch (error) {
       throw toAppError(error)
     }
