@@ -38,6 +38,15 @@ export const queryPersister = createSyncStoragePersister({
 })
 
 /**
+ * De quién es lo que hay guardado.
+ *
+ * Se anota aparte de la caché, y no dentro, porque hay que poder preguntarlo
+ * **antes** de mirar nada: la pregunta es si lo guardado es de quien está ahora,
+ * y para eso no hace falta leer los datos.
+ */
+const OWNER_KEY = 'nexus.cache-owner'
+
+/**
  * Borra la caché guardada en el dispositivo.
  *
  * Se llama al cerrar sesión. La caché lleva datos de salud en claro; si
@@ -46,4 +55,20 @@ export const queryPersister = createSyncStoragePersister({
  */
 export function clearPersistedCache(): void {
   window.localStorage.removeItem(STORAGE_KEY)
+  window.localStorage.removeItem(OWNER_KEY)
+}
+
+/** Quién dejó lo que hay guardado, o `null` si no hay nada anotado. */
+export function readCacheOwner(): string | null {
+  return window.localStorage.getItem(OWNER_KEY)
+}
+
+/** Si hay algo guardado que tirar. */
+export function hasPersistedCache(): boolean {
+  return window.localStorage.getItem(STORAGE_KEY) !== null
+}
+
+/** Deja anotado que lo guardado es de este usuario. */
+export function writeCacheOwner(userId: string): void {
+  window.localStorage.setItem(OWNER_KEY, userId)
 }
