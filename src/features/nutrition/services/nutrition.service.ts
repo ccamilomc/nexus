@@ -368,10 +368,17 @@ export const nutritionService = {
     }
   },
 
-  /** Registra agua. La hora es la de ahora: se bebe en el momento. */
-  async addWater(userId: string, amountMl: number): Promise<void> {
+  /**
+   * Registra agua en el día que se está mirando.
+   *
+   * Si ese día es hoy va con la hora real, que es lo normal: se bebe y se
+   * apunta. **Fechaba siempre en el momento de apuntarlo**, y desde que se puede
+   * retroceder de día eso ponía el agua de ayer en hoy: la tarjeta enseñaba el
+   * día elegido y el vaso caía en otro, así que el número ni se movía.
+   */
+  async addWater(userId: string, amountMl: number, date: Date, now: Date): Promise<void> {
     try {
-      await nutritionRepository.insertWaterLog(userId, amountMl, new Date().toISOString())
+      await nutritionRepository.insertWaterLog(userId, amountMl, toLoggedAt(date, now))
     } catch (error) {
       throw toAppError(error)
     }

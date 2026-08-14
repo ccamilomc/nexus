@@ -48,6 +48,7 @@ const listItemsByMealLogs = vi.mocked(nutritionRepository.listItemsByMealLogs)
 const insertMealLog = vi.mocked(nutritionRepository.insertMealLog)
 const insertMealLogItem = vi.mocked(nutritionRepository.insertMealLogItem)
 const insertMealLogItems = vi.mocked(nutritionRepository.insertMealLogItems)
+const insertWaterLog = vi.mocked(nutritionRepository.insertWaterLog)
 const insertFood = vi.mocked(nutritionRepository.insertFood)
 const deleteFood = vi.mocked(nutritionRepository.deleteFood)
 const listFoods = vi.mocked(nutritionRepository.listFoods)
@@ -364,6 +365,26 @@ describe('nutritionService.getRepeatableMeals', () => {
     const rehidratado: unknown = JSON.parse(JSON.stringify(byType))
 
     expect(rehidratado).toEqual(byType)
+  })
+})
+
+describe('nutritionService.addWater', () => {
+  it('apunta el agua en el día que se está mirando, no en el de hoy', async () => {
+    // Fechaba siempre en el momento de apuntarlo: desde que se puede retroceder
+    // de día, el vaso de ayer caía en hoy y la tarjeta ni se movía.
+    const ANTEAYER = new Date(2026, 6, 27)
+
+    await nutritionService.addWater(USER_ID, 250, ANTEAYER, DATE)
+
+    const loggedAt = new Date(insertWaterLog.mock.calls[0]?.[2] ?? '')
+    expect(loggedAt.getDate()).toBe(27)
+    expect(loggedAt.getHours()).toBe(12)
+  })
+
+  it('si el día es hoy conserva la hora real, que es cuando se bebió', async () => {
+    await nutritionService.addWater(USER_ID, 250, DATE, DATE)
+
+    expect(insertWaterLog.mock.calls[0]?.[2]).toBe(DATE.toISOString())
   })
 })
 
