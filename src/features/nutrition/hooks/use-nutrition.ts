@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { useNow } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
@@ -143,6 +144,7 @@ interface AddFoodVariables {
 /** Registra un alimento en una comida del día indicado. */
 export function useAddFoodToMeal(date: Date) {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshDays()
 
   return useMutation<void, AppError, AddFoodVariables>({
@@ -153,6 +155,7 @@ export function useAddFoodToMeal(date: Date) {
         mealType,
         foodId,
         servings,
+        now,
       } satisfies AddFoodInput),
     onSuccess: refresh,
   })
@@ -210,11 +213,12 @@ interface RepeatMealVariables {
 /** Repite en el día una comida ya registrada antes. */
 export function useRepeatMeal() {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshDays()
 
   return useMutation<void, AppError, RepeatMealVariables>({
     mutationFn: ({ date, mealType }) =>
-      nutritionService.repeatMeal(requireUserId(user?.id), date, mealType),
+      nutritionService.repeatMeal(requireUserId(user?.id), date, mealType, now),
     onSuccess: refresh,
   })
 }

@@ -28,6 +28,30 @@ export function formatGrams(grams: number): string {
   return `${decimalFormatter.format(grams)} g`
 }
 
+/**
+ * Cómo se llama el día que se está mirando: `Hoy`, `Ayer`, `mié, 12 de agosto`.
+ *
+ * Los dos días recientes van por su nombre porque es como se piensan —«no
+ * apunté la cena de ayer»—; más atrás, la fecha, que es lo único que distingue
+ * un miércoles de otro.
+ */
+export function formatDayLabel(date: Date, today: Date): string {
+  const diff = daysBetween(date, today)
+
+  if (diff === 0) return 'Hoy'
+  if (diff === 1) return 'Ayer'
+
+  return date.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'long' })
+}
+
+/** Días naturales entre dos fechas, ignorando la hora. */
+function daysBetween(date: Date, today: Date): number {
+  const a = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime()
+  const b = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()
+
+  return Math.round((b - a) / 86_400_000)
+}
+
 /** La porción del alimento: `100 g`, `50 g`. */
 export function formatServing(food: FoodRef): string {
   return `${decimalFormatter.format(food.serving_size)} ${food.serving_unit}`
