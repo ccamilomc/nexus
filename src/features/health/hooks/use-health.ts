@@ -3,11 +3,12 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { useNow } from '@/core/time'
 
-import type { LogMetricValues } from '../schemas/health.schema'
+import type { LogMeasurementsValues } from '../schemas/health.schema'
 import type { HealthOverview } from '../services/health.service'
 import { healthService } from '../services/health.service'
-import type { BodyMetricType, MetricHistory } from '../types/health.types'
+import type { BodyMetric, BodyMetricType, MetricHistory } from '../types/health.types'
 
 export const healthKeys = {
   all: ['health'] as const,
@@ -62,13 +63,19 @@ function useRefreshHealth() {
   )
 }
 
-/** Registra una medición. */
-export function useLogMetric() {
+/**
+ * Registra una vuelta de medidas: las que se hayan tomado, con su día.
+ *
+ * Sustituye al registro de una en una: incluso apuntar sólo el peso es rellenar
+ * una casilla de éstas, así que tener dos caminos era tener uno de sobra.
+ */
+export function useLogMeasurements() {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshHealth()
 
-  return useMutation<void, AppError, LogMetricValues>({
-    mutationFn: (values) => healthService.logMetric(requireUserId(user?.id), values),
+  return useMutation<BodyMetric[], AppError, LogMeasurementsValues>({
+    mutationFn: (values) => healthService.logMeasurements(requireUserId(user?.id), values, now),
     onSuccess: refresh,
   })
 }
