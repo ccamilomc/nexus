@@ -56,6 +56,21 @@ export function useCreateHabit() {
   })
 }
 
+interface UpdateHabitVariables {
+  readonly habitId: string
+  readonly values: CreateHabitValues
+}
+
+/** Cambia el nombre o la nota de un hábito, sin tocar su historial. */
+export function useUpdateHabit() {
+  const refresh = useRefreshHabits()
+
+  return useMutation<Habit, AppError, UpdateHabitVariables>({
+    mutationFn: ({ habitId, values }) => habitsService.updateHabit(habitId, values),
+    onSuccess: refresh,
+  })
+}
+
 interface ToggleHabitVariables {
   readonly habitId: string
   /** Día a marcar, en `YYYY-MM-DD`: puede ser hoy o uno ya pasado. */
