@@ -49,6 +49,7 @@ vi.mock('../repositories/workout.repository', () => ({
 
 const findActiveSession = vi.mocked(workoutRepository.findActiveSession)
 const insertSession = vi.mocked(workoutRepository.insertSession)
+const updateSession = vi.mocked(workoutRepository.updateSession)
 const listSetsBySessions = vi.mocked(workoutRepository.listSetsBySessions)
 const listCompletedSessions = vi.mocked(workoutRepository.listCompletedSessions)
 const findRoutineDay = vi.mocked(workoutRepository.findRoutineDay)
@@ -198,6 +199,42 @@ describe('workoutService.startSessionFromRoutineDay', () => {
     expect(insertSession).not.toHaveBeenCalled()
     expect(detail.session.id).toBe('libre')
     expect(detail.plan).toBeNull()
+  })
+})
+
+describe('workoutService.reopenSession', () => {
+  it('lo devuelve a en curso sin tocar su fin', async () => {
+    // El fin es lo que guarda la fecha y la duración: ponerlo a cero haría que
+    // un entrenamiento de hace tres días apareciera durando tres días.
+    await workoutService.reopenSession(USER_ID, 'una-vieja')
+
+    expect(updateSession).toHaveBeenCalledExactlyOnceWith('una-vieja', {
+      status: 'in_progress',
+    })
+  })
+
+  it('no reabre nada si hay otro en curso', async () => {
+    findActiveSession.mockResolvedValue(session('en-curso'))
+
+    const error: unknown = await workoutService
+      .reopenSession(USER_ID, 'una-vieja')
+      .catch((e: unknown) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect(updateSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('workoutService.removeSession', () => {
+  it('sale de la aplicación pero sigue siendo un entrenamiento hecho', async () => {
+    // A diferencia de descartar uno en curso, que nunca llegó a contar: esto
+    // ocurrió y se borra, así que el estado no se toca.
+    await workoutService.removeSession('una-vieja')
+
+    const [, patch] = updateSession.mock.calls[0] ?? []
+
+    expect(patch?.deleted_at).toEqual(expect.any(String))
+    expect(patch?.status).toBeUndefined()
   })
 })
 
