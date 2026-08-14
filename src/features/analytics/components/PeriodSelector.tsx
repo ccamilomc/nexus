@@ -33,7 +33,11 @@ export function PeriodSelector({ value, onChange }: PeriodSelectorProps) {
             aria-checked={isSelected}
             onClick={() => onChange(period.id)}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              // 44 px de alto en móvil: son tres controles pegados, así que el
+              // área no se puede ampliar por debajo sin robarle el toque al
+              // vecino —hay que agrandarlos de verdad—. Con ratón vuelven a su
+              // altura natural, como las pestañas de sección.
+              'flex min-h-11 items-center rounded-md px-3 text-sm font-medium transition-colors sm:min-h-0 sm:py-1.5',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
               isSelected
                 ? 'bg-primary text-primary-foreground'
