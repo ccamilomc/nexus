@@ -1,17 +1,19 @@
-import { toAppError } from '@/core/error'
+import { createAppError, toAppError } from '@/core/error'
 import type { DayRange } from '@/shared/utils'
 
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
-import type { LogMetricValues } from '../schemas/health.schema'
+import type { LogMeasurementsValues } from '../schemas/health.schema'
 import type {
   Bmi,
+  BodyMetric,
   BodyMetricType,
   MetricHistory,
   MetricSummary,
   WeightPeriodSeries,
 } from '../types/health.types'
 import { calculateBmi } from '../utils/bmi'
+import { toMeasuredAt } from '../utils/measured-at'
 import { buildMetricHistory } from '../utils/metric-history'
 import { buildMetricSummaries } from '../utils/metric-summary'
 import { buildWeightSeries } from '../utils/weight-series'
@@ -116,20 +118,38 @@ export const healthService = {
   },
 
   /**
-   * Registra una medición.
+   * Registra una vuelta de medidas: las que se hayan tomado, con su día.
    *
-   * La unidad la pone el sistema y **se guarda en la fila**: una medición vieja
-   * conserva la unidad con la que se tomó aunque mañana cambie la convención.
+   * Una sola escritura para todas. Se ignoran las que se dejaron en blanco:
+   * vacío es «no me lo medí», no cero.
    */
-  async logMetric(userId: string, values: LogMetricValues): Promise<void> {
+  async logMeasurements(
+    userId: string,
+    values: LogMeasurementsValues,
+    now: Date,
+  ): Promise<BodyMetric[]> {
     try {
-      await healthRepository.insertMetric({
-        user_id: userId,
-        metric_type: values.metricType,
-        value: values.value,
-        unit: METRIC_UNITS[values.metricType],
-        measured_at: new Date().toISOString(),
+      const measuredAt = toMeasuredAt(values.date, now)
+      if (!measuredAt) throw createAppError('validation', 'Revisa el día: no se entiende.')
+
+      const rows = METRIC_TYPES_IN_ORDER.flatMap((type) => {
+        const value = values.values[type]
+        if (value === undefined) return []
+
+        return [
+          {
+            user_id: userId,
+            metric_type: type,
+            value,
+            // La unidad se guarda en la fila: una medición vieja conserva la
+            // suya aunque mañana cambie la convención.
+            unit: METRIC_UNITS[type],
+            measured_at: measuredAt,
+          },
+        ]
       })
+
+      return await healthRepository.insertMetrics(rows)
     } catch (error) {
       throw toAppError(error)
     }

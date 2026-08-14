@@ -65,6 +65,25 @@ export const healthRepository = {
     return data
   },
 
+  /**
+   * Varias mediciones de una vez.
+   *
+   * Una sola escritura para toda la vuelta de cinta métrica: insertarlas de una
+   * en una serían cinco viajes, y además podrían quedarse a medias —tres
+   * guardadas y dos no— sin manera de saberlo.
+   */
+  async insertMetrics(rows: readonly TablesInsert<'body_metrics'>[]): Promise<BodyMetric[]> {
+    if (rows.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('body_metrics')
+      .insert([...rows])
+      .select('*')
+
+    if (error) throw error
+    return data ?? []
+  },
+
   /** Borrado lógico: la medición es sincronizable offline (ver docs/04). */
   async softDeleteMetric(metricId: string, deletedAtIso: string): Promise<void> {
     const { error } = await supabase

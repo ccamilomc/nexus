@@ -14,7 +14,7 @@ import { healthService } from './health.service'
 vi.mock('../repositories/health.repository', () => ({
   healthRepository: {
     listRecentMetrics: vi.fn(),
-    insertMetric: vi.fn(),
+    insertMetrics: vi.fn(),
     softDeleteMetric: vi.fn(),
     findHeightCm: vi.fn(),
     updateHeightCm: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('../repositories/health.repository', () => ({
 }))
 
 const listRecentMetrics = vi.mocked(healthRepository.listRecentMetrics)
-const insertMetric = vi.mocked(healthRepository.insertMetric)
+const insertMetrics = vi.mocked(healthRepository.insertMetrics)
 const findHeightCm = vi.mocked(healthRepository.findHeightCm)
 
 const USER_ID = 'user-1'
@@ -45,7 +45,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   listRecentMetrics.mockResolvedValue([])
   findHeightCm.mockResolvedValue(175)
-  insertMetric.mockResolvedValue(metric('weight', 74.5, '2026-07-31T08:00:00.000Z'))
+  insertMetrics.mockResolvedValue([metric('weight', 74.5, '2026-07-31T08:00:00.000Z')])
 })
 
 describe('healthService.getOverview', () => {
@@ -95,38 +95,61 @@ describe('healthService.getOverview', () => {
   })
 })
 
-describe('healthService.logMetric', () => {
-  it('pone la unidad que corresponde a la medida', async () => {
-    await healthService.logMetric(USER_ID, { metricType: 'weight', value: 74.5 })
+describe('healthService.logMeasurements', () => {
+  const HOY = new Date(2026, 7, 14, 9, 30)
 
-    expect(insertMetric).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: USER_ID, metric_type: 'weight', value: 74.5, unit: 'kg' }),
+  it('guarda sólo las que se rellenaron, con su unidad', async () => {
+    // Vacío es «no me lo medí», no cero.
+    await healthService.logMeasurements(
+      USER_ID,
+      { date: '2026-08-14', values: { weight: 74.5, waist: 82, body_fat: 18 } },
+      HOY,
+    )
+
+    const [rows] = insertMetrics.mock.calls[0] ?? []
+
+    expect(rows).toHaveLength(3)
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ metric_type: 'weight', value: 74.5, unit: 'kg' }),
+        expect.objectContaining({ metric_type: 'waist', value: 82, unit: 'cm' }),
+        expect.objectContaining({ metric_type: 'body_fat', value: 18, unit: '%' }),
+      ]),
     )
   })
 
-  it('las medidas de contorno van en centímetros', async () => {
-    await healthService.logMetric(USER_ID, { metricType: 'waist', value: 82 })
-
-    expect(insertMetric).toHaveBeenCalledWith(expect.objectContaining({ unit: 'cm' }))
-  })
-
-  it('la grasa corporal va en porcentaje', async () => {
-    await healthService.logMetric(USER_ID, { metricType: 'body_fat', value: 18 })
-
-    expect(insertMetric).toHaveBeenCalledWith(expect.objectContaining({ unit: '%' }))
-  })
-
-  it('fecha la medición en el momento de registrarla', async () => {
-    vi.useFakeTimers()
-    const now = new Date(2026, 6, 31, 8, 30)
-    vi.setSystemTime(now)
-
-    await healthService.logMetric(USER_ID, { metricType: 'weight', value: 74.5 })
-
-    expect(insertMetric).toHaveBeenCalledWith(
-      expect.objectContaining({ measured_at: now.toISOString() }),
+  it('una sola escritura para toda la vuelta de cinta métrica', async () => {
+    // De una en una serían cinco viajes, y podrían quedarse a medias.
+    await healthService.logMeasurements(
+      USER_ID,
+      { date: '2026-08-14', values: { waist: 82, hip: 95, chest: 104, arm: 36, thigh: 58 } },
+      HOY,
     )
 
-    vi.useRealTimers()
+    expect(insertMetrics).toHaveBeenCalledOnce()
+    expect(insertMetrics.mock.calls[0]?.[0]).toHaveLength(5)
+  })
+
+  it('un día pasado se fecha a su mediodía, no en el momento de apuntarlo', async () => {
+    await healthService.logMeasurements(
+      USER_ID,
+      { date: '2026-08-12', values: { weight: 74 } },
+      HOY,
+    )
+
+    const medida = insertMetrics.mock.calls[0]?.[0]?.[0]
+    const fecha = new Date(medida?.measured_at ?? '')
+
+    expect(fecha.getDate()).toBe(12)
+    expect(fecha.getHours()).toBe(12)
+  })
+
+  it('avisa en vez de inventarse una fecha que no se entiende', async () => {
+    const error: unknown = await healthService
+      .logMeasurements(USER_ID, { date: '', values: { weight: 74 } }, HOY)
+      .catch((e: unknown) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect(insertMetrics).not.toHaveBeenCalled()
   })
 })
