@@ -1,7 +1,8 @@
 import { cn } from '@/shared/lib/utils'
+import { parseDateKey } from '@/shared/utils'
 
 import type { HabitDay } from '../types/habits.types'
-import { formatDayAndMonth, parseDateKey, weekdayInitial } from '../utils/format'
+import { formatDayAndMonth, weekdayInitial } from '../utils/format'
 
 interface HabitWeekProps {
   readonly days: readonly HabitDay[]

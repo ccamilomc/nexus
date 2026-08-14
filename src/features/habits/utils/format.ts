@@ -9,18 +9,6 @@
  */
 const WEEKDAY_INITIALS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
-/**
- * Fecha local a partir de la clave `YYYY-MM-DD`.
- *
- * Se parte a mano: `new Date('2026-07-29')` la interpretaría en UTC y en
- * Colombia mostraría el día anterior.
- */
-export function parseDateKey(dateKey: string): Date {
-  const [year, month, day] = dateKey.split('-').map(Number)
-
-  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
-}
-
 export function weekdayInitial(date: Date): string {
   return WEEKDAY_INITIALS[date.getDay()] ?? '?'
 }

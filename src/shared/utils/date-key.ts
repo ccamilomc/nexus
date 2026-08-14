@@ -29,6 +29,18 @@ export function toDateKeyFromIso(iso: string): string {
   return toDateKey(new Date(iso))
 }
 
+/**
+ * Fecha local a partir de la clave `YYYY-MM-DD`. El inverso de `toDateKey`.
+ *
+ * Se parte a mano: `new Date('2026-07-29')` la interpretaría en UTC y en
+ * Colombia mostraría el día anterior.
+ */
+export function parseDateKey(dateKey: string): Date {
+  const [year, month, day] = dateKey.split('-').map(Number)
+
+  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
+}
+
 /** La fecha `days` días antes de `date`, sin tocar el original. */
 export function minusDays(date: Date, days: number): Date {
   const result = new Date(date)

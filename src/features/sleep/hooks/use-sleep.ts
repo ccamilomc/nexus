@@ -68,13 +68,13 @@ function useRefreshSleep() {
   )
 }
 
-/** Registra o corrige la noche. */
-export function useLogSleep(today: Date) {
+/** Registra o corrige una noche; cuál es va en los propios valores. */
+export function useLogSleep() {
   const { user } = useAuth()
   const refresh = useRefreshSleep()
 
   return useMutation<void, AppError, LogSleepValues>({
-    mutationFn: (values) => sleepService.logSleep(requireUserId(user?.id), today, values),
+    mutationFn: (values) => sleepService.logSleep(requireUserId(user?.id), values),
     onSuccess: refresh,
   })
 }

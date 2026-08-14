@@ -2,6 +2,7 @@ export {
   dateRangeKey,
   lastDays,
   minusDays,
+  parseDateKey,
   previousDay,
   toDateKey,
   toDateKeyFromIso,

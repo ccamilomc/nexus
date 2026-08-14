@@ -5,7 +5,7 @@ import { ROUTES } from '@/app/router/routes'
 import { useNow, useToday } from '@/core/time'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
-import { formatMinutes } from '@/shared/utils'
+import { formatMinutes, toDateKey } from '@/shared/utils'
 
 import { useLastNight, useLogSleep, useSleepHistory } from '../hooks/use-sleep'
 import { sleepPattern } from '../utils/sleep-pattern'
@@ -37,7 +37,7 @@ export function SleepQuickLog() {
   const now = useNow()
   const lastNight = useLastNight(today)
   const history = useSleepHistory()
-  const logSleep = useLogSleep(today)
+  const logSleep = useLogSleep()
 
   // Nada que ofrecer si ya está apuntada, si no es por la mañana o si aún no hay
   // costumbre de la que hablar.
@@ -74,7 +74,13 @@ export function SleepQuickLog() {
             type="button"
             disabled={logSleep.isPending}
             onClick={() =>
-              logSleep.mutate({ bedtime: pattern.bedtime, wakeTime: pattern.wakeTime })
+              // Desde el panel siempre es la noche de hoy: es el trago de la
+              // mañana, no una corrección.
+              logSleep.mutate({
+                date: toDateKey(today),
+                bedtime: pattern.bedtime,
+                wakeTime: pattern.wakeTime,
+              })
             }
           >
             {logSleep.isPending ? 'Apuntando…' : 'Sí, apúntalo'}
