@@ -127,3 +127,13 @@ export function useRestoreHabit() {
     onSuccess: refresh,
   })
 }
+
+/** Borra del todo un hábito que nunca se llegó a marcar. */
+export function useDeleteHabit() {
+  const refresh = useRefreshHabits()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (habitId) => habitsService.deleteHabit(habitId),
+    onSuccess: refresh,
+  })
+}

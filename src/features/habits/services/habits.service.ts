@@ -1,4 +1,4 @@
-import { toAppError } from '@/core/error'
+import { createAppError, toAppError } from '@/core/error'
 import { minusDays, previousDay, toDateKey } from '@/shared/utils'
 
 import { habitsRepository } from '../repositories/habits.repository'
@@ -169,6 +169,34 @@ export const habitsService = {
       }
 
       await habitsRepository.insertLog({ user_id: userId, habit_id: habitId, date: dateKey })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra del todo un hábito que nunca se llegó a usar.
+   *
+   * Existe para el error de tecleo: se crea «adasd», se archiva, y hasta ahora
+   * se quedaba ahí para siempre porque lo único que se ofrecía era recuperarlo.
+   *
+   * **Sólo si no tiene ningún día marcado.** Con historial, la salida es
+   * archivar: archivar guarda y borrar destruye, y una racha de meses no se tira
+   * por un botón. La comprobación va aquí y no en la base a propósito: la clave
+   * ajena es `on delete cascade`, así que Postgres borraría los registros en
+   * silencio en lugar de negarse.
+   */
+  async deleteHabit(habitId: string): Promise<void> {
+    try {
+      const logs = await habitsRepository.countLogs(habitId)
+      if (logs > 0) {
+        throw createAppError(
+          'conflict',
+          'Este hábito tiene días marcados, así que no se borra: archívalo y su historial se queda.',
+        )
+      }
+
+      await habitsRepository.deleteHabit(habitId)
     } catch (error) {
       throw toAppError(error)
     }
