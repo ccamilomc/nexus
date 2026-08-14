@@ -25,7 +25,8 @@ export function HealthPage() {
       <PageHeader title="Salud" description="Peso, medidas y cómo van cambiando." />
 
       <div className="space-y-4">
-        <MetricForm />
+        {/* Sin mediciones no hay nada que consultar: el formulario se abre solo. */}
+        <MetricForm defaultOpen={metrics.length === 0} />
 
         {metrics.length === 0 ? (
           <EmptyState
