@@ -10,7 +10,7 @@ import { useRemoveMealItem } from '../hooks/use-nutrition'
 import type { Food, MealEntry, RepeatableMeal } from '../types/nutrition.types'
 import { formatCalories, formatQuantity } from '../utils/format'
 import { macrosForServings } from '../utils/macros'
-import { AddFoodForm } from './AddFoodForm'
+import { AddFoodsForm } from './AddFoodsForm'
 import { FoodPicker } from './FoodPicker'
 import { MacroSummary } from './MacroSummary'
 import { RepeatMealButton } from './RepeatMealButton'
@@ -25,13 +25,13 @@ interface MealSectionProps {
 /** Una comida del día: lo que se registró en ella y cómo añadir más. */
 export function MealSection({ date, meal, repeatable }: MealSectionProps) {
   const [isPicking, setIsPicking] = useState(false)
-  const [selected, setSelected] = useState<Food | null>(null)
+  const [selected, setSelected] = useState<readonly Food[]>([])
   const removeItem = useRemoveMealItem()
   const isEmpty = meal.items.length === 0
 
   const close = () => {
     setIsPicking(false)
-    setSelected(null)
+    setSelected([])
   }
 
   return (
@@ -76,13 +76,13 @@ export function MealSection({ date, meal, repeatable }: MealSectionProps) {
 
         {removeItem.isError ? <FormAlert>{removeItem.error.message}</FormAlert> : null}
 
-        {selected ? (
-          <AddFoodForm
+        {selected.length > 0 ? (
+          <AddFoodsForm
             date={date}
             mealType={meal.mealType}
-            food={selected}
+            foods={selected}
             onAdded={close}
-            onBack={() => setSelected(null)}
+            onBack={() => setSelected([])}
           />
         ) : isPicking ? (
           <FoodPicker onSelect={setSelected} onClose={close} />
@@ -103,7 +103,7 @@ export function MealSection({ date, meal, repeatable }: MealSectionProps) {
               onClick={() => setIsPicking(true)}
             >
               <Plus aria-hidden />
-              Añadir alimento
+              Añadir alimentos
             </Button>
           </div>
         )}

@@ -30,6 +30,7 @@ vi.mock('../repositories/nutrition.repository', () => ({
     listItemsByMealLogs: vi.fn(),
     insertMealLog: vi.fn(),
     insertMealLogItem: vi.fn(),
+    insertMealLogItems: vi.fn(),
     deleteMealLogItem: vi.fn(),
     findActiveGoal: vi.fn(),
     deactivateGoals: vi.fn(),
@@ -46,6 +47,7 @@ const listRecentMealLogs = vi.mocked(nutritionRepository.listRecentMealLogs)
 const listItemsByMealLogs = vi.mocked(nutritionRepository.listItemsByMealLogs)
 const insertMealLog = vi.mocked(nutritionRepository.insertMealLog)
 const insertMealLogItem = vi.mocked(nutritionRepository.insertMealLogItem)
+const insertMealLogItems = vi.mocked(nutritionRepository.insertMealLogItems)
 const insertFood = vi.mocked(nutritionRepository.insertFood)
 const deleteFood = vi.mocked(nutritionRepository.deleteFood)
 const listFoods = vi.mocked(nutritionRepository.listFoods)
@@ -140,8 +142,7 @@ const ADD_LUNCH = {
   userId: USER_ID,
   date: DATE,
   mealType: 'lunch',
-  foodId: CHICKEN.id,
-  servings: 1.5,
+  items: [{ foodId: CHICKEN.id, servings: 1.5 }],
   now: DATE,
 } as const
 
@@ -160,49 +161,89 @@ beforeEach(() => {
   listItemsByMealLogs.mockResolvedValue([])
   insertMealLog.mockImplementation(async (_userId, mealType) => mealLog('nuevo', mealType))
   insertMealLogItem.mockResolvedValue(SAVED_ITEM)
+  insertMealLogItems.mockResolvedValue([SAVED_ITEM])
 })
 
-describe('nutritionService.addFoodToMeal', () => {
+describe('nutritionService.addFoodsToMeal', () => {
   it('crea la comida la primera vez y registra el alimento en ella', async () => {
     listMealLogsBetween.mockResolvedValue([])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).toHaveBeenCalledTimes(1)
     expect(insertMealLog.mock.calls[0]?.slice(0, 2)).toEqual([USER_ID, 'lunch'])
-    expect(insertMealLogItem).toHaveBeenCalledExactlyOnceWith({
-      meal_log_id: 'nuevo',
-      food_id: CHICKEN.id,
-      servings: 1.5,
+    expect(insertMealLogItems).toHaveBeenCalledExactlyOnceWith([
+      { meal_log_id: 'nuevo', food_id: CHICKEN.id, servings: 1.5 },
+    ])
+  })
+
+  it('guarda toda la comida en una escritura, no una por plato', async () => {
+    // De una en una podían quedarse a medias: dos platos guardados y dos no.
+    listMealLogsBetween.mockResolvedValue([])
+
+    await nutritionService.addFoodsToMeal({
+      ...ADD_LUNCH,
+      items: [
+        { foodId: 'arroz', servings: 1 },
+        { foodId: 'pollo', servings: 1.5 },
+        { foodId: 'ensalada', servings: 2 },
+      ],
     })
+
+    expect(insertMealLogItems).toHaveBeenCalledOnce()
+    expect(insertMealLogItems.mock.calls[0]?.[0]).toHaveLength(3)
+    expect(insertMealLog).toHaveBeenCalledTimes(1)
+  })
+
+  it('todos los platos van a la misma comida', async () => {
+    listMealLogsBetween.mockResolvedValue([mealLog('almuerzo-de-hoy', 'lunch')])
+
+    await nutritionService.addFoodsToMeal({
+      ...ADD_LUNCH,
+      items: [
+        { foodId: 'arroz', servings: 1 },
+        { foodId: 'pollo', servings: 1 },
+      ],
+    })
+
+    const rows = insertMealLogItems.mock.calls[0]?.[0] ?? []
+    expect(rows.every((row) => row.meal_log_id === 'almuerzo-de-hoy')).toBe(true)
+  })
+
+  it('sin nada elegido no crea una comida vacía', async () => {
+    // Un almuerzo sin platos ni siquiera cuenta como día registrado.
+    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, items: [] })
+
+    expect(insertMealLog).not.toHaveBeenCalled()
+    expect(insertMealLogItems).not.toHaveBeenCalled()
   })
 
   it('reutiliza la comida del día en lugar de partirla en varias', async () => {
     listMealLogsBetween.mockResolvedValue([mealLog('almuerzo-de-hoy', 'lunch')])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).not.toHaveBeenCalled()
-    expect(insertMealLogItem).toHaveBeenCalledWith(
+    expect(insertMealLogItems).toHaveBeenCalledWith([
       expect.objectContaining({ meal_log_id: 'almuerzo-de-hoy' }),
-    )
+    ])
   })
 
   it('no mete el almuerzo dentro del desayuno ya registrado', async () => {
     listMealLogsBetween.mockResolvedValue([mealLog('desayuno-de-hoy', 'breakfast')])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).toHaveBeenCalledTimes(1)
-    expect(insertMealLogItem).toHaveBeenCalledWith(
+    expect(insertMealLogItems).toHaveBeenCalledWith([
       expect.objectContaining({ meal_log_id: 'nuevo' }),
-    )
+    ])
   })
 
   it('busca la comida dentro del día local, no del día UTC', async () => {
     // A las 16:30 en Bogotá ya es de noche en UTC: si el rango se calculara en
     // UTC, la cena caería en el día siguiente.
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     const [userId, fromIso, toIso] = listMealLogsBetween.mock.calls[0] ?? []
     expect(userId).toBe(USER_ID)
@@ -217,7 +258,7 @@ describe('nutritionService.addFoodToMeal', () => {
     listMealLogsBetween.mockResolvedValue([])
     const ANTEAYER = new Date(2026, 6, 27)
 
-    await nutritionService.addFoodToMeal({ ...ADD_LUNCH, date: ANTEAYER, now: DATE })
+    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, date: ANTEAYER, now: DATE })
 
     const loggedAt = new Date(insertMealLog.mock.calls[0]?.[2] ?? '')
     expect(loggedAt.getDate()).toBe(27)
@@ -227,15 +268,15 @@ describe('nutritionService.addFoodToMeal', () => {
   it('si el día es hoy conserva la hora real', async () => {
     listMealLogsBetween.mockResolvedValue([])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog.mock.calls[0]?.[2]).toBe(DATE.toISOString())
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
-    insertMealLogItem.mockRejectedValue(new Error('null value in column "servings"'))
+    insertMealLogItems.mockRejectedValue(new Error('null value in column "servings"'))
 
-    const error: unknown = await nutritionService.addFoodToMeal(ADD_LUNCH).catch((e) => e)
+    const error: unknown = await nutritionService.addFoodsToMeal(ADD_LUNCH).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('column')
