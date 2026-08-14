@@ -10,22 +10,22 @@ import { useRemoveMealItem } from '../hooks/use-nutrition'
 import type { Food, MealEntry, RepeatableMeal } from '../types/nutrition.types'
 import { formatCalories, formatQuantity } from '../utils/format'
 import { macrosForServings } from '../utils/macros'
-import { AddFoodsForm } from './AddFoodsForm'
+import { AddFoodsForm, type FoodChoice } from './AddFoodsForm'
 import { FoodPicker } from './FoodPicker'
 import { MacroSummary } from './MacroSummary'
-import { RepeatMealButton } from './RepeatMealButton'
+import { RepeatMealOptions } from './RepeatMealOptions'
 
 interface MealSectionProps {
   readonly date: Date
   readonly meal: MealEntry
-  /** Qué se puede repetir en esta comida; `null` si no hay nada anterior. */
-  readonly repeatable: RepeatableMeal | null
+  /** Lo que se suele comer en esta comida; vacío si no hay nada anterior. */
+  readonly repeatable: readonly RepeatableMeal[] | null
 }
 
 /** Una comida del día: lo que se registró en ella y cómo añadir más. */
 export function MealSection({ date, meal, repeatable }: MealSectionProps) {
   const [isPicking, setIsPicking] = useState(false)
-  const [selected, setSelected] = useState<readonly Food[]>([])
+  const [selected, setSelected] = useState<readonly FoodChoice[]>([])
   const removeItem = useRemoveMealItem()
   const isEmpty = meal.items.length === 0
 
@@ -33,6 +33,14 @@ export function MealSection({ date, meal, repeatable }: MealSectionProps) {
     setIsPicking(false)
     setSelected([])
   }
+
+  /** Del catálogo se parte de una porción; ya se ajusta en el paso siguiente. */
+  const pickFoods = (foods: readonly Food[]) =>
+    setSelected(foods.map((food) => ({ food, servings: 1 })))
+
+  /** Al repetir se parte de lo que se comió aquella vez, no de una porción. */
+  const pickRepeat = (option: RepeatableMeal) =>
+    setSelected(option.items.map((item) => ({ food: item.food, servings: item.servings })))
 
   return (
     <Card>
@@ -80,12 +88,12 @@ export function MealSection({ date, meal, repeatable }: MealSectionProps) {
           <AddFoodsForm
             date={date}
             mealType={meal.mealType}
-            foods={selected}
+            choices={selected}
             onAdded={close}
             onBack={() => setSelected([])}
           />
         ) : isPicking ? (
-          <FoodPicker onSelect={setSelected} onClose={close} />
+          <FoodPicker onSelect={pickFoods} onClose={close} />
         ) : (
           <div className="space-y-2">
             {/*
@@ -93,7 +101,12 @@ export function MealSection({ date, meal, repeatable }: MealSectionProps) {
               registrado, el gesto que se busca es añadir, no duplicar.
             */}
             {isEmpty && repeatable ? (
-              <RepeatMealButton date={date} mealType={meal.mealType} template={repeatable} />
+              <RepeatMealOptions
+                date={date}
+                mealType={meal.mealType}
+                options={repeatable}
+                onPick={pickRepeat}
+              />
             ) : null}
             <Button
               type="button"

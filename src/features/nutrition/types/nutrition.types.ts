@@ -117,13 +117,23 @@ export interface DayNutrition {
 }
 
 /**
- * Una comida anterior que puede repetirse tal cual.
+ * Una combinación que ya se ha comido y puede volver a apuntarse.
  *
- * Se guarda cuándo fue para poder decirlo («el almuerzo del martes»): repetir a
- * ciegas lo que uno no recuerda haber comido daría menos confianza que teclearlo.
+ * **Sale de lo registrado, no de una lista que haya que mantener.** Uno come
+ * casi siempre las mismas tres o cuatro cosas en cada comida, y esas
+ * combinaciones ya están en el histórico: pedirle además que las nombre y las
+ * actualice sería trabajo para saber algo que la aplicación ya sabe.
+ *
+ * Se guarda cuándo fue la última vez para poder decirlo —repetir a ciegas lo
+ * que uno no recuerda haber comido daría menos confianza que teclearlo— y
+ * cuántas veces se ha comido, que es lo que la ordena.
  */
 export interface RepeatableMeal {
+  /** Identifica la combinación por sus alimentos, para listas de React. */
+  readonly key: string
   readonly loggedAt: string
+  /** Veces que se ha comido esta misma combinación en el tramo mirado. */
+  readonly times: number
   readonly items: readonly MealLogItemWithFood[]
 }
 
@@ -140,7 +150,7 @@ export interface RepeatableMeal {
  * sobrevivir a un ida y vuelta por JSON.** Nada de `Map`, `Set`, `Date` ni
  * instancias de clase.
  */
-export type RepeatableMeals = Partial<Record<MealType, RepeatableMeal>>
+export type RepeatableMeals = Partial<Record<MealType, readonly RepeatableMeal[]>>
 
 /** La hidratación de un día: cada registro y el total. */
 export interface DayWater {

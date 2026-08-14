@@ -19,6 +19,7 @@ import type {
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { buildNutritionSeries } from '../utils/nutrition-series'
 import { pricePerServing } from '../utils/pricing'
+import { buildRepeatableMeals } from '../utils/repeatable-meals'
 import { sumWaterMl } from '../utils/water'
 import { buildWeekNutrition } from '../utils/week-nutrition'
 
@@ -36,12 +37,14 @@ const MS_PER_DAY = 86_400_000
 const REPEAT_WINDOW_DAYS = 14
 
 /**
- * Comidas recientes que se traen para buscar plantillas.
+ * Comidas recientes que se traen para buscar lo repetible.
  *
- * Con cuatro comidas al día, veinte cubren los últimos cinco días, de sobra
- * para encontrar la última de cada tipo.
+ * Con cuatro al día, sesenta cubren las dos semanas de la ventana. Antes eran
+ * veinte, que bastaban cuando sólo se buscaba **la última** de cada tipo; para
+ * ver qué se repite hacen falta las dos semanas enteras, porque con cinco días
+ * casi todo parece comido una sola vez.
  */
-const REPEAT_CANDIDATES = 20
+const REPEAT_CANDIDATES = 60
 
 /**
  * La comida del día, creándola si es la primera vez.
@@ -244,8 +247,12 @@ export const nutritionService = {
    *
    * Una sola consulta para las cuatro: la pantalla las muestra juntas, así que
    * preguntarlo comida por comida serían cuatro viajes para lo mismo. Sólo mira
-   * las dos últimas semanas: lo que se comió hace tres meses no es «lo de
-   * siempre», y ofrecerlo sería ruido.
+   * las últimas semanas: lo que se comió hace tres meses no es «lo de siempre»,
+   * y ofrecerlo sería ruido.
+   *
+   * Devuelve varias combinaciones por comida —no sólo la última— porque uno no
+   * come siempre lo mismo: hay el desayuno de diario y el de los días con
+   * prisa. Cuál va primero lo decide `buildRepeatableMeals`.
    */
   async getRepeatableMeals(userId: string, date: Date): Promise<RepeatableMeals> {
     try {
@@ -262,46 +269,7 @@ export const nutritionService = {
 
       const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
 
-      const byType: RepeatableMeals = {}
-      // Los registros llegan del más reciente al más antiguo, así que la primera
-      // vez que aparece un tipo es la última que se comió. Una comida que quedó
-      // vacía —se borró lo que tenía— se salta: repetir la nada no sirve.
-      for (const log of logs) {
-        if (byType[log.meal_type]) continue
-
-        const logItems = items.filter((item) => item.meal_log_id === log.id)
-        if (logItems.length > 0)
-          byType[log.meal_type] = { loggedAt: log.logged_at, items: logItems }
-      }
-
-      return byType
-    } catch (error) {
-      throw toAppError(error)
-    }
-  },
-
-  /**
-   * Repite en el día una comida ya registrada antes.
-   *
-   * Copia los alimentos y sus porciones **por valor**: si luego se cambia uno,
-   * el de hoy no se toca. Registrar lo que se come a diario era el paso más
-   * caro de la aplicación; esto lo deja en un toque.
-   */
-  async repeatMeal(userId: string, date: Date, mealType: MealType, now: Date): Promise<void> {
-    try {
-      const template = (await this.getRepeatableMeals(userId, date))[mealType]
-      if (!template)
-        throw createAppError('not_found', 'No hay ninguna comida anterior que repetir.')
-
-      const mealLog = await ensureMealLog(userId, date, mealType, now)
-
-      for (const item of template.items) {
-        await nutritionRepository.insertMealLogItem({
-          meal_log_id: mealLog.id,
-          food_id: item.food_id,
-          servings: item.servings,
-        })
-      }
+      return buildRepeatableMeals(logs, items, MEAL_TYPES_IN_ORDER)
     } catch (error) {
       throw toAppError(error)
     }
