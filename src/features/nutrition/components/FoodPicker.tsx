@@ -11,6 +11,7 @@ import { useFoods } from '../hooks/use-nutrition'
 import type { Food } from '../types/nutrition.types'
 import { formatCalories, formatServing } from '../utils/format'
 import { FoodForm } from './FoodForm'
+import { FoodMacroLine } from './FoodMacroLine'
 
 interface FoodPickerProps {
   readonly onSelect: (food: Food) => void
@@ -68,7 +69,10 @@ export function FoodPicker({ onSelect, onClose }: FoodPickerProps) {
             Ningún alimento coincide con tu búsqueda.
           </p>
         ) : (
-          <ul className="max-h-80 space-y-2 overflow-y-auto">
+          // Sube de 20 a 24 rem porque cada opción creció una línea al añadir
+          // los macros: con la altura de antes se veían menos alimentos de un
+          // vistazo que al principio, y eso es lo contrario de lo que se busca.
+          <ul className="max-h-96 space-y-2 overflow-y-auto">
             {available.map((food) => (
               <li key={food.id}>
                 <button
@@ -81,6 +85,10 @@ export function FoodPicker({ onSelect, onClose }: FoodPickerProps) {
                     {formatServing(food)} · {formatCalories(food.calories)}
                     {food.is_custom ? ' · Personal' : ''}
                   </p>
+                  {/* Elegir qué comer es la decisión que se toma aquí, y con
+                      sólo las calorías no se puede tomar: la pantalla dice que
+                      faltan 120 g de proteína y luego no enseña la de nada. */}
+                  <FoodMacroLine food={food} />
                 </button>
               </li>
             ))}

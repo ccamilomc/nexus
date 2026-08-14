@@ -4,7 +4,8 @@ import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 
 import type { Food } from '../types/nutrition.types'
-import { formatCalories, formatCop, formatGrams, formatServing } from '../utils/format'
+import { formatCalories, formatServing } from '../utils/format'
+import { FoodMacroLine } from './FoodMacroLine'
 
 interface FoodListProps {
   readonly foods: readonly Food[]
@@ -27,11 +28,7 @@ export function FoodList({ foods, onEdit, onDelete }: FoodListProps) {
             {food.brand ? ` · ${food.brand}` : ''}
             {food.is_custom ? ' · Personal' : ''}
           </p>
-          <p className="text-xs text-muted-foreground">
-            P {formatGrams(food.protein_g)} · C {formatGrams(food.carbs_g)} · G{' '}
-            {formatGrams(food.fat_g)}
-            {food.cost_per_serving !== null ? ` · ${formatCop(food.cost_per_serving)}` : ''}
-          </p>
+          <FoodMacroLine food={food} />
 
           {hasActions && food.is_custom ? (
             <div className="mt-2 flex flex-wrap items-center gap-1">
