@@ -3,18 +3,20 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { workoutRoutinePath } from '@/app/router/routes'
+import { useNow } from '@/core/time'
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 
 import { RoutineForm } from '../components/RoutineForm'
 import { RoutineList } from '../components/RoutineList'
-import { useRoutines } from '../hooks/use-routines'
+import { useRoutineSummaries } from '../hooks/use-routines'
 
 /** Lista de rutinas del usuario y creación de rutinas nuevas. */
 export function RoutinesPage() {
-  const { data, isPending, isError, error, refetch } = useRoutines()
+  const { data, isPending, isError, error, refetch } = useRoutineSummaries()
   const [isCreating, setIsCreating] = useState(false)
   const navigate = useNavigate()
+  const now = useNow()
 
   if (isPending) return <SkeletonList label="Cargando tus rutinas" rows={3} rowClassName="h-16" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
@@ -50,7 +52,7 @@ export function RoutinesPage() {
           />
         )
       ) : (
-        <RoutineList routines={data} />
+        <RoutineList summaries={data} now={now} />
       )}
     </div>
   )
