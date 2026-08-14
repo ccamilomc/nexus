@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 
 import { GoalForm } from '../components/GoalForm'
+import { GoalHistory } from '../components/GoalHistory'
 import { useActiveGoal } from '../hooks/use-nutrition'
 import { formatCalories, formatGrams, formatVolumeMl } from '../utils/format'
 
@@ -73,6 +74,9 @@ export function GoalsPage() {
         Al cambiarlos se guarda el objetivo anterior: así queda constancia de qué perseguías en cada
         momento.
       </p>
+
+      {/* La frase de arriba prometía una constancia que no se podía mirar. */}
+      <GoalHistory />
     </div>
   )
 }

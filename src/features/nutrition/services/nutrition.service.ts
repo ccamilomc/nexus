@@ -47,6 +47,14 @@ const REPEAT_WINDOW_DAYS = 14
 const REPEAT_CANDIDATES = 60
 
 /**
+ * Objetivos anteriores que se traen.
+ *
+ * Diez cubren de sobra los cambios de un año: los objetivos se tocan cuando
+ * cambia el plan, no cada semana.
+ */
+const GOAL_HISTORY_LIMIT = 10
+
+/**
  * La comida del día, creándola si es la primera vez.
  *
  * El usuario piensa «añado pollo al almuerzo», no «creo un almuerzo y luego le
@@ -279,6 +287,20 @@ export const nutritionService = {
   async getActiveGoal(userId: string): Promise<NutritionGoal | null> {
     try {
       return await nutritionRepository.findActiveGoal(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Los objetivos anteriores, para poder mirar qué se perseguía antes.
+   *
+   * La pantalla decía que al cambiarlos «queda constancia» y no había manera de
+   * verla: la constancia estaba en la base y era invisible.
+   */
+  async getRetiredGoals(userId: string): Promise<NutritionGoal[]> {
+    try {
+      return await nutritionRepository.listRetiredGoals(userId, GOAL_HISTORY_LIMIT)
     } catch (error) {
       throw toAppError(error)
     }
