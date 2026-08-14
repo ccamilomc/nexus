@@ -16,6 +16,14 @@ interface FoodFormProps {
   readonly initialName?: string
   /** Si se indica, el formulario edita ese alimento en lugar de crear uno. */
   readonly food?: Food
+  /**
+   * Alimento del que se copian los valores para crear uno nuevo.
+   *
+   * Es lo que evita reteclear seis campos para quedarse con el mismo pollo y
+   * otra porción. No se edita: el del catálogo global no es de nadie y la RLS
+   * impide tocarlo.
+   */
+  readonly template?: Food
   readonly onSaved: (food: Food) => void
   readonly onCancel: () => void
 }
@@ -40,11 +48,13 @@ function toFormValues(food: Food): CreateFoodValues {
 }
 
 /** Formulario para crear o editar un alimento propio. */
-export function FoodForm({ initialName = '', food, onSaved, onCancel }: FoodFormProps) {
+export function FoodForm({ initialName = '', food, template, onSaved, onCancel }: FoodFormProps) {
   const createFood = useCreateFood()
   const updateFood = useUpdateFood()
   const isEditing = food !== undefined
   const pending = isEditing ? updateFood : createFood
+  // El que se edita, o el que se copia: los dos rellenan las mismas casillas.
+  const source = food ?? template
 
   const {
     register,
@@ -52,8 +62,8 @@ export function FoodForm({ initialName = '', food, onSaved, onCancel }: FoodForm
     formState: { errors },
   } = useForm<CreateFoodValues>({
     resolver: zodResolver(createFoodSchema),
-    defaultValues: food
-      ? toFormValues(food)
+    defaultValues: source
+      ? toFormValues(source)
       : {
           name: initialName,
           servingSize: 100,
@@ -73,6 +83,16 @@ export function FoodForm({ initialName = '', food, onSaved, onCancel }: FoodForm
   return (
     <Card>
       <CardContent className="p-4">
+        {/* Al copiar hay que decir de dónde salen las cifras ya puestas: si no,
+            parecen inventadas por la aplicación. */}
+        {template ? (
+          <p className="mb-3 text-xs text-muted-foreground">
+            Copiado de «{template.name}» del catálogo, que se queda como está. Ponle tu precio y,{' '}
+            <strong>si cambias la porción, ajusta también las cifras</strong>: van por porción, no
+            se recalculan solas.
+          </p>
+        ) : null}
+
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <FormField id="food-name" label="Nombre" error={errors.name?.message}>
             <Input

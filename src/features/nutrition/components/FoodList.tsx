@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+import { Copy, Pencil } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
@@ -12,10 +12,12 @@ interface FoodListProps {
   /** Editar/borrar; sólo se ofrecen en los alimentos propios. */
   readonly onEdit?: (food: Food) => void
   readonly onDelete?: (food: Food) => void
+  /** Crear uno propio copiando el del catálogo; sólo en los que no son propios. */
+  readonly onCopy?: (food: Food) => void
 }
 
 /** Catálogo de alimentos con sus macros por porción. */
-export function FoodList({ foods, onEdit, onDelete }: FoodListProps) {
+export function FoodList({ foods, onEdit, onDelete, onCopy }: FoodListProps) {
   const hasActions = Boolean(onEdit || onDelete)
 
   return (
@@ -54,6 +56,26 @@ export function FoodList({ foods, onEdit, onDelete }: FoodListProps) {
                   className="text-muted-foreground"
                 />
               ) : null}
+            </div>
+          ) : null}
+
+          {/* Los del catálogo no se pueden editar —no son de nadie y la RLS lo
+              impide—, así que lo único que cabe hacer con ellos es partir de
+              ellos. Sin esto había que reteclear los seis campos para quedarse
+              con el mismo pollo y otra porción. */}
+          {onCopy && !food.is_custom ? (
+            <div className="mt-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground"
+                aria-label={`Crear mi versión de ${food.name}`}
+                onClick={() => onCopy(food)}
+              >
+                <Copy aria-hidden />
+                Crear el mío
+              </Button>
             </div>
           ) : null}
         </li>
