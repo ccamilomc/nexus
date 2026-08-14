@@ -15,6 +15,13 @@ interface ExerciseListProps {
   /** Editar/borrar; sólo se ofrecen en los ejercicios propios. */
   readonly onEdit?: (exercise: Exercise) => void
   readonly onDelete?: (exercise: Exercise) => void
+  /**
+   * Ejercicios con series registradas.
+   *
+   * Sólo en ésos se ofrece «Tus marcas»: en los demás el desplegable abría para
+   * decir que no había nada, y con setenta ejercicios eran cincuenta y ocho.
+   */
+  readonly trainedIds?: readonly string[]
 }
 
 function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
@@ -36,7 +43,13 @@ function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
 }
 
 /** Lista de ejercicios agrupada por grupo muscular. */
-export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: ExerciseListProps) {
+export function ExerciseList({
+  exercises,
+  onSelect,
+  onEdit,
+  onDelete,
+  trainedIds,
+}: ExerciseListProps) {
   const groups = new Map<Exercise['muscle_group'], Exercise[]>()
   for (const exercise of exercises) {
     const current = groups.get(exercise.muscle_group) ?? []
@@ -73,20 +86,23 @@ export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: Exercise
                   <div className={itemClassName}>
                     <ExerciseSummary exercise={exercise} />
 
-                    {/* Sólo fuera del selector: durante el entrenamiento la
-                        referencia útil es «la última vez», no el récord. */}
-                    <details className="group mt-2">
-                      <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                        <ChevronRight
-                          aria-hidden
-                          className="h-3.5 w-3.5 transition-transform duration-fast ease-out group-open:rotate-90"
-                        />
-                        Tus marcas
-                      </summary>
-                      <div className="mt-2">
-                        <ExerciseProgressPanel exerciseId={exercise.id} name={exercise.name} />
-                      </div>
-                    </details>
+                    {/* Sólo fuera del selector y sólo si se ha entrenado: durante
+                        el entrenamiento la referencia útil es «la última vez», y
+                        en un ejercicio sin series no hay marcas que enseñar. */}
+                    {trainedIds?.includes(exercise.id) ? (
+                      <details className="group mt-2">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <ChevronRight
+                            aria-hidden
+                            className="h-3.5 w-3.5 transition-transform duration-fast ease-out group-open:rotate-90"
+                          />
+                          Tus marcas
+                        </summary>
+                        <div className="mt-2">
+                          <ExerciseProgressPanel exerciseId={exercise.id} name={exercise.name} />
+                        </div>
+                      </details>
+                    ) : null}
 
                     {hasActions && exercise.is_custom ? (
                       <div className="mt-2 flex flex-wrap items-center gap-1">

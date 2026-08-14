@@ -18,6 +18,23 @@ export function useExercises() {
 }
 
 /**
+ * Qué ejercicios se han entrenado alguna vez.
+ *
+ * La lista lo usa para ofrecer «Tus marcas» sólo donde hay algo que enseñar: de
+ * setenta ejercicios se han tocado doce, y los otros cincuenta y ocho abrían un
+ * desplegable para decir que no había nada.
+ */
+export function useTrainedExerciseIds() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<string[], AppError>({
+    queryKey: workoutKeys.trainedExercises(userId),
+    queryFn: () => (userId ? workoutService.getTrainedExerciseIds(userId) : []),
+  })
+}
+
+/**
  * Lo mejor que se ha hecho en un ejercicio. **Sólo se pide al abrirlo.**
  *
  * Con `null` la consulta ni se lanza: son dieciséis ejercicios y traerlos todos

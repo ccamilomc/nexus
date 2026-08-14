@@ -21,6 +21,8 @@ export const workoutKeys = {
   // un entrenamiento, no editar el catálogo.
   exerciseProgress: (userId: string | undefined, exerciseId: string) =>
     [...workoutKeys.sessions(), 'exercise-progress', userId, exerciseId] as const,
+  trainedExercises: (userId: string | undefined) =>
+    [...workoutKeys.sessions(), 'trained-exercises', userId] as const,
   routines: (userId: string | undefined) => [...workoutKeys.all, 'routines', userId] as const,
   routineDays: (userId: string | undefined) =>
     [...workoutKeys.all, 'routines', 'days', userId] as const,

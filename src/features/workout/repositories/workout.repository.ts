@@ -221,6 +221,25 @@ export const workoutRepository = {
     return data ?? []
   },
 
+  /**
+   * Qué ejercicios se han entrenado alguna vez.
+   *
+   * Sólo la columna del ejercicio: con esto la lista sabe en cuáles ofrecer las
+   * marcas y en cuáles no, sin traerse una serie entera para averiguarlo.
+   */
+  async listTrainedExerciseIds(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .select('exercise_id, session:workout_sessions!inner(user_id, status, deleted_at)')
+      .is('deleted_at', null)
+      .eq('session.user_id', userId)
+      .eq('session.status', 'completed')
+      .is('session.deleted_at', null)
+
+    if (error) throw error
+    return [...new Set((data ?? []).map(({ exercise_id }) => exercise_id))]
+  },
+
   async listSetsBySessions(sessionIds: readonly string[]): Promise<WorkoutSetWithExercise[]> {
     if (sessionIds.length === 0) return []
 
