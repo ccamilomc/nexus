@@ -5,6 +5,7 @@ import type {
   ExerciseSetSample,
   Routine,
   RoutineDay,
+  RoutineDayUsage,
   RoutineExercise,
   RoutineExerciseWithExercise,
   SessionSample,
@@ -364,6 +365,26 @@ export const workoutRepository = {
       .select('*')
       .in('routine_id', routineIds)
       .order('order_index', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Cuándo se entrenó cada día de rutina, de lo más reciente a lo más antiguo.
+   *
+   * Sólo tres columnas: la pregunta es «¿cuándo usé esta rutina por última
+   * vez?», y para eso no hacen falta ni las series ni el resto de la sesión.
+   */
+  async listRoutineDayUsage(userId: string): Promise<RoutineDayUsage[]> {
+    const { data, error } = await supabase
+      .from('workout_sessions')
+      .select('routine_day_id, started_at, ended_at')
+      .eq('user_id', userId)
+      .eq('status', 'completed')
+      .is('deleted_at', null)
+      .not('routine_day_id', 'is', null)
+      .order('started_at', { ascending: false })
 
     if (error) throw error
     return data ?? []

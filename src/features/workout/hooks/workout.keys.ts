@@ -24,6 +24,10 @@ export const workoutKeys = {
   trainedExercises: (userId: string | undefined) =>
     [...workoutKeys.sessions(), 'trained-exercises', userId] as const,
   routines: (userId: string | undefined) => [...workoutKeys.all, 'routines', userId] as const,
+  // Bajo `sessions()` porque lo que la deja vieja es terminar un entrenamiento
+  // —cambia el «última vez»—, no editar la rutina.
+  routineSummaries: (userId: string | undefined) =>
+    [...workoutKeys.sessions(), 'routine-summaries', userId] as const,
   routineDays: (userId: string | undefined) =>
     [...workoutKeys.all, 'routines', 'days', userId] as const,
   routine: (routineId: string) => [...workoutKeys.all, 'routines', 'detail', routineId] as const,

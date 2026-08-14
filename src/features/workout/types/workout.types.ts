@@ -177,3 +177,20 @@ export interface RoutineDetail {
   readonly routine: Routine
   readonly days: readonly RoutineDayDetail[]
 }
+
+/** Un entrenamiento que siguió un día de rutina, para saber cuándo se usó. */
+export type RoutineDayUsage = Pick<WorkoutSession, 'routine_day_id' | 'started_at' | 'ended_at'>
+
+/**
+ * Una rutina con lo que hace falta para elegirla sin abrirla.
+ *
+ * La lista sólo decía el nombre, y un nombre no responde a lo que uno se
+ * pregunta al mirarla: **cuánta es y si la sigue usando**.
+ */
+export interface RoutineSummary {
+  readonly routine: Routine
+  readonly dayCount: number
+  readonly exerciseCount: number
+  /** Última vez que se entrenó siguiéndola; `null` si nunca. */
+  readonly lastUsedAt: string | null
+}

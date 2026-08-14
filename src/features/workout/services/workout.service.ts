@@ -17,6 +17,7 @@ import type {
   Routine,
   RoutineDayDetail,
   RoutineDetail,
+  RoutineSummary,
   SessionDetail,
   WorkoutPeriodSeries,
   WorkoutSession,
@@ -27,6 +28,7 @@ import { buildLastPerformances } from '../utils/last-performance'
 import { toPastSessionRange } from '../utils/past-session'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
+import { buildRoutineSummaries } from '../utils/routine-summary'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 import { buildWorkoutSeries } from '../utils/workout-series'
 
@@ -433,6 +435,30 @@ export const workoutService = {
   async getRoutines(userId: string): Promise<Routine[]> {
     try {
       return await workoutRepository.listRoutines(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Las rutinas con cuánta es cada una y cuándo se usó por última vez.
+   *
+   * Cuatro consultas en paralelo y no una por rutina: quien tiene tres rutinas
+   * no debería pagar tres viajes por cada dato. Se agrega en el cliente, como el
+   * resto ([ADR-0006](../../../../docs/adr/0006-analytics-agrega-en-el-cliente.md)).
+   */
+  async getRoutineSummaries(userId: string): Promise<RoutineSummary[]> {
+    try {
+      const routines = await workoutRepository.listRoutines(userId)
+      if (routines.length === 0) return []
+
+      const days = await workoutRepository.listDaysByRoutines(routines.map(({ id }) => id))
+      const [exercises, usage] = await Promise.all([
+        workoutRepository.listExercisesByDays(days.map(({ id }) => id)),
+        workoutRepository.listRoutineDayUsage(userId),
+      ])
+
+      return buildRoutineSummaries(routines, days, exercises, usage)
     } catch (error) {
       throw toAppError(error)
     }
