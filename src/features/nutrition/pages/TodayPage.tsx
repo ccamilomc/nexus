@@ -4,7 +4,13 @@ import { LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { DaySummaryCard } from '../components/DaySummaryCard'
 import { MealSection } from '../components/MealSection'
 import { WaterCard } from '../components/WaterCard'
-import { useActiveGoal, useDayNutrition, useRepeatableMeals } from '../hooks/use-nutrition'
+import { WeekNutritionCard } from '../components/WeekNutritionCard'
+import {
+  useActiveGoal,
+  useDayNutrition,
+  useRepeatableMeals,
+  useWeekNutrition,
+} from '../hooks/use-nutrition'
 
 /** Lo que se ha comido hoy, por comidas, con los macros del día. */
 export function TodayPage() {
@@ -16,6 +22,7 @@ export function TodayPage() {
   const { data: goal } = useActiveGoal()
   // Lo mismo con lo repetible: si no llega, se registra a mano como siempre.
   const { data: repeatable } = useRepeatableMeals(today)
+  const { data: week, isPending: isWeekPending } = useWeekNutrition(today)
 
   if (isPending) return <SkeletonList label="Cargando lo de hoy" rows={4} rowClassName="h-28" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
@@ -28,6 +35,10 @@ export function TodayPage() {
       <DaySummaryCard totals={data.totals} goal={goal ?? null} />
 
       <WaterCard date={today} />
+
+      {/* Debajo del día y del agua: primero lo de hoy, que es sobre lo que aún
+          se puede hacer algo, y después el patrón de la semana. */}
+      <WeekNutritionCard week={week ?? null} goal={goal ?? null} isPending={isWeekPending} />
 
       <ul className="space-y-3">
         {data.meals.map((meal) => (

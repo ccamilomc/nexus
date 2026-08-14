@@ -20,4 +20,4 @@ export {
   type SeriesPoint,
   seriesTotal,
 } from './series'
-export { weekRange } from './week-range'
+export { weekDays, weekRange } from './week-range'

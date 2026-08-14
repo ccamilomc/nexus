@@ -14,6 +14,10 @@ export const nutritionKeys = {
     [...nutritionKeys.days(), 'water', userId, isoDate] as const,
   repeatable: (userId: string | undefined, isoDate: string) =>
     [...nutritionKeys.days(), 'repeatable', userId, isoDate] as const,
+  // Cuelga de `days()` para que apuntar una comida la refresque: la media de la
+  // semana cambia con cada registro.
+  week: (userId: string | undefined, isoDate: string) =>
+    [...nutritionKeys.days(), 'week', userId, isoDate] as const,
   goal: (userId: string | undefined) => [...nutritionKeys.all, 'goal', userId] as const,
   series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
     [...nutritionKeys.days(), 'series', userId, rangeKey, previousKey] as const,

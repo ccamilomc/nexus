@@ -17,6 +17,7 @@ import type {
   NutritionGoal,
   RepeatableMeals,
   RepricedFood,
+  WeekNutrition,
 } from '../types/nutrition.types'
 import { nutritionKeys } from './nutrition.keys'
 
@@ -104,6 +105,22 @@ export function useDayNutrition(date: Date) {
   return useQuery<DayNutrition | null, AppError>({
     queryKey: nutritionKeys.day(userId, toDateKey(date)),
     queryFn: () => (userId ? nutritionService.getDayNutrition(userId, date) : null),
+  })
+}
+
+/**
+ * Cómo va la semana, en medias por día.
+ *
+ * `null` cuando aún no hay días suficientes que promediar: con uno solo, la
+ * media sería el día que ya está encima en la pantalla.
+ */
+export function useWeekNutrition(date: Date) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<WeekNutrition | null, AppError>({
+    queryKey: nutritionKeys.week(userId, toDateKey(date)),
+    queryFn: () => (userId ? nutritionService.getWeekNutrition(userId, date) : null),
   })
 }
 
