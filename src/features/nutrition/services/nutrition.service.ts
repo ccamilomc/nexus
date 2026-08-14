@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { type DayRange, dayRange } from '@/shared/utils'
+import { type DayRange, dayRange, weekDays, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -14,11 +14,13 @@ import type {
   NutritionPeriodSeries,
   RepeatableMeals,
   RepricedFood,
+  WeekNutrition,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { buildNutritionSeries } from '../utils/nutrition-series'
 import { pricePerServing } from '../utils/pricing'
 import { sumWaterMl } from '../utils/water'
+import { buildWeekNutrition } from '../utils/week-nutrition'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'
@@ -342,6 +344,27 @@ export const nutritionService = {
       const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
 
       return buildNutritionSeries(mealLogs, items, waterLogs, days, previousDays)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cómo va la semana de comida, en medias por día.
+   *
+   * Reutiliza las dos consultas ligeras de Analytics —comidas del rango y sus
+   * alimentos, sólo con las columnas que se suman—: es la misma pregunta sobre
+   * un tramo, y montar unas propias sería mantener dos caminos para lo mismo.
+   *
+   * De lunes a domingo, como la de estudio.
+   */
+  async getWeekNutrition(userId: string, date: Date): Promise<WeekNutrition | null> {
+    try {
+      const { fromIso, toIso } = weekRange(date)
+      const mealLogs = await nutritionRepository.listMealLogsForSeries(userId, fromIso, toIso)
+      const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
+
+      return buildWeekNutrition(mealLogs, items, weekDays(date))
     } catch (error) {
       throw toAppError(error)
     }
