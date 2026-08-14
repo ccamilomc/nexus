@@ -142,6 +142,7 @@ const ADD_LUNCH = {
   mealType: 'lunch',
   foodId: CHICKEN.id,
   servings: 1.5,
+  now: DATE,
 } as const
 
 const GOAL_VALUES = {
@@ -207,6 +208,28 @@ describe('nutritionService.addFoodToMeal', () => {
     expect(userId).toBe(USER_ID)
     expect(fromIso).toBe(new Date(2026, 6, 29).toISOString())
     expect(toIso).toBe(new Date(2026, 6, 30).toISOString())
+  })
+
+  it('fecha la comida nueva en el día que se apunta, no en el de hoy', async () => {
+    // Apuntar la cena de anteayer creaba la comida con la hora actual, así que
+    // el alimento acababa en el día equivocado. No se veía mientras la pantalla
+    // estaba clavada en hoy.
+    listMealLogsBetween.mockResolvedValue([])
+    const ANTEAYER = new Date(2026, 6, 27)
+
+    await nutritionService.addFoodToMeal({ ...ADD_LUNCH, date: ANTEAYER, now: DATE })
+
+    const loggedAt = new Date(insertMealLog.mock.calls[0]?.[2] ?? '')
+    expect(loggedAt.getDate()).toBe(27)
+    expect(loggedAt.getHours()).toBe(12)
+  })
+
+  it('si el día es hoy conserva la hora real', async () => {
+    listMealLogsBetween.mockResolvedValue([])
+
+    await nutritionService.addFoodToMeal(ADD_LUNCH)
+
+    expect(insertMealLog.mock.calls[0]?.[2]).toBe(DATE.toISOString())
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
@@ -301,7 +324,7 @@ describe('nutritionService.repeatMeal', () => {
     listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch')])
     listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 2), item('i2', 'ayer', 0.5)])
 
-    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch')
+    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch', DATE)
 
     expect(insertMealLogItem).toHaveBeenCalledTimes(2)
     expect(insertMealLogItem).toHaveBeenNthCalledWith(1, {
@@ -317,7 +340,7 @@ describe('nutritionService.repeatMeal', () => {
     listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch')])
     listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 1)])
 
-    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch')
+    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch', DATE)
 
     expect(insertMealLog).not.toHaveBeenCalled()
     expect(insertMealLogItem).toHaveBeenCalledWith(
@@ -326,7 +349,9 @@ describe('nutritionService.repeatMeal', () => {
   })
 
   it('sin nada que repetir avisa en cristiano', async () => {
-    const error: unknown = await nutritionService.repeatMeal(USER_ID, DATE, 'lunch').catch((e) => e)
+    const error: unknown = await nutritionService
+      .repeatMeal(USER_ID, DATE, 'lunch', DATE)
+      .catch((e) => e)
 
     expect(error).toEqual({
       code: 'not_found',

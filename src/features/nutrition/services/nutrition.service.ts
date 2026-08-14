@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { type DayRange, dayRange, weekDays, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, toLoggedAt, weekDays, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -48,15 +48,19 @@ const REPEAT_CANDIDATES = 20
  *
  * El usuario piensa «añado pollo al almuerzo», no «creo un almuerzo y luego le
  * añado pollo». Se reutiliza la del día para no partirla en varios registros.
+ *
+ * **La comida nueva se fecha en el día que se está apuntando, no en el momento
+ * de apuntarla.** Buscaba en el día correcto pero creaba con la hora actual: no
+ * se notaba mientras la pantalla estaba clavada en hoy, y en cuanto se pudo
+ * retroceder, apuntar la cena de ayer la habría guardado en hoy.
  */
-async function ensureMealLog(userId: string, date: Date, mealType: MealType) {
+async function ensureMealLog(userId: string, date: Date, mealType: MealType, now: Date) {
   const { fromIso, toIso } = dayRange(date)
   const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
   const existing = logs.find((log) => log.meal_type === mealType)
 
   return (
-    existing ??
-    (await nutritionRepository.insertMealLog(userId, mealType, new Date().toISOString()))
+    existing ?? (await nutritionRepository.insertMealLog(userId, mealType, toLoggedAt(date, now)))
   )
 }
 
@@ -84,10 +88,13 @@ function toFoodRow(values: CreateFoodValues) {
 /** Datos necesarios para registrar un alimento en una comida. */
 export interface AddFoodInput {
   readonly userId: string
+  /** El día al que se apunta, que no tiene por qué ser hoy. */
   readonly date: Date
   readonly mealType: MealType
   readonly foodId: string
   readonly servings: number
+  /** El instante actual, para fechar la comida si hay que crearla. */
+  readonly now: Date
 }
 
 /** Reglas de negocio de nutrición. Traduce errores técnicos a `AppError`. */
@@ -207,9 +214,16 @@ export const nutritionService = {
    * almuerzo», no «creo un almuerzo y luego le añado pollo». Se reutiliza la
    * del día para no partir el almuerzo en varios registros.
    */
-  async addFoodToMeal({ userId, date, mealType, foodId, servings }: AddFoodInput): Promise<void> {
+  async addFoodToMeal({
+    userId,
+    date,
+    mealType,
+    foodId,
+    servings,
+    now,
+  }: AddFoodInput): Promise<void> {
     try {
-      const mealLog = await ensureMealLog(userId, date, mealType)
+      const mealLog = await ensureMealLog(userId, date, mealType, now)
 
       await nutritionRepository.insertMealLogItem({
         meal_log_id: mealLog.id,
@@ -269,13 +283,13 @@ export const nutritionService = {
    * el de hoy no se toca. Registrar lo que se come a diario era el paso más
    * caro de la aplicación; esto lo deja en un toque.
    */
-  async repeatMeal(userId: string, date: Date, mealType: MealType): Promise<void> {
+  async repeatMeal(userId: string, date: Date, mealType: MealType, now: Date): Promise<void> {
     try {
       const template = (await this.getRepeatableMeals(userId, date))[mealType]
       if (!template)
         throw createAppError('not_found', 'No hay ninguna comida anterior que repetir.')
 
-      const mealLog = await ensureMealLog(userId, date, mealType)
+      const mealLog = await ensureMealLog(userId, date, mealType, now)
 
       for (const item of template.items) {
         await nutritionRepository.insertMealLogItem({
