@@ -1,5 +1,5 @@
 import { createAppError, toAppError } from '@/core/error'
-import type { DayRange } from '@/shared/utils'
+import { type DayRange, minusDays } from '@/shared/utils'
 
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
@@ -11,12 +11,14 @@ import type {
   MetricHistory,
   MetricSummary,
   WeightPeriodSeries,
+  WeightTrend,
 } from '../types/health.types'
 import { calculateBmi } from '../utils/bmi'
 import { toMeasuredAt } from '../utils/measured-at'
 import { buildMetricHistory } from '../utils/metric-history'
 import { buildMetricSummaries } from '../utils/metric-summary'
 import { buildWeightSeries } from '../utils/weight-series'
+import { buildWeightTrend } from '../utils/weight-trend'
 
 /**
  * Mediciones que se traen para componer el resumen.
@@ -36,12 +38,21 @@ const RECENT_LIMIT = 40
  */
 const HISTORY_LIMIT = 20
 
+/**
+ * Días de pesadas que se traen para la tendencia.
+ *
+ * Cuatro semanas: las dos que se comparan y las dos con las que se comparan.
+ */
+const TREND_DAYS = 28
+
 /** Lo que la pantalla de salud necesita saber de una vez. */
 export interface HealthOverview {
   readonly metrics: readonly MetricSummary[]
   /** IMC del último peso; `null` si falta el peso o la altura. */
   readonly bmi: Bmi | null
   readonly heightCm: number | null
+  /** Hacia dónde va el peso; `null` sin pesadas suficientes. */
+  readonly weightTrend: WeightTrend | null
 }
 
 /** Reglas de negocio de salud. Traduce errores técnicos a `AppError`. */
@@ -52,11 +63,20 @@ export const healthService = {
    * El IMC se **calcula** con la altura del perfil; si no está, no se muestra
    * (ver docs/04-modelo-de-datos.md).
    */
-  async getOverview(userId: string): Promise<HealthOverview> {
+  async getOverview(userId: string, today: Date): Promise<HealthOverview> {
     try {
-      const [metrics, heightCm] = await Promise.all([
+      // Las pesadas van aparte: el resumen trae unas pocas de cada medida y para
+      // la tendencia hacen falta todas las de cuatro semanas, sólo de peso.
+      const [metrics, heightCm, weights] = await Promise.all([
         healthRepository.listRecentMetrics(userId, RECENT_LIMIT),
         healthRepository.findHeightCm(userId),
+        healthRepository.listMetricsBetween(
+          userId,
+          'weight',
+          minusDays(today, TREND_DAYS - 1).toISOString(),
+          // Mañana: el extremo es exclusivo y hoy tiene que entrar.
+          minusDays(today, -1).toISOString(),
+        ),
       ])
 
       const summaries = buildMetricSummaries(metrics, METRIC_TYPES_IN_ORDER)
@@ -66,6 +86,7 @@ export const healthService = {
         metrics: summaries,
         bmi: weight ? calculateBmi(weight.latest.value, heightCm) : null,
         heightCm,
+        weightTrend: buildWeightTrend(weights, today),
       }
     } catch (error) {
       throw toAppError(error)

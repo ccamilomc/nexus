@@ -3,7 +3,8 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
-import { useNow } from '@/core/time'
+import { useNow, useToday } from '@/core/time'
+import { toDateKey } from '@/shared/utils'
 
 import type { LogMeasurementsValues } from '../schemas/health.schema'
 import type { HealthOverview } from '../services/health.service'
@@ -12,7 +13,8 @@ import type { BodyMetric, BodyMetricType, MetricHistory } from '../types/health.
 
 export const healthKeys = {
   all: ['health'] as const,
-  overview: (userId: string | undefined) => [...healthKeys.all, 'overview', userId] as const,
+  overview: (userId: string | undefined, dayKey: string) =>
+    [...healthKeys.all, 'overview', userId, dayKey] as const,
   history: (userId: string | undefined, metricType: string) =>
     [...healthKeys.all, 'history', userId, metricType] as const,
   weightSeries: (userId: string | undefined, rangeKey: string) =>
@@ -25,14 +27,20 @@ function requireUserId(userId: string | undefined): string {
   return userId
 }
 
-/** Última lectura de cada medida, con el IMC. */
+/**
+ * Última lectura de cada medida, con el IMC y la tendencia del peso.
+ *
+ * Lleva el día en la clave: la tendencia se calcula respecto a hoy, así que al
+ * cruzar la medianoche con la pantalla abierta hay que rehacerla.
+ */
 export function useHealthOverview() {
   const { user } = useAuth()
+  const today = useToday()
   const userId = user?.id
 
   return useQuery<HealthOverview | null, AppError>({
-    queryKey: healthKeys.overview(userId),
-    queryFn: () => (userId ? healthService.getOverview(userId) : null),
+    queryKey: healthKeys.overview(userId, toDateKey(today)),
+    queryFn: () => (userId ? healthService.getOverview(userId, today) : null),
   })
 }
 
