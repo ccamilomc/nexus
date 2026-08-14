@@ -50,6 +50,31 @@ export const habitsRepository = {
     return data
   },
 
+  /** Cuántos días marcados tiene un hábito. Sólo cuenta: no baja las filas. */
+  async countLogs(habitId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('habit_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('habit_id', habitId)
+
+    if (error) throw error
+    return count ?? 0
+  },
+
+  /**
+   * Borra un hábito de verdad.
+   *
+   * **Sólo para los que no tienen ningún día marcado.** La clave ajena de
+   * `habit_logs` es `on delete cascade`, así que la base se llevaría por delante
+   * el historial sin decir nada: quien llame a esto tiene que haber comprobado
+   * antes que no hay nada que perder.
+   */
+  async deleteHabit(habitId: string): Promise<void> {
+    const { error } = await supabase.from('habits').delete().eq('id', habitId)
+
+    if (error) throw error
+  },
+
   /** Registros entre dos fechas (`YYYY-MM-DD`), ambas incluidas. */
   async listLogsBetween(userId: string, fromKey: string, toKey: string): Promise<HabitLog[]> {
     const { data, error } = await supabase

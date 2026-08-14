@@ -3,9 +3,10 @@ import { useState } from 'react'
 
 import { FormAlert, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
+import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { cn } from '@/shared/lib/utils'
 
-import { useArchivedHabits, useRestoreHabit } from '../hooks/use-habits'
+import { useArchivedHabits, useDeleteHabit, useRestoreHabit } from '../hooks/use-habits'
 
 /**
  * Los hábitos archivados, con la opción de recuperarlos.
@@ -19,6 +20,7 @@ export function ArchivedHabits() {
   const [isOpen, setIsOpen] = useState(false)
   const { data, isPending, isError, error } = useArchivedHabits(isOpen)
   const restore = useRestoreHabit()
+  const remove = useDeleteHabit()
 
   return (
     <section className="border-t border-border pt-4">
@@ -54,23 +56,38 @@ export function ArchivedHabits() {
                   className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2"
                 >
                   <span className="min-w-0 flex-1 truncate text-sm">{habit.name}</span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={restore.isPending}
-                    aria-label={`Recuperar el hábito ${habit.name}`}
-                    onClick={() => restore.mutate(habit.id)}
-                  >
-                    <RotateCcw aria-hidden />
-                    Recuperar
-                  </Button>
+                  <div className="flex shrink-0 items-center gap-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={restore.isPending}
+                      aria-label={`Recuperar el hábito ${habit.name}`}
+                      onClick={() => restore.mutate(habit.id)}
+                    >
+                      <RotateCcw aria-hidden />
+                      Recuperar
+                    </Button>
+                    {/* Para el hábito que se creó por error: sin días marcados
+                        no hay historial que perder. Con ellos, el servicio se
+                        niega y lo dice. */}
+                    <ConfirmButton
+                      label="Borrar"
+                      confirmLabel="Sí, borrar"
+                      size="sm"
+                      disabled={remove.isPending}
+                      aria-label={`Borrar el hábito ${habit.name}`}
+                      onConfirm={() => remove.mutate(habit.id)}
+                      className="text-muted-foreground"
+                    />
+                  </div>
                 </li>
               ))}
             </ul>
           )}
 
           {restore.isError ? <FormAlert>{restore.error.message}</FormAlert> : null}
+          {remove.isError ? <FormAlert>{remove.error.message}</FormAlert> : null}
         </div>
       ) : null}
     </section>

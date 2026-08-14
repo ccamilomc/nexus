@@ -21,6 +21,8 @@ vi.mock('../repositories/habits.repository', () => ({
     updateHabit: vi.fn(),
     insertLog: vi.fn(),
     deleteLog: vi.fn(),
+    countLogs: vi.fn(),
+    deleteHabit: vi.fn(),
   },
 }))
 
@@ -31,6 +33,8 @@ const insertHabit = vi.mocked(habitsRepository.insertHabit)
 const updateHabit = vi.mocked(habitsRepository.updateHabit)
 const insertLog = vi.mocked(habitsRepository.insertLog)
 const deleteLog = vi.mocked(habitsRepository.deleteLog)
+const countLogs = vi.mocked(habitsRepository.countLogs)
+const deleteHabit = vi.mocked(habitsRepository.deleteHabit)
 
 const USER_ID = 'user-1'
 const TODAY = new Date(2026, 6, 29)
@@ -262,6 +266,29 @@ describe('habitsService.updateHabit', () => {
     await habitsService.updateHabit('h1', { name: 'Leer' })
 
     expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', { name: 'Leer', description: null })
+  })
+})
+
+describe('habitsService.deleteHabit', () => {
+  it('borra el hábito que nunca se llegó a marcar', async () => {
+    // El error de tecleo: se creó «adasd», nunca se usó, y sólo se podía archivar.
+    countLogs.mockResolvedValue(0)
+
+    await habitsService.deleteHabit('h1')
+
+    expect(deleteHabit).toHaveBeenCalledExactlyOnceWith('h1')
+  })
+
+  it('se niega si tiene días marcados, en vez de llevárselos por delante', async () => {
+    // La clave ajena es `on delete cascade`: sin esta comprobación, Postgres
+    // borraría el historial en silencio.
+    countLogs.mockResolvedValue(1)
+
+    const error: unknown = await habitsService.deleteHabit('h1').catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).toMatch(/archívalo/i)
+    expect(deleteHabit).not.toHaveBeenCalled()
   })
 })
 
