@@ -2,6 +2,7 @@ import { lastDays, toDateKey } from '@/shared/utils'
 
 import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
 import { calculateConsistency } from './consistency'
+import { daysSinceDone } from './days-since'
 import { calculateStreak } from './streak'
 
 /**
@@ -39,6 +40,7 @@ export function buildHabitsToday(
       habit,
       isDoneToday: completed.has(todayKey),
       streak: calculateStreak(completed, today),
+      daysSinceDone: daysSinceDone(completed, today, new Date(habit.created_at)),
       recentDays: window.map((dateKey) => ({
         dateKey,
         isDone: completed.has(dateKey),

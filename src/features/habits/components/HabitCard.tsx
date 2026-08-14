@@ -56,7 +56,7 @@ export function HabitCard({ todayKey, entry }: HabitCardProps) {
             {habit.description ? (
               <p className="truncate text-xs text-muted-foreground">{habit.description}</p>
             ) : null}
-            <HabitStreak streak={streak} />
+            <HabitStreak streak={streak} daysSinceDone={entry.daysSinceDone} />
           </div>
         </div>
 

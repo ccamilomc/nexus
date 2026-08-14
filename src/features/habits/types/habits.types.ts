@@ -17,6 +17,14 @@ export interface HabitToday {
   readonly habit: Habit
   readonly isDoneToday: boolean
   readonly streak: number
+  /**
+   * Días desde la última vez que se cumplió; `0` si fue hoy.
+   *
+   * `null` cuando no consta ninguna vez en la ventana que se trae, o cuando el
+   * hábito es más nuevo que ella: uno recién creado todavía no se ha dejado de
+   * hacer, y dar una cifra ahí sería inventarse un pasado.
+   */
+  readonly daysSinceDone: number | null
   /** Últimos días, del más antiguo al más reciente, para el mini-calendario. */
   readonly recentDays: readonly HabitDay[]
   /** Cumplimiento en las últimas semanas, para ver la tendencia. */
