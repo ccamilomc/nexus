@@ -5,8 +5,9 @@ import { Button } from '@/shared/components/ui/button'
 import { formatMinutes } from '@/shared/utils'
 
 import { QUALITY_LABELS } from '../constants/sleep.constants'
-import { useRemoveSleepLog } from '../hooks/use-sleep'
+import { useRemoveSleepLog, useSleepGoal } from '../hooks/use-sleep'
 import type { SleepHistory } from '../types/sleep.types'
+import { compareWithGoal } from '../utils/against-goal'
 
 interface SleepHistoryListProps {
   readonly history: SleepHistory
@@ -24,8 +25,13 @@ function describeDate(dateKey: string): string {
 /** Las últimas noches y lo que dicen en conjunto. */
 export function SleepHistoryList({ history }: SleepHistoryListProps) {
   const removeLog = useRemoveSleepLog()
+  // Misma consulta que la tarjeta del objetivo: TanStack la comparte, así que
+  // enseñar la comparación no cuesta ningún viaje extra.
+  const { data: goal } = useSleepGoal()
 
   if (history.logs.length === 0) return null
+
+  const comparison = compareWithGoal(history.averageMinutes, goal?.target_minutes ?? null)
 
   return (
     <div className="space-y-2">
@@ -41,6 +47,17 @@ export function SleepHistoryList({ history }: SleepHistoryListProps) {
           </p>
         )}
       </div>
+
+      {/* La comparación va aquí, con la media, y no junto al objetivo: éste se
+          fija una vez y vive al final de la página, a siete noches de scroll.
+          Los dos números estaban en pantalla sin cruzarse nunca. */}
+      {comparison === null ? null : (
+        <p className="text-xs text-muted-foreground">
+          {comparison.meetsGoal
+            ? `Duermes lo que te propones, ${formatMinutes(comparison.targetMinutes)}.`
+            : `Te faltan ${formatMinutes(comparison.missingMinutes)} para las ${formatMinutes(comparison.targetMinutes)} que quieres dormir.`}
+        </p>
+      )}
 
       {removeLog.isError ? <FormAlert>{removeLog.error.message}</FormAlert> : null}
 
