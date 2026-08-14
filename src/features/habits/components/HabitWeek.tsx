@@ -23,7 +23,7 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
   return (
     <ul className="flex gap-1">
       {days.map((day) => {
-        const { dateKey, isDone, isEditable } = day
+        const { dateKey, isDone, isToday, isEditable } = day
         const date = parseDateKey(dateKey)
 
         return (
@@ -33,8 +33,9 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
               role="switch"
               aria-checked={isDone}
               // El contenido visible es una sola letra: el nombre accesible se
-              // da aparte para que se anuncie el hábito y el día completos.
-              aria-label={`${habitName}: ${formatDayAndMonth(date)}, ${isDone ? 'cumplido' : 'sin cumplir'}`}
+              // da aparte para que se anuncie el hábito y el día completos. Hoy
+              // se nombra «hoy», que es como se piensa, y no por su fecha.
+              aria-label={`${habitName}: ${isToday ? 'hoy' : formatDayAndMonth(date)}, ${isDone ? 'cumplido' : 'sin cumplir'}`}
               // 36 px: por debajo de los 44 recomendados, pero son siete
               // controles seguidos y no caben más grandes en 320 px. Con la
               // separación entre ellos se cumple igualmente el mínimo táctil.
@@ -42,6 +43,10 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
                 'flex h-9 w-9 items-center justify-center rounded text-xs font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
                 isDone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                // Hoy va con borde: siete letras seguidas no dicen dónde estás,
+                // y este calendario existe para corregir el día que toque. Borde
+                // y no anillo, que es lo que usa el foco del teclado.
+                isToday && 'border-2 border-foreground/40',
                 isEditable && !disabled ? 'hover:opacity-80' : 'cursor-not-allowed opacity-50',
               )}
               disabled={disabled || !isEditable}

@@ -36,6 +36,13 @@ export interface HabitDay {
   readonly dateKey: string
   readonly isDone: boolean
   /**
+   * Si es el día de hoy.
+   *
+   * El mini-calendario está para corregir días pasados, y sin saber cuál es hoy
+   * hay que contar cuadritos: siete letras seguidas no dicen dónde estás.
+   */
+  readonly isToday: boolean
+  /**
    * Si se puede marcar o desmarcar.
    *
    * Es `false` en los días **anteriores a la creación del hábito**: ahí no
