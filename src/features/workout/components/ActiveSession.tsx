@@ -15,8 +15,10 @@ import {
 } from '../hooks/use-active-session'
 import type { Exercise, SessionDetail } from '../types/workout.types'
 import { formatOptionalTargets, formatSessionDate } from '../utils/format'
+import { findLastSetAt } from '../utils/last-set-at'
 import { buildSessionItems } from '../utils/session-items'
 import { ExercisePicker } from './ExercisePicker'
+import { RestTimer } from './RestTimer'
 import { SessionExerciseCard } from './SessionExerciseCard'
 import { SessionSummary } from './SessionSummary'
 import { SessionTimer } from './SessionTimer'
@@ -59,6 +61,7 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
     setDrafts((current) => current.filter((exercise) => exercise.id !== exerciseId))
 
   const hasSets = stats.setCount > 0
+  const lastSetAt = findLastSetAt(exercises)
 
   return (
     <div className="space-y-4">
@@ -78,7 +81,12 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
                   {formatMinutes(pastDurationMinutes)}
                 </p>
               ) : (
-                <SessionTimer startedAt={session.started_at} />
+                <>
+                  <SessionTimer startedAt={session.started_at} />
+                  {/* Sólo entrenando en directo: apuntando algo de ayer, el
+                      «descanso» sería el rato que se lleva tecleando. */}
+                  {lastSetAt ? <RestTimer lastSetAt={lastSetAt} /> : null}
+                </>
               )}
             </div>
             <SessionSummary stats={stats} />
