@@ -239,6 +239,26 @@ export const nutritionRepository = {
     return data
   },
 
+  /**
+   * Los objetivos ya jubilados, del más reciente al más antiguo.
+   *
+   * Se guardan al cambiarlos para que quede constancia de qué se perseguía en
+   * cada momento, y hasta ahora no había forma de mirarlos.
+   */
+  async listRetiredGoals(userId: string, limit: number): Promise<NutritionGoal[]> {
+    const { data, error } = await supabase
+      .from('nutrition_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', false)
+      .is('deleted_at', null)
+      .order('effective_from', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
   /** Jubila los objetivos vigentes: el historial se conserva (ver docs/04). */
   async deactivateGoals(userId: string): Promise<void> {
     const { error } = await supabase

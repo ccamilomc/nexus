@@ -10,6 +10,8 @@ import { Input } from '@/shared/components/ui/input'
 import { useSaveGoal } from '../hooks/use-nutrition'
 import { nutritionGoalSchema, type NutritionGoalValues } from '../schemas/nutrition.schema'
 import type { NutritionGoal } from '../types/nutrition.types'
+import { formatCalories } from '../utils/format'
+import { checkGoalBalance } from '../utils/goal-balance'
 
 interface GoalFormProps {
   /** Objetivos vigentes, si ya los fijó; si no, se parte de valores razonables. */
@@ -43,12 +45,22 @@ export function GoalForm({ goal, onSaved, onCancel }: GoalFormProps) {
 
   const {
     register,
+    watch,
     handleSubmit,
     formState: { errors },
   } = useForm<NutritionGoalValues>({
     resolver: zodResolver(nutritionGoalSchema),
     defaultValues: goal ? toFormValues(goal) : DEFAULT_VALUES,
   })
+
+  // Se comprueba mientras se escribe, no al guardar: enterarse de que las metas
+  // no cuadran justo después de fijarlas obliga a volver a entrar.
+  const balance = checkGoalBalance(
+    watch('caloriesTarget'),
+    watch('proteinGTarget'),
+    watch('carbsGTarget'),
+    watch('fatGTarget'),
+  )
 
   const onSubmit = handleSubmit((values) => saveGoal.mutate(values, { onSuccess: onSaved }))
 
@@ -122,6 +134,17 @@ export function GoalForm({ goal, onSaved, onCancel }: GoalFormProps) {
               />
             </FormField>
           </div>
+
+          {/* Aviso, no impedimento: quien pone las metas manda y puede tener sus
+              razones. Pero callarlo dejaría fijar dos objetivos que no se pueden
+              cumplir a la vez, y la pantalla del día los enseñaría como si nada. */}
+          {balance ? (
+            <FormAlert variant="warning">
+              Con esos macros salen {formatCalories(balance.fromMacros)}, no{' '}
+              {formatCalories(watch('caloriesTarget'))}. Puedes guardarlo igual, pero cumplir las
+              dos cosas a la vez no va a poder ser.
+            </FormAlert>
+          ) : null}
 
           {saveGoal.isError ? <FormAlert>{saveGoal.error.message}</FormAlert> : null}
 

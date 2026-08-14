@@ -170,6 +170,23 @@ export function useActiveGoal() {
   })
 }
 
+/**
+ * Los objetivos anteriores. **Sólo se piden al abrirlos.**
+ *
+ * Es algo que se mira de vez en cuando, así que traerlos al cargar la pantalla
+ * sería pagar una consulta por una lista que casi nunca se despliega.
+ */
+export function useRetiredGoals(enabled: boolean) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<NutritionGoal[], AppError>({
+    queryKey: nutritionKeys.retiredGoals(userId),
+    queryFn: () => (userId ? nutritionService.getRetiredGoals(userId) : []),
+    enabled,
+  })
+}
+
 /** Guarda los objetivos (jubila los anteriores). */
 export function useSaveGoal() {
   const { user } = useAuth()
