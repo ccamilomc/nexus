@@ -203,13 +203,15 @@ export function useRepeatableMeals(date: Date) {
   })
 }
 
-/** Registra agua de un toque. */
-export function useAddWater() {
+/** Registra agua en el día indicado, que no tiene por qué ser hoy. */
+export function useAddWater(date: Date) {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshDays()
 
   return useMutation<void, AppError, number>({
-    mutationFn: (amountMl) => nutritionService.addWater(requireUserId(user?.id), amountMl),
+    mutationFn: (amountMl) =>
+      nutritionService.addWater(requireUserId(user?.id), amountMl, date, now),
     onSuccess: refresh,
   })
 }
