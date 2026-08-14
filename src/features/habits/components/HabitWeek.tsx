@@ -42,7 +42,12 @@ export function HabitWeek({ days, habitName, disabled, onToggle }: HabitWeekProp
               className={cn(
                 'flex h-9 w-9 items-center justify-center rounded text-xs font-medium transition-colors',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-                isDone ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
+                // El día sin cumplir lleva el color de texto normal, no el
+                // atenuado: gris tenue sobre fondo gris se quedaba en 4,4 de
+                // contraste sobre el tema claro, por debajo del 4,5 de la WCAG
+                // AA. Lo que distingue un día cumplido de otro es el fondo
+                // índigo, no lo flojo que se lea la letra.
+                isDone ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
                 // Hoy va con borde: siete letras seguidas no dicen dónde estás,
                 // y este calendario existe para corregir el día que toque. Borde
                 // y no anillo, que es lo que usa el foco del teclado.
