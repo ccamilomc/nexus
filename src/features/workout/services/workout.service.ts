@@ -268,6 +268,53 @@ export const workoutService = {
   },
 
   /**
+   * Vuelve a abrir un entrenamiento del historial para corregirlo.
+   *
+   * Un peso mal tecleado, un ejercicio que no era o una serie de más quedaban
+   * ahí para siempre: la única salida era descartar la sesión en curso, y una ya
+   * guardada no lo está. Reabrirla la devuelve a la pantalla de siempre, donde
+   * las series se añaden y se quitan.
+   *
+   * **Conserva el fin que tuviera**, así que se edita como un entrenamiento
+   * apuntado a posteriori: con su fecha y su duración, sin cronómetro. Ponerlo a
+   * cero haría que un entrenamiento de hace tres días apareciera durando tres
+   * días.
+   *
+   * No se reabre nada si hay otro en curso: dos sesiones abiertas a la vez es
+   * justo lo que el resto del módulo evita.
+   */
+  async reopenSession(userId: string, sessionId: string): Promise<void> {
+    try {
+      const active = await workoutRepository.findActiveSession(userId)
+      if (active) {
+        throw createAppError(
+          'conflict',
+          'Tienes un entrenamiento en curso. Termínalo o descártalo antes de corregir otro.',
+        )
+      }
+
+      await workoutRepository.updateSession(sessionId, { status: 'in_progress' })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Quita un entrenamiento del historial.
+   *
+   * Soft delete: sale de la aplicación pero la fila se queda, como el resto del
+   * proyecto. **Mantiene `status` en `completed`** a diferencia de descartar uno
+   * en curso: aquello nunca llegó a contar, y esto sí ocurrió y se borra.
+   */
+  async removeSession(sessionId: string): Promise<void> {
+    try {
+      await workoutRepository.updateSession(sessionId, { deleted_at: new Date().toISOString() })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
    * Descarta el entrenamiento: desaparece de la aplicación sin borrarse de la
    * base (`deleted_at`) y queda marcado como no realizado.
    */

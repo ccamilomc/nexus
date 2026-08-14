@@ -103,6 +103,27 @@ export function useFinishSession() {
   })
 }
 
+/** Vuelve a abrir un entrenamiento del historial para corregirlo. */
+export function useReopenSession() {
+  const { user } = useAuth()
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (sessionId) => workoutService.reopenSession(requireUserId(user?.id), sessionId),
+    onSuccess: refreshSessions,
+  })
+}
+
+/** Quita un entrenamiento del historial. */
+export function useRemoveSession() {
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (sessionId) => workoutService.removeSession(sessionId),
+    onSuccess: refreshSessions,
+  })
+}
+
 /** Descarta el entrenamiento: no queda registrado. */
 export function useDiscardSession() {
   const refreshSessions = useRefreshSessions()
