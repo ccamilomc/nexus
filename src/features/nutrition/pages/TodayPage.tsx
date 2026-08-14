@@ -52,7 +52,13 @@ export function TodayPage() {
 
       {/* Debajo del día y del agua: primero el día, que es sobre lo que aún se
           puede hacer algo, y después el patrón de la semana. */}
-      <WeekNutritionCard week={week ?? null} goal={goal ?? null} isPending={isWeekPending} />
+      <WeekNutritionCard
+        week={week ?? null}
+        goal={goal ?? null}
+        date={date}
+        today={today}
+        isPending={isWeekPending}
+      />
 
       <ul className="space-y-3">
         {data.meals.map((meal) => (
