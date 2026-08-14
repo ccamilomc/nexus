@@ -328,6 +328,15 @@ export const workoutService = {
     }
   },
 
+  /** Qué ejercicios se han entrenado alguna vez, para saber cuáles tienen marcas. */
+  async getTrainedExerciseIds(userId: string): Promise<string[]> {
+    try {
+      return await workoutRepository.listTrainedExerciseIds(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
   /**
    * Lo mejor que se ha hecho en un ejercicio, y cómo se llegó ahí.
    *
