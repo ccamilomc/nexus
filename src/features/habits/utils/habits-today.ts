@@ -44,6 +44,7 @@ export function buildHabitsToday(
       recentDays: window.map((dateKey) => ({
         dateKey,
         isDone: completed.has(dateKey),
+        isToday: dateKey === todayKey,
         isEditable: dateKey >= startKey,
       })),
       consistency: calculateConsistency(
