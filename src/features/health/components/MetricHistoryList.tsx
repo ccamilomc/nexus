@@ -3,6 +3,7 @@ import { LoadFailure, Skeleton } from '@/shared/components/feedback'
 import { useMetricHistory } from '../hooks/use-health'
 import type { BodyMetricType } from '../types/health.types'
 import { formatChange, formatMeasuredAt, formatValue } from '../utils/format'
+import { MetricSparkline } from './MetricSparkline'
 
 interface MetricHistoryListProps {
   readonly type: BodyMetricType
@@ -53,6 +54,10 @@ export function MetricHistoryList({ type, label }: MetricHistoryListProps) {
     )
   }
 
+  // De la más antigua a la más reciente: la línea se lee de izquierda a derecha
+  // y las lecturas llegan al revés, que es como se leen en lista.
+  const values = readings.map(({ value }) => value).reverse()
+
   return (
     <div className="space-y-2">
       {data.totalChange === null ? null : (
@@ -61,6 +66,11 @@ export function MetricHistoryList({ type, label }: MetricHistoryListProps) {
           , en {readings.length} mediciones.
         </p>
       )}
+
+      <MetricSparkline
+        values={values}
+        description={`Recorrido de ${label.toLowerCase()} en las últimas ${readings.length} mediciones, desde el ${formatMeasuredAt(oldest.measuredAt)}. Los valores están en la lista de debajo.`}
+      />
 
       <ul className="divide-y divide-border">
         {readings.map((reading) => (
