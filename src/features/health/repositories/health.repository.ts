@@ -58,13 +58,6 @@ export const healthRepository = {
     return data ?? []
   },
 
-  async insertMetric(input: TablesInsert<'body_metrics'>): Promise<BodyMetric> {
-    const { data, error } = await supabase.from('body_metrics').insert(input).select('*').single()
-
-    if (error) throw error
-    return data
-  },
-
   /**
    * Varias mediciones de una vez.
    *

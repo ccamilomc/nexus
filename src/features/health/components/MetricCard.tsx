@@ -1,5 +1,5 @@
 import { ChevronDown, Trash2 } from 'lucide-react'
-import { useId, useState } from 'react'
+import { type ReactNode, useId, useState } from 'react'
 
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -13,6 +13,11 @@ import { MetricHistoryList } from './MetricHistoryList'
 
 interface MetricCardProps {
   readonly summary: MetricSummary
+  /**
+   * Sustituye a la línea de cambio cuando hay algo mejor que decir que la resta
+   * entre las dos últimas lecturas. Lo usa el peso con su tendencia.
+   */
+  readonly note?: ReactNode
 }
 
 /**
@@ -26,7 +31,7 @@ interface MetricCardProps {
  * mirar dos seguidas serían cuatro navegaciones; aquí son dos toques y se
  * comparan sin perder de vista las demás. Sólo se pide al abrir.
  */
-export function MetricCard({ summary }: MetricCardProps) {
+export function MetricCard({ summary, note }: MetricCardProps) {
   const { type, latest, change, previous } = summary
   const removeMetric = useRemoveMetric()
   const [isOpen, setIsOpen] = useState(false)
@@ -46,10 +51,11 @@ export function MetricCard({ summary }: MetricCardProps) {
             </p>
             <p className="text-xs text-muted-foreground">
               {formatMeasuredAt(latest.measured_at)}
-              {change === null || previous === null
+              {note || change === null || previous === null
                 ? null
                 : ` · ${formatChange(change, latest.unit)} desde el ${formatMeasuredAt(previous.measured_at)}`}
             </p>
+            {note ? <div className="mt-1.5">{note}</div> : null}
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <Button

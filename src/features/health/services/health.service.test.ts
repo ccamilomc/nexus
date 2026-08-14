@@ -14,6 +14,7 @@ import { healthService } from './health.service'
 vi.mock('../repositories/health.repository', () => ({
   healthRepository: {
     listRecentMetrics: vi.fn(),
+    listMetricsBetween: vi.fn(),
     insertMetrics: vi.fn(),
     softDeleteMetric: vi.fn(),
     findHeightCm: vi.fn(),
@@ -22,10 +23,12 @@ vi.mock('../repositories/health.repository', () => ({
 }))
 
 const listRecentMetrics = vi.mocked(healthRepository.listRecentMetrics)
+const listMetricsBetween = vi.mocked(healthRepository.listMetricsBetween)
 const insertMetrics = vi.mocked(healthRepository.insertMetrics)
 const findHeightCm = vi.mocked(healthRepository.findHeightCm)
 
 const USER_ID = 'user-1'
+const HOY = new Date(2026, 7, 14, 9, 30)
 
 function metric(type: BodyMetricType, value: number, measuredAt: string): BodyMetric {
   return {
@@ -44,13 +47,14 @@ function metric(type: BodyMetricType, value: number, measuredAt: string): BodyMe
 beforeEach(() => {
   vi.clearAllMocks()
   listRecentMetrics.mockResolvedValue([])
+  listMetricsBetween.mockResolvedValue([])
   findHeightCm.mockResolvedValue(175)
   insertMetrics.mockResolvedValue([metric('weight', 74.5, '2026-07-31T08:00:00.000Z')])
 })
 
 describe('healthService.getOverview', () => {
   it('sin mediciones no hay resumen ni IMC', async () => {
-    const overview = await healthService.getOverview(USER_ID)
+    const overview = await healthService.getOverview(USER_ID, HOY)
 
     expect(overview.metrics).toEqual([])
     expect(overview.bmi).toBeNull()
@@ -59,7 +63,7 @@ describe('healthService.getOverview', () => {
   it('calcula el IMC con el último peso y la altura del perfil', async () => {
     listRecentMetrics.mockResolvedValue([metric('weight', 70, '2026-07-31T08:00:00.000Z')])
 
-    const overview = await healthService.getOverview(USER_ID)
+    const overview = await healthService.getOverview(USER_ID, HOY)
 
     expect(overview.bmi).toEqual({ value: 22.9, category: 'Peso normal' })
     expect(overview.heightCm).toBe(175)
@@ -70,7 +74,7 @@ describe('healthService.getOverview', () => {
     findHeightCm.mockResolvedValue(null)
     listRecentMetrics.mockResolvedValue([metric('weight', 70, '2026-07-31T08:00:00.000Z')])
 
-    const overview = await healthService.getOverview(USER_ID)
+    const overview = await healthService.getOverview(USER_ID, HOY)
 
     expect(overview.bmi).toBeNull()
     expect(overview.metrics).toHaveLength(1)
@@ -79,16 +83,45 @@ describe('healthService.getOverview', () => {
   it('con medidas pero sin peso tampoco hay IMC', async () => {
     listRecentMetrics.mockResolvedValue([metric('waist', 82, '2026-07-31T08:00:00.000Z')])
 
-    const overview = await healthService.getOverview(USER_ID)
+    const overview = await healthService.getOverview(USER_ID, HOY)
 
     expect(overview.bmi).toBeNull()
     expect(overview.metrics).toHaveLength(1)
   })
 
+  it('trae la tendencia del peso de las últimas cuatro semanas', async () => {
+    listMetricsBetween.mockResolvedValue([
+      metric('weight', 91.2, new Date(2026, 6, 20, 12).toISOString()),
+      metric('weight', 90.8, new Date(2026, 6, 28, 12).toISOString()),
+      metric('weight', 90.2, new Date(2026, 7, 5, 12).toISOString()),
+      metric('weight', 89.8, new Date(2026, 7, 12, 12).toISOString()),
+    ])
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTrend?.direction).toBe('down')
+    expect(listMetricsBetween).toHaveBeenCalledWith(
+      USER_ID,
+      'weight',
+      expect.any(String),
+      expect.any(String),
+    )
+  })
+
+  it('sin pesadas suficientes no da tendencia en vez de inventarla', async () => {
+    listMetricsBetween.mockResolvedValue([
+      metric('weight', 90, new Date(2026, 7, 12, 12).toISOString()),
+    ])
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTrend).toBeNull()
+  })
+
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     listRecentMetrics.mockRejectedValue(new Error('violates row-level security policy'))
 
-    const error: unknown = await healthService.getOverview(USER_ID).catch((e) => e)
+    const error: unknown = await healthService.getOverview(USER_ID, HOY).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')
@@ -96,8 +129,6 @@ describe('healthService.getOverview', () => {
 })
 
 describe('healthService.logMeasurements', () => {
-  const HOY = new Date(2026, 7, 14, 9, 30)
-
   it('guarda sólo las que se rellenaron, con su unidad', async () => {
     // Vacío es «no me lo medí», no cero.
     await healthService.logMeasurements(

@@ -59,6 +59,29 @@ export interface MetricHistory {
 }
 
 /**
+ * Hacia dónde va el peso, ya sin el ruido del día a día.
+ *
+ * Como el resto de Salud **no opina**: `direction` dice si sube o baja, no si
+ * está bien o mal. Va en gris, sin flechas ni colores, igual que las
+ * comparativas (ver docs/11-ux-ui-y-diseno.md).
+ *
+ * Se acompaña de las medias y de cuántas pesadas las forman: una tendencia
+ * calculada con dos pesadas contra dos no merece la misma confianza que una
+ * con seis, y quien la lee tiene derecho a saberlo.
+ */
+export interface WeightTrend {
+  readonly direction: 'up' | 'down' | 'stable'
+  /** Cambio semanal con signo; negativo es a la baja. */
+  readonly kgPerWeek: number
+  readonly recentAverage: number
+  readonly previousAverage: number
+  readonly recentCount: number
+  readonly previousCount: number
+  /** Días que abarca cada ventana, para poder contarlo en pantalla. */
+  readonly windowDays: number
+}
+
+/**
  * Índice de masa corporal.
  *
  * Se **calcula** a partir del peso y la altura del perfil; nunca se almacena
