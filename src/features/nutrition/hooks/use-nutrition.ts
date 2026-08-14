@@ -203,24 +203,6 @@ export function useRepeatableMeals(date: Date) {
   })
 }
 
-interface RepeatMealVariables {
-  readonly date: Date
-  readonly mealType: MealType
-}
-
-/** Repite en el día una comida ya registrada antes. */
-export function useRepeatMeal() {
-  const { user } = useAuth()
-  const now = useNow()
-  const refresh = useRefreshDays()
-
-  return useMutation<void, AppError, RepeatMealVariables>({
-    mutationFn: ({ date, mealType }) =>
-      nutritionService.repeatMeal(requireUserId(user?.id), date, mealType, now),
-    onSuccess: refresh,
-  })
-}
-
 /** Registra agua de un toque. */
 export function useAddWater() {
   const { user } = useAuth()
