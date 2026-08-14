@@ -239,6 +239,32 @@ describe('habitsService.createHabit', () => {
   })
 })
 
+describe('habitsService.updateHabit', () => {
+  it('cambia el nombre y la nota sin tocar nada más', async () => {
+    // Ni los registros ni la fecha de creación: son lo que sostiene la racha y
+    // la constancia, y corregir una errata no puede costar el historial.
+    updateHabit.mockResolvedValue(habit('h1'))
+
+    await habitsService.updateHabit('h1', {
+      name: 'Leer 30 minutos',
+      description: 'Antes de dormir',
+    })
+
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', {
+      name: 'Leer 30 minutos',
+      description: 'Antes de dormir',
+    })
+  })
+
+  it('una nota vacía se guarda como ausencia, no como texto vacío', async () => {
+    updateHabit.mockResolvedValue(habit('h1'))
+
+    await habitsService.updateHabit('h1', { name: 'Leer' })
+
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', { name: 'Leer', description: null })
+  })
+})
+
 describe('habitsService.archiveHabit', () => {
   it('archiva con una fecha en lugar de borrar, para conservar el historial', async () => {
     updateHabit.mockResolvedValue(habit('h1'))

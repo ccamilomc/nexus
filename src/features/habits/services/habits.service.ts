@@ -127,6 +127,25 @@ export const habitsService = {
   },
 
   /**
+   * Cambia el nombre o la nota de un hábito.
+   *
+   * **Sin tocar sus registros ni su fecha de creación**, que es todo lo que
+   * sostiene la racha y la constancia: corregir una errata en el nombre no puede
+   * costar el historial. Sin esto la única salida era archivarlo y crear otro,
+   * empezando de cero.
+   */
+  async updateHabit(habitId: string, values: CreateHabitValues): Promise<Habit> {
+    try {
+      return await habitsRepository.updateHabit(habitId, {
+        name: values.name,
+        description: values.description ?? null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
    * Marca o desmarca un hábito en un día.
    *
    * El día llega ya como clave `YYYY-MM-DD` —lo que guarda la columna `date`—
