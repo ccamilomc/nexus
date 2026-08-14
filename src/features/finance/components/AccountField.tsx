@@ -6,6 +6,8 @@ import { ROUTES } from '@/app/router/routes'
 import { FormAlert } from '@/shared/components/feedback'
 import { Label } from '@/shared/components/ui/label'
 import { Select } from '@/shared/components/ui/select'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 interface AccountFieldProps {
   readonly id: string
@@ -36,9 +38,16 @@ export function AccountField({ id, label, accounts, registration, error }: Accou
         ))}
       </Select>
 
+      {/* Medía 16 px de alto y se fallaba el toque. El área sube a 44 sin mover
+          el texto, pero **hay un desplegable justo encima**: por eso el margen
+          pasa de 1.5 a 4, lo justo para que las dos áreas no se toquen y no se
+          pulse la que no era (ver `WIDE_TAP_AREA`). */}
       <Link
         to={ROUTES.financeAccounts}
-        className="mt-1.5 inline-flex items-center gap-1 rounded text-xs text-muted-foreground transition-colors duration-fast ease-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className={cn(
+          WIDE_TAP_AREA,
+          'mt-4 inline-flex items-center gap-1 rounded text-xs text-muted-foreground transition-colors duration-fast ease-out hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+        )}
       >
         <Plus className="h-3 w-3" aria-hidden />
         Añadir otra cuenta
