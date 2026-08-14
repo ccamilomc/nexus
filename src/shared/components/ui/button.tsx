@@ -16,11 +16,21 @@ const buttonVariants = cva(
         ghost: 'hover:bg-accent hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 hover:underline',
       },
+      // Todos llegan a 44 px en el móvil y se compactan a partir de `sm`.
+      //
+      // La regla del proyecto son 44 px de objetivo táctil (docs/11), y los
+      // tamaños que traía shadcn se quedaban en 40 y 36: se usa con el móvil en
+      // la mano y con prisa, y ahí cuatro píxeles se notan. En escritorio hay
+      // ratón, así que se recuperan los tamaños compactos y nada engorda.
+      //
+      // Se agrandan de verdad y no con un área invisible porque casi siempre van
+      // en pareja —Corregir y Borrar, Guardar y Cancelar—, y dos áreas invisibles
+      // contiguas se solapan y se pulsa la que no era (ver `WIDE_TAP_AREA`).
       size: {
-        default: 'h-10 px-4 py-2',
-        sm: 'h-9 rounded-md px-3',
+        default: 'h-11 px-4 py-2 sm:h-10',
+        sm: 'h-11 rounded-md px-3 sm:h-9',
         lg: 'h-11 rounded-md px-8',
-        icon: 'h-10 w-10',
+        icon: 'h-11 w-11 sm:h-10 sm:w-10',
         // Icono compacto para filas densas: se ve de 32 px, pero el área
         // pulsable llega a 44 px (mínimo accesible) mediante un pseudo-elemento
         // invisible. Así el dedo acierta sin engordar la fila.

@@ -29,9 +29,10 @@ interface SectionTabsProps {
 
 function tabClassName({ isActive }: { isActive: boolean }): string {
   return cn(
-    // Compacto en móvil para que quepan cuatro pestañas sin desbordar; holgado a
-    // partir de sm. `truncate` es la red de seguridad.
-    'block truncate rounded-md px-2 py-2 text-center text-xs font-medium sm:px-3 sm:text-sm',
+    // Estrecho en móvil para que quepan cinco pestañas sin desbordar, pero **con
+    // 44 px de alto**: es lo que se pulsa con el pulgar, y se quedaban en 32.
+    // El ancho se aprieta; el alto no se toca. `truncate` es la red de seguridad.
+    'flex min-h-11 items-center justify-center truncate rounded-md px-2 text-center text-xs font-medium sm:min-h-0 sm:px-3 sm:py-2 sm:text-sm',
     'transition-colors duration-fast ease-out',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
     isActive
