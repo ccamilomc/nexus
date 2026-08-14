@@ -85,14 +85,14 @@ function toFoodRow(values: CreateFoodValues) {
   }
 }
 
-/** Datos necesarios para registrar un alimento en una comida. */
-export interface AddFoodInput {
+/** Datos necesarios para registrar alimentos en una comida. */
+export interface AddFoodsInput {
   readonly userId: string
   /** El día al que se apunta, que no tiene por qué ser hoy. */
   readonly date: Date
   readonly mealType: MealType
-  readonly foodId: string
-  readonly servings: number
+  /** Los alimentos con su cantidad; una comida son varias cosas. */
+  readonly items: readonly { readonly foodId: string; readonly servings: number }[]
   /** El instante actual, para fechar la comida si hay que crearla. */
   readonly now: Date
 }
@@ -208,28 +208,32 @@ export const nutritionService = {
   },
 
   /**
-   * Registra un alimento en una comida del día.
+   * Registra uno o varios alimentos en una comida del día.
+   *
+   * **Se comen juntos, así que se apuntan juntos.** Antes iba de uno en uno: un
+   * almuerzo de cuatro platos eran cuatro vueltas por el mismo camino —buscar,
+   * elegir, cantidad, guardar— y cuatro escrituras sueltas que podían quedarse
+   * a medias. Ahora es una sola.
    *
    * La comida se crea sola la primera vez: el usuario piensa «añado pollo al
    * almuerzo», no «creo un almuerzo y luego le añado pollo». Se reutiliza la
    * del día para no partir el almuerzo en varios registros.
    */
-  async addFoodToMeal({
-    userId,
-    date,
-    mealType,
-    foodId,
-    servings,
-    now,
-  }: AddFoodInput): Promise<void> {
+  async addFoodsToMeal({ userId, date, mealType, items, now }: AddFoodsInput): Promise<void> {
     try {
+      // Sin nada elegido no se crea la comida: quedaría un almuerzo vacío que
+      // ni siquiera cuenta como día registrado.
+      if (items.length === 0) return
+
       const mealLog = await ensureMealLog(userId, date, mealType, now)
 
-      await nutritionRepository.insertMealLogItem({
-        meal_log_id: mealLog.id,
-        food_id: foodId,
-        servings,
-      })
+      await nutritionRepository.insertMealLogItems(
+        items.map(({ foodId, servings }) => ({
+          meal_log_id: mealLog.id,
+          food_id: foodId,
+          servings,
+        })),
+      )
     } catch (error) {
       throw toAppError(error)
     }

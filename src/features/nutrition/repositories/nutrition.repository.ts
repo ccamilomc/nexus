@@ -197,6 +197,27 @@ export const nutritionRepository = {
     return data
   },
 
+  /**
+   * Varios alimentos en una comida, de una sola vez.
+   *
+   * Una comida son varias cosas y se apuntan juntas: insertarlas de una en una
+   * serían cuatro viajes que además pueden quedarse a medias —dos guardados y
+   * dos no— sin manera de saberlo.
+   */
+  async insertMealLogItems(
+    rows: readonly TablesInsert<'meal_log_items'>[],
+  ): Promise<MealLogItem[]> {
+    if (rows.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('meal_log_items')
+      .insert([...rows])
+      .select('*')
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async deleteMealLogItem(itemId: string): Promise<void> {
     const { error } = await supabase.from('meal_log_items').delete().eq('id', itemId)
 

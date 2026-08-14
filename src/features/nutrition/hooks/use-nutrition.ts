@@ -7,7 +7,7 @@ import { useNow } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
-import type { AddFoodInput } from '../services/nutrition.service'
+import type { AddFoodsInput } from '../services/nutrition.service'
 import { nutritionService } from '../services/nutrition.service'
 import type {
   DayNutrition,
@@ -135,28 +135,26 @@ function useRefreshDays() {
   )
 }
 
-interface AddFoodVariables {
+interface AddFoodsVariables {
   readonly mealType: MealType
-  readonly foodId: string
-  readonly servings: number
+  readonly items: readonly { readonly foodId: string; readonly servings: number }[]
 }
 
-/** Registra un alimento en una comida del día indicado. */
-export function useAddFoodToMeal(date: Date) {
+/** Registra los alimentos elegidos en una comida del día indicado. */
+export function useAddFoodsToMeal(date: Date) {
   const { user } = useAuth()
   const now = useNow()
   const refresh = useRefreshDays()
 
-  return useMutation<void, AppError, AddFoodVariables>({
-    mutationFn: ({ mealType, foodId, servings }) =>
-      nutritionService.addFoodToMeal({
+  return useMutation<void, AppError, AddFoodsVariables>({
+    mutationFn: ({ mealType, items }) =>
+      nutritionService.addFoodsToMeal({
         userId: requireUserId(user?.id),
         date,
         mealType,
-        foodId,
-        servings,
+        items,
         now,
-      } satisfies AddFoodInput),
+      } satisfies AddFoodsInput),
     onSuccess: refresh,
   })
 }
