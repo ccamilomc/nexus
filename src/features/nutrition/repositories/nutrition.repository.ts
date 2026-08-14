@@ -19,11 +19,22 @@ const FOOD_FIELDS =
 
 /** Acceso a datos de nutrición. Sólo habla con Supabase; sin reglas de negocio. */
 export const nutritionRepository = {
+  /**
+   * El catálogo entero: los del sistema y los propios.
+   *
+   * Alfabético, y **a igualdad de nombre el propio va primero**. Tener el mismo
+   * alimento dos veces es lo normal aquí —el catálogo global no lleva precio y
+   * no se puede editar, así que quien quiere el suyo con su porción y su precio
+   * acaba creándolo—, y de los dos el que sirve es el propio. El orden
+   * alfabético se mantiene, así que el par sigue saliendo junto.
+   */
   async listFoods(): Promise<Food[]> {
     const { data, error } = await supabase
       .from('foods')
       .select('*')
       .order('name', { ascending: true })
+      // Los del sistema tienen `user_id` nulo: al final de cada empate.
+      .order('user_id', { ascending: true, nullsFirst: false })
 
     if (error) throw error
     return data ?? []
