@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { useNow } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
@@ -102,13 +103,14 @@ export function useDeleteSubject() {
   })
 }
 
-/** Registra una sesión de estudio ya terminada. */
+/** Registra una sesión de estudio ya terminada; el día va en los valores. */
 export function useLogStudy() {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshDays()
 
   return useMutation<void, AppError, LogStudyValues>({
-    mutationFn: (values) => studyService.logStudy(requireUserId(user?.id), values),
+    mutationFn: (values) => studyService.logStudy(requireUserId(user?.id), values, now),
     onSuccess: refresh,
   })
 }
