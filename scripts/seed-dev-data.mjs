@@ -32,8 +32,15 @@ import { dirname, join } from 'node:path'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** Días de historia que se siembran. */
-const DAYS_BACK = 70
+/**
+ * Días de historia que se siembran.
+ *
+ * **Poco más de tres meses**, y no diez semanas, para que las pantallas se vean
+ * con el volumen que van a tener de verdad: el tramo de 90 días de Analytics
+ * lleno y con un tramo anterior con el que comparar, listas largas, rachas de
+ * más de un mes. Con dos semanas de datos casi nada se rompe.
+ */
+const DAYS_BACK = 100
 
 /** Días de la semana con gimnasio: lunes, martes, jueves y viernes. */
 const TRAINING_WEEKDAYS = new Set([1, 2, 4, 5])
