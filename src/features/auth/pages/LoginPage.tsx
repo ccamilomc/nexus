@@ -11,6 +11,8 @@ import { FormField } from '@/shared/components/form'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { PasswordInput } from '@/shared/components/ui/password-input'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 import { AuthShell } from '../components/AuthShell'
 import { loginSchema, type LoginValues } from '../schemas/auth.schema'
@@ -44,7 +46,10 @@ export function LoginPage() {
       footer={
         <>
           ¿No tienes cuenta?{' '}
-          <Link to={ROUTES.register} className="font-medium text-foreground hover:underline">
+          <Link
+            to={ROUTES.register}
+            className={cn(WIDE_TAP_AREA, `font-medium text-foreground hover:underline`)}
+          >
             Crea una
           </Link>
         </>
@@ -75,7 +80,10 @@ export function LoginPage() {
         <div className="text-right">
           <Link
             to={ROUTES.forgotPassword}
-            className="text-xs text-muted-foreground hover:text-foreground hover:underline"
+            className={cn(
+              WIDE_TAP_AREA,
+              `text-xs text-muted-foreground hover:text-foreground hover:underline`,
+            )}
           >
             ¿Olvidaste tu contraseña?
           </Link>
