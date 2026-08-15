@@ -22,7 +22,7 @@ export function GoalProgressRow({ label, progress, format }: GoalProgressRowProp
       <Progress
         value={progress.percent}
         label={`${label}: ${progress.percent}% del objetivo`}
-        isExceeded={progress.isExceeded}
+        tone={progress.isExceeded ? 'warning' : 'default'}
       />
 
       <p className="text-xs text-muted-foreground">

@@ -59,7 +59,7 @@ export function WaterCard({ date }: WaterCardProps) {
             <Progress
               value={progress.percent}
               label={`Agua: ${progress.percent}% del objetivo`}
-              isExceeded={progress.isExceeded}
+              tone={progress.isExceeded ? 'warning' : 'default'}
             />
             <p className="text-xs text-muted-foreground">
               {progress.remaining === 0
