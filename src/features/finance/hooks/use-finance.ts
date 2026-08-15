@@ -3,6 +3,7 @@ import { useCallback, useMemo } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { OFFLINE_MUTATIONS } from '@/core/offline'
 import { useToday } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
@@ -14,6 +15,7 @@ import type {
   TransactionValues,
 } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
+import type { CreateTransactionInput } from '../services/transactions.service'
 import type {
   BudgetStatus,
   DebtWithBalance,
@@ -23,9 +25,11 @@ import type {
   FinanceDebt,
   FinanceMonth,
   FinanceRecurring,
+  FinanceTransactionWithNames,
   MonthProjection,
   RecurringWithStatus,
 } from '../types/finance.types'
+import { addTransactionToMonth } from '../utils/add-transaction'
 import { projectMonthEnd } from '../utils/projection'
 import { financeKeys } from './finance.keys'
 
@@ -94,15 +98,117 @@ function useRefreshMovements() {
   )
 }
 
-/** Registra un movimiento. */
-export function useCreateTransaction() {
-  const { user } = useAuth()
-  const refresh = useRefreshMovements()
+/** Lo que el formulario necesita, sin las variables internas de la mutación. */
+interface CreateTransactionMutation {
+  readonly isPending: boolean
+  readonly error: AppError | null
+  /**
+   * `onApuntado` corre **en cuanto el movimiento queda a salvo**, esté enviado o
+   * esperando red. No es `onSuccess`: una mutación pausada nunca lo llamaría, y
+   * el formulario se quedaría con el monto puesto como si no hubiera guardado.
+   */
+  readonly mutate: (
+    values: TransactionValues,
+    options?: { readonly onApuntado?: () => void },
+  ) => void
+}
 
-  return useMutation<void, AppError, TransactionValues>({
-    mutationFn: (values) => financeService.createTransaction(requireUserId(user?.id), values),
-    onSuccess: refresh,
+/**
+ * Registra un movimiento.
+ *
+ * **Un gasto se apunta en la calle**, así que sobrevive a quedarse sin red
+ * (ADR-0011): aparece en la lista al momento, espera guardado y sale solo al
+ * recuperar la conexión.
+ */
+export function useCreateTransaction(): CreateTransactionMutation {
+  const { user } = useAuth()
+  const today = useToday()
+  const queryClient = useQueryClient()
+  const refresh = useRefreshMovements()
+  const monthKey = financeKeys.month(user?.id, monthKeyOf(today))
+
+  const mutation = useMutation<void, AppError, CreateTransactionInput>({
+    mutationKey: OFFLINE_MUTATIONS.createTransaction,
+    mutationFn: (input) => financeService.createTransaction(input),
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: monthKey })
+      const previous = queryClient.getQueryData<FinanceMonth>(monthKey)
+      if (!previous) return { previous }
+
+      const named = toNamedTransaction(input, queryClient, user?.id)
+      queryClient.setQueryData<FinanceMonth>(monthKey, addTransactionToMonth(previous, named))
+
+      return { previous }
+    },
+
+    // Si falla de verdad (sin red se pausa, no falla) se deshace: un gasto que
+    // parece apuntado y no está descuadra lo que queda del presupuesto.
+    onError: (_error, _input, context) => {
+      const previous = (context as { previous?: FinanceMonth } | undefined)?.previous
+      if (previous !== undefined) queryClient.setQueryData(monthKey, previous)
+    },
+
+    onSettled: refresh,
   })
+
+  const { mutate } = mutation
+
+  return {
+    // Pausada no es «en marcha»: sin red el movimiento ya está guardado, y
+    // bloquear impediría apuntar el siguiente gasto de la misma salida.
+    isPending: mutation.isPending && !mutation.isPaused,
+    error: mutation.error,
+
+    mutate: useCallback(
+      (values, options) => {
+        mutate({ id: crypto.randomUUID(), userId: requireUserId(user?.id), values })
+        options?.onApuntado?.()
+      },
+      [mutate, user?.id],
+    ),
+  }
+}
+
+/**
+ * El movimiento con los nombres puestos, que es como lo enseña la lista.
+ *
+ * Salen de las cuentas y categorías que ya están cargadas —de ahí se acaban de
+ * elegir—, así que no hace falta preguntar a nadie para pintarlo.
+ */
+function toNamedTransaction(
+  input: CreateTransactionInput,
+  queryClient: ReturnType<typeof useQueryClient>,
+  userId: string | undefined,
+): FinanceTransactionWithNames {
+  const { values } = input
+  const accounts = queryClient.getQueryData<FinanceAccount[]>(financeKeys.accounts(userId)) ?? []
+  const categories = queryClient.getQueryData<FinanceCategory[]>(financeKeys.categories()) ?? []
+  const nameOf = <T extends { id: string; name: string }>(list: readonly T[], id: string | null) =>
+    id === null ? null : (list.find((entry) => entry.id === id) ?? null)
+
+  const isTransfer = values.kind === 'transfer'
+  const now = new Date().toISOString()
+
+  return {
+    id: input.id,
+    user_id: input.userId,
+    account_id: values.accountId,
+    counterpart_account_id: isTransfer ? values.toAccountId : null,
+    category_id: isTransfer ? null : values.categoryId,
+    debt_id: isTransfer ? null : values.debtId,
+    kind: values.kind,
+    amount: values.amount,
+    occurred_on: values.occurredOn,
+    note: values.note?.trim() ? values.note.trim() : null,
+    recurring_id: null,
+    deleted_at: null,
+    created_at: now,
+    updated_at: now,
+    account: nameOf(accounts, values.accountId),
+    toAccount: isTransfer ? nameOf(accounts, values.toAccountId) : null,
+    category: isTransfer ? null : nameOf(categories, values.categoryId),
+  }
 }
 
 interface UpdateTransactionVariables {

@@ -333,8 +333,8 @@ describe('workoutService.getActiveSession', () => {
 
 describe('workoutService.logSet', () => {
   // La numeración se decide en el cliente y se prueba en `utils/add-set.test.ts`:
-  // aquí llega resuelta porque la serie puede haberse apuntado sin señal y
-  // enviarse al salir del gimnasio (ADR-0011).
+  // aquí llega resuelta porque la pantalla necesita el número para enseñar la
+  // serie antes de que salga, con red o sin ella (ADR-0011).
   it('guarda la serie tal y como se apuntó, con su id y su número', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
@@ -359,7 +359,7 @@ describe('workoutService.logSet', () => {
     })
   })
 
-  it('ya no pregunta a la base por el último número: sin señal esa consulta falla', async () => {
+  it('ya no pregunta a la base por el último número: lo trae resuelto', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
     await workoutService.logSet({

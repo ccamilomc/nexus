@@ -228,10 +228,10 @@ export const workoutService = {
   /**
    * Registra una serie.
    *
-   * Recibe el id y el número de serie ya resueltos: antes preguntaba a la base
-   * cuál era el último número antes de insertar, y esa consulta sin señal falla
-   * —justo donde más falta hace, en el gimnasio— (ADR-0011). El número lo
-   * calcula la pantalla, que ya tiene las series delante.
+   * Recibe el id y el número de serie ya resueltos porque **la pantalla los
+   * necesita antes**: sin red la serie se enseña igual, y para eso hay que
+   * saber ya que es la tercera (ADR-0011). El número lo calcula la pantalla,
+   * que tiene las series delante, y así se ahorra además una consulta.
    */
   async logSet(input: LogSetInput): Promise<void> {
     try {

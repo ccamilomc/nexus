@@ -9,6 +9,7 @@ import type { QueryClient } from '@tanstack/react-query'
  */
 export const OFFLINE_MUTATIONS = {
   addWater: ['offline', 'add-water'],
+  createTransaction: ['offline', 'create-transaction'],
   logSet: ['offline', 'log-set'],
   toggleHabit: ['offline', 'toggle-habit'],
 } as const satisfies Record<string, readonly string[]>

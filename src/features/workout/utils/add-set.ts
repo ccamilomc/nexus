@@ -10,10 +10,10 @@ import { calculateSessionStats } from './session-stats'
 /**
  * Qué número le toca a la siguiente serie de un ejercicio.
  *
- * Sale de lo que ya está en pantalla, no de una consulta. Antes se preguntaba a
- * la base por el último número antes de cada serie: en el gimnasio sin señal esa
- * consulta falla y no se puede registrar nada, y con señal es un viaje de más
- * para algo que la sesión abierta ya sabe.
+ * Sale de lo que ya está en pantalla, no de una consulta. **Hace falta para
+ * poder enseñar la serie antes de que salga**: sin red no hay a quién
+ * preguntarle, y la pantalla la pinta como «Serie 3». De paso se ahorra el
+ * viaje que antes se hacía con red para algo que la sesión abierta ya sabe.
  *
  * Cuenta **las series ya apuntadas**, incluidas las que todavía esperan a que
  * vuelva la red: dos series seguidas sin conexión son la 1 y la 2, no dos veces
