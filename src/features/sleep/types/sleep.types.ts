@@ -63,4 +63,6 @@ export interface SleepPeriodSeries {
   readonly averageQuality: number | null
   /** La misma media en el tramo anterior, para comparar. */
   readonly previousAverageMinutes: number | null
+  /** Objetivo vigente, para dibujarlo en la gráfica; `null` si no hay. */
+  readonly targetMinutes: number | null
 }

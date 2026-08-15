@@ -12,7 +12,12 @@ function night(date: string, minutes: number, quality: number | null = null): Sl
 
 describe('buildSleepSeries', () => {
   it('coloca cada noche en su día', () => {
-    const series = buildSleepSeries([night('2026-07-27', 420), night('2026-07-29', 480)], DAYS, [])
+    const series = buildSleepSeries(
+      [night('2026-07-27', 420), night('2026-07-29', 480)],
+      DAYS,
+      [],
+      null,
+    )
 
     expect(series.points).toEqual([
       { dateKey: '2026-07-27', value: 420 },
@@ -22,7 +27,12 @@ describe('buildSleepSeries', () => {
   })
 
   it('la media sale de las noches registradas, no de los días del periodo', () => {
-    const series = buildSleepSeries([night('2026-07-27', 420), night('2026-07-29', 480)], DAYS, [])
+    const series = buildSleepSeries(
+      [night('2026-07-27', 420), night('2026-07-29', 480)],
+      DAYS,
+      [],
+      null,
+    )
 
     expect(series.averageMinutes).toBe(450)
     expect(series.nightsLogged).toBe(2)
@@ -31,14 +41,14 @@ describe('buildSleepSeries', () => {
   it('separa el tramo anterior del actual', () => {
     const samples = [night('2026-07-25', 360), night('2026-07-28', 480)]
 
-    const series = buildSleepSeries(samples, DAYS, PREVIOUS_DAYS)
+    const series = buildSleepSeries(samples, DAYS, PREVIOUS_DAYS, null)
 
     expect(series.averageMinutes).toBe(480)
     expect(series.previousAverageMinutes).toBe(360)
   })
 
   it('sin noches no inventa medias', () => {
-    const series = buildSleepSeries([], DAYS, PREVIOUS_DAYS)
+    const series = buildSleepSeries([], DAYS, PREVIOUS_DAYS, null)
 
     expect(series.averageMinutes).toBeNull()
     expect(series.previousAverageMinutes).toBeNull()
@@ -54,7 +64,7 @@ describe('buildSleepSeries', () => {
       night('2026-07-29', 480, 5),
     ]
 
-    const series = buildSleepSeries(samples, DAYS, [])
+    const series = buildSleepSeries(samples, DAYS, [], null)
 
     expect(series.averageQuality).toBe(4.5)
     expect(series.nightsLogged).toBe(3)
@@ -63,8 +73,17 @@ describe('buildSleepSeries', () => {
   it('la calidad del tramo anterior no contamina la del actual', () => {
     const samples = [night('2026-07-25', 360, 1), night('2026-07-28', 480, 5)]
 
-    const series = buildSleepSeries(samples, DAYS, PREVIOUS_DAYS)
+    const series = buildSleepSeries(samples, DAYS, PREVIOUS_DAYS, null)
 
     expect(series.averageQuality).toBe(5)
+  })
+
+  it('lleva el objetivo consigo, que es contra lo que se lee la grafica', () => {
+    // Sin el, la serie solo dice que unas noches se durmio mas que otras.
+    expect(buildSleepSeries([], DAYS, PREVIOUS_DAYS, 480).targetMinutes).toBe(480)
+  })
+
+  it('sin objetivo fijado no inventa ninguno', () => {
+    expect(buildSleepSeries([], DAYS, PREVIOUS_DAYS, null).targetMinutes).toBeNull()
   })
 })

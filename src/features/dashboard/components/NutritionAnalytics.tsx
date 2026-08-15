@@ -85,6 +85,14 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
               plural: 'días registrados',
             }}
             variant="line"
+            {...(data.calorieTarget === null
+              ? {}
+              : {
+                  reference: {
+                    value: data.calorieTarget,
+                    label: `Tu objetivo: ${formatCalories(data.calorieTarget)}`,
+                  },
+                })}
             colorIndex={3}
             formatValue={formatCalories}
             formatAxisValue={(calories) =>

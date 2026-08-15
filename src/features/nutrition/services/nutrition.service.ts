@@ -381,14 +381,24 @@ export const nutritionService = {
     previousDays: readonly Date[],
   ): Promise<NutritionPeriodSeries> {
     try {
-      const [mealLogs, waterLogs] = await Promise.all([
+      // El objetivo va con la serie porque es **contra lo que se lee**: sin el,
+      // la grafica solo dice que unos dias se comio mas que otros.
+      const [mealLogs, waterLogs, goal] = await Promise.all([
         nutritionRepository.listMealLogsForSeries(userId, previousRange.fromIso, range.toIso),
         nutritionRepository.listWaterForSeries(userId, previousRange.fromIso, range.toIso),
+        nutritionRepository.findActiveGoal(userId),
       ])
 
       const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
 
-      return buildNutritionSeries(mealLogs, items, waterLogs, days, previousDays)
+      return buildNutritionSeries(
+        mealLogs,
+        items,
+        waterLogs,
+        days,
+        previousDays,
+        goal?.calories_target ?? null,
+      )
     } catch (error) {
       throw toAppError(error)
     }
