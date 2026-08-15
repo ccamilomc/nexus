@@ -6,6 +6,7 @@ import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { formatMinutes } from '@/shared/utils'
 
+import { RetiredSubjects } from '../components/RetiredSubjects'
 import { SubjectForm } from '../components/SubjectForm'
 import { useDeleteSubject, useSubjects } from '../hooks/use-study'
 import type { Subject } from '../types/study.types'
@@ -94,6 +95,9 @@ export function SubjectsPage() {
           ))}
         </ul>
       )}
+
+      {/* «Retirar» suena a que se puede deshacer, y hasta ahora no se podía. */}
+      <RetiredSubjects />
     </div>
   )
 }

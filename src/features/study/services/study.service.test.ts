@@ -20,8 +20,11 @@ import { studyService } from './study.service'
 vi.mock('../repositories/study.repository', () => ({
   studyRepository: {
     listSubjects: vi.fn(),
+    listRetiredSubjects: vi.fn(),
     insertSubject: vi.fn(),
     updateSubject: vi.fn(),
+    countSessions: vi.fn(),
+    deleteSubjectForever: vi.fn(),
     listSessionsBetween: vi.fn(),
     findActiveSession: vi.fn(),
     insertSession: vi.fn(),
@@ -33,6 +36,8 @@ vi.mock('../repositories/study.repository', () => ({
 const listSubjects = vi.mocked(studyRepository.listSubjects)
 const insertSubject = vi.mocked(studyRepository.insertSubject)
 const updateSubject = vi.mocked(studyRepository.updateSubject)
+const countSessions = vi.mocked(studyRepository.countSessions)
+const deleteSubjectForever = vi.mocked(studyRepository.deleteSubjectForever)
 const listSessionsBetween = vi.mocked(studyRepository.listSessionsBetween)
 const findActiveSession = vi.mocked(studyRepository.findActiveSession)
 const insertSession = vi.mocked(studyRepository.insertSession)
@@ -147,6 +152,37 @@ describe('studyService.deleteSubject', () => {
     const [subjectId, patch] = updateSubject.mock.calls[0] ?? []
     expect(subjectId).toBe('subject-1')
     expect(typeof patch?.deleted_at).toBe('string')
+  })
+})
+
+describe('studyService.restoreSubject', () => {
+  it('recuperar sólo quita la fecha de retirada: las horas nunca se tocaron', async () => {
+    await studyService.restoreSubject('subject-1')
+
+    expect(updateSubject).toHaveBeenCalledExactlyOnceWith('subject-1', { deleted_at: null })
+  })
+})
+
+describe('studyService.deleteSubjectForever', () => {
+  it('borra la materia que nunca se llegó a usar', async () => {
+    // La que se creó con una errata: sin sesiones no hay horas que perder.
+    countSessions.mockResolvedValue(0)
+
+    await studyService.deleteSubjectForever('subject-1')
+
+    expect(deleteSubjectForever).toHaveBeenCalledExactlyOnceWith('subject-1')
+  })
+
+  it('se niega si tiene horas, en vez de dejar sesiones sin materia', async () => {
+    // La clave ajena es `on delete set null`: sin esta comprobación, las
+    // sesiones se quedarían huérfanas y la pantalla espera que la tengan.
+    countSessions.mockResolvedValue(3)
+
+    const error: unknown = await studyService.deleteSubjectForever('subject-1').catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).toMatch(/retírala/i)
+    expect(deleteSubjectForever).not.toHaveBeenCalled()
   })
 })
 
