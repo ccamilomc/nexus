@@ -181,4 +181,6 @@ export interface NutritionPeriodSeries {
   /** Media de agua de los días con registro; `null` si no hay ninguno. */
   readonly averageWaterMl: number | null
   readonly previousAverageWaterMl: number | null
+  /** Objetivo de calorias vigente, para dibujarlo; `null` si no hay. */
+  readonly calorieTarget: number | null
 }

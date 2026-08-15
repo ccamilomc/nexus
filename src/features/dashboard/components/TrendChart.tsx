@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -61,6 +62,22 @@ interface TrendChartProps {
    * apagado del tema. Salud usa `neutral` a propósito, porque no opina.
    */
   readonly colorIndex?: 1 | 2 | 3 | 4 | 5 | 'neutral'
+  /**
+   * El objetivo, dibujado como una línea de referencia.
+   *
+   * **Es lo que convierte «cuánto» en «¿voy bien?»**, que es la pregunta que
+   * de verdad se hace quien mira. Sin ella, una serie de sueño sólo dice que
+   * unas noches se durmió más que otras; con ella se ve de un vistazo cuántas
+   * quedaron por debajo de lo que uno se propuso.
+   *
+   * Sólo se pasa cuando el usuario **ha fijado un objetivo**: inventar uno por
+   * defecto sería medir a nadie contra una cifra que no eligió.
+   */
+  readonly reference?: {
+    readonly value: number
+    /** Cómo se llama esa línea, ya formateada: «Tu objetivo: 8 h». */
+    readonly label: string
+  }
 }
 
 /** Cuántas marcas caben en el eje sin amontonarse en un móvil de 320 px. */
@@ -90,6 +107,7 @@ export function TrendChart({
   formatAxisValue,
   verticalAxis,
   colorIndex = 1,
+  reference,
 }: TrendChartProps) {
   // Antes de cualquier salida: es un hook. Un id por instancia, porque dos
   // áreas en la misma página compartirían el degradado y la segunda se pintaría
@@ -138,6 +156,22 @@ export function TrendChart({
         cursor={{ fill: 'hsl(var(--muted))', stroke: 'hsl(var(--muted))' }}
         content={<ChartTooltip formatValue={formatValue} />}
       />
+      {/* Discontinua y en gris de texto: la referencia acompaña, no compite con
+          el dato. Sólida y en color parecería otra serie. */}
+      {reference ? (
+        <ReferenceLine
+          y={reference.value}
+          stroke="hsl(var(--muted-foreground))"
+          strokeDasharray="4 4"
+          strokeWidth={1}
+          label={{
+            value: reference.label,
+            position: 'insideTopRight',
+            fill: 'hsl(var(--muted-foreground))',
+            fontSize: 11,
+          }}
+        />
+      ) : null}
     </>
   )
 

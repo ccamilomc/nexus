@@ -89,15 +89,17 @@ export const sleepService = {
     try {
       const first = previousDays[0] ?? days[0]
       const last = days[days.length - 1]
-      if (!first || !last) return buildSleepSeries([], days, previousDays)
+      if (!first || !last) return buildSleepSeries([], days, previousDays, null)
 
-      const samples = await sleepRepository.listLogsBetween(
-        userId,
-        toDateKey(first),
-        toDateKey(last),
-      )
+      // El objetivo va con la serie porque es **contra lo que se lee**: sin él,
+      // la gráfica sólo dice que unas noches se durmió más que otras. Se piden
+      // a la vez para no encadenar dos esperas.
+      const [samples, goal] = await Promise.all([
+        sleepRepository.listLogsBetween(userId, toDateKey(first), toDateKey(last)),
+        sleepRepository.findActiveGoal(userId),
+      ])
 
-      return buildSleepSeries(samples, days, previousDays)
+      return buildSleepSeries(samples, days, previousDays, goal?.target_minutes ?? null)
     } catch (error) {
       throw toAppError(error)
     }

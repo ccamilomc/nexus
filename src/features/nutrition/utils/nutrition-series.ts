@@ -23,6 +23,8 @@ export function buildNutritionSeries(
   waterLogs: readonly WaterSample[],
   days: readonly Date[],
   previousDays: readonly Date[],
+  /** El objetivo vigente, para poder dibujar contra que se compara. */
+  calorieTarget: number | null,
 ): NutritionPeriodSeries {
   const itemsByLog = groupItemsByLog(items)
 
@@ -36,6 +38,7 @@ export function buildNutritionSeries(
     daysLogged: current.daysLogged,
     averageWaterMl: current.averageWaterMl,
     previousAverageWaterMl: previous.averageWaterMl,
+    calorieTarget,
   }
 }
 

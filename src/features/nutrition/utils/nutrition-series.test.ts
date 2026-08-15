@@ -69,7 +69,7 @@ describe('buildNutritionSeries', () => {
     const logs = [mealLog('m1', DAYS[0] as Date), mealLog('m2', DAYS[2] as Date)]
     const items = [item('m1', food(500, null)), item('m2', food(700, null))]
 
-    const series = buildNutritionSeries(logs, items, [], DAYS, [])
+    const series = buildNutritionSeries(logs, items, [], DAYS, [], null)
 
     expect(series.caloriePoints).toEqual([
       { dateKey: '2026-07-27', value: 500 },
@@ -80,7 +80,7 @@ describe('buildNutritionSeries', () => {
 
   it('un día sin registrar es un hueco, no cero calorías', () => {
     // Nadie come cero. Contarlo como cero hundiría la media hasta la mentira.
-    const series = buildNutritionSeries([], [], [], DAYS, [])
+    const series = buildNutritionSeries([], [], [], DAYS, [], null)
 
     expect(series.caloriePoints.every(({ value }) => value === null)).toBe(true)
     expect(series.averageCalories).toBeNull()
@@ -91,11 +91,11 @@ describe('buildNutritionSeries', () => {
     const logs = [mealLog('m1', DAYS[0] as Date), mealLog('m2', DAYS[2] as Date)]
     const items = [item('m1', food(500, null)), item('m2', food(700, null))]
 
-    expect(buildNutritionSeries(logs, items, [], DAYS, []).averageCalories).toBe(600)
+    expect(buildNutritionSeries(logs, items, [], DAYS, [], null).averageCalories).toBe(600)
   })
 
   it('una comida vacía no cuenta como día registrado', () => {
-    const series = buildNutritionSeries([mealLog('m1', DAYS[0] as Date)], [], [], DAYS, [])
+    const series = buildNutritionSeries([mealLog('m1', DAYS[0] as Date)], [], [], DAYS, [], null)
 
     expect(series.daysLogged).toBe(0)
     expect(series.caloriePoints[0]?.value).toBeNull()
@@ -108,6 +108,7 @@ describe('buildNutritionSeries', () => {
       [],
       DAYS,
       [],
+      null,
     )
 
     expect(series.caloriePoints[0]?.value).toBe(500)
@@ -120,6 +121,7 @@ describe('buildNutritionSeries', () => {
       [water(DAYS[0] as Date, 500), water(DAYS[0] as Date, 250), water(DAYS[2] as Date, 750)],
       DAYS,
       [],
+      null,
     )
 
     expect(series.averageWaterMl).toBe(750)
@@ -129,7 +131,7 @@ describe('buildNutritionSeries', () => {
     const logs = [mealLog('viejo', PREVIOUS_DAYS[0] as Date), mealLog('nuevo', DAYS[0] as Date)]
     const items = [item('viejo', food(400, 3000)), item('nuevo', food(800, 5000))]
 
-    const series = buildNutritionSeries(logs, items, [], DAYS, PREVIOUS_DAYS)
+    const series = buildNutritionSeries(logs, items, [], DAYS, PREVIOUS_DAYS, null)
 
     expect(series.averageCalories).toBe(800)
     expect(series.previousAverageCalories).toBe(400)

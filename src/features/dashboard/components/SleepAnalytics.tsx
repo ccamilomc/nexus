@@ -83,6 +83,16 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
             formatValue={formatMinutes}
             formatAxisValue={(minutes) => `${Math.round(minutes / 60)} h`}
             {...(sleepAxis ? { verticalAxis: sleepAxis } : {})}
+            // Sólo si el usuario fijó objetivo: sin él, la línea mediría contra
+            // una cifra que no eligió.
+            {...(data.targetMinutes === null
+              ? {}
+              : {
+                  reference: {
+                    value: data.targetMinutes,
+                    label: `Tu objetivo: ${formatMinutes(data.targetMinutes)}`,
+                  },
+                })}
           />
         </div>
       )}
