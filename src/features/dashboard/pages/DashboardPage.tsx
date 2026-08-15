@@ -4,6 +4,7 @@ import { FinanceAnalytics } from '../components/FinanceAnalytics'
 import { HabitsAnalytics } from '../components/HabitsAnalytics'
 import { HealthAnalytics } from '../components/HealthAnalytics'
 import { NutritionAnalytics } from '../components/NutritionAnalytics'
+import { PeriodHighlights } from '../components/PeriodHighlights'
 import { PeriodSelector } from '../components/PeriodSelector'
 import { SleepAnalytics } from '../components/SleepAnalytics'
 import { StudyAnalytics } from '../components/StudyAnalytics'
@@ -31,6 +32,9 @@ export function DashboardPage() {
 
       <div className="space-y-6">
         <PeriodSelector value={periodId} onChange={setPeriodId} />
+
+        {/* Lo primero: por dónde empezar a mirar. Debajo, el detalle. */}
+        <PeriodHighlights window={window} />
 
         {/* El mismo orden que la navegación, para que la página no obligue a
             buscar. Salud va al final: es la única sección que no compara ni

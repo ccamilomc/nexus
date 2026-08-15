@@ -8,17 +8,12 @@ import { formatCop } from '@/shared/utils'
 import { NO_PREVIOUS_PERIOD_HINT } from '../constants/dashboard.constants'
 import type { PeriodWindow } from '../types/dashboard.types'
 import { compareValues } from '../utils/comparison'
-import { formatDecimal } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'
-import { TrendChart } from './TrendChart'
 
 interface FinanceAnalyticsProps {
   readonly window: PeriodWindow
 }
-
-/** Miles de pesos: en el eje «120k» se lee mejor que «120.000». */
-const COP_IN_THOUSAND = 1000
 
 /**
  * Las finanzas del periodo: lo que salió, lo que entró y cuándo.
@@ -87,23 +82,10 @@ export function FinanceAnalytics({ window }: FinanceAnalyticsProps) {
             />
           </div>
 
-          <TrendChart
-            label={`Gasto por día ${window.period.description}`}
-            points={data.expensePoints}
-            recorded={{
-              count: data.daysWithMovements,
-              singular: 'día con movimientos',
-              plural: 'días con movimientos',
-            }}
-            variant="bar"
-            colorIndex={5}
-            formatValue={formatCop}
-            formatAxisValue={(cop) =>
-              cop >= COP_IN_THOUSAND
-                ? `${formatDecimal(cop / COP_IN_THOUSAND)}k`
-                : String(Math.round(cop))
-            }
-          />
+          {/* Sin gráfica de gasto diario: un día se paga el arriendo y esa
+              barra aplasta a las demás, así que la forma se lee pero no dice
+              nada. Lo que informa del dinero —en qué se fue y cuánto queda del
+              tope— está en Finanzas, con su reparto por categoría. */}
         </div>
       )}
     </AnalyticsSection>
