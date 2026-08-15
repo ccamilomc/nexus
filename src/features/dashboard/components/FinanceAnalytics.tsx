@@ -1,7 +1,7 @@
 import { Wallet } from 'lucide-react'
 
 import { ROUTES } from '@/app/router/routes'
-import { useFinanceSeries } from '@/features/finance'
+import { CategoryBreakdown, useFinanceSeries } from '@/features/finance'
 import { EmptyState } from '@/shared/components/feedback'
 import { formatCop } from '@/shared/utils'
 
@@ -86,6 +86,7 @@ export function FinanceAnalytics({ window }: FinanceAnalyticsProps) {
               barra aplasta a las demás, así que la forma se lee pero no dice
               nada. Lo que informa del dinero —en qué se fue y cuánto queda del
               tope— está en Finanzas, con su reparto por categoría. */}
+          <CategoryBreakdown byCategory={data.byCategory} />
         </div>
       )}
     </AnalyticsSection>
