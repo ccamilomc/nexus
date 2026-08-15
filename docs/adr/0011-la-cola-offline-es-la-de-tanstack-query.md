@@ -78,6 +78,10 @@ caché) es de sobra para una cola de registros, que son unas pocas líneas por
 entrada, pero **es un límite compartido**: si algún día la caché creciera, la
 cola es lo que no puede perderse.
 
+**Medido con tres meses de historia (2026-08-15):** la caché ocupa **184,5 KB**,
+un 3,6 % del techo, así que el margen para la cola es amplio. La cifra y cómo
+escala están en el [ADR-0007](./0007-cache-persistente-en-localstorage.md).
+
 ## Alternativas descartadas
 
 - **Cola propia en IndexedDB** (lo que sugería el ADR-0004): más control, pero

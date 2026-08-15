@@ -28,6 +28,25 @@ techo de ~5 MB de `localStorage`.
 Lo que se guarda son **resultados ya agregados**, no las filas crudas: las ~2.300
 filas que Analytics descarga se reducen a unas series de unos pocos KB.
 
+### Cómo escala (medido con tres meses, 2026-08-15)
+
+Se volvió a medir con **~100 días sembrados**, recorriendo la aplicación entera
+y con Analytics a 90 días:
+
+| Historia sembrada | Consultas en caché | Guardado en disco | Del techo de 5 MB |
+| ----------------- | ------------------ | ----------------- | ----------------- |
+| ~10 semanas       | 12                 | 128,7 KB          | 2,5 %             |
+| **~14 semanas**   | **33**             | **184,5 KB**      | **3,6 %**         |
+
+**Crece mucho menos que los datos**, y por lo dicho arriba: lo que se guarda son
+agregados, no filas. Lo que sí puede crecer con los años son las listas que se
+piden enteras —el historial de entrenamientos, que ahora carga a demanda— y por
+eso conviene repetir esta medición si alguna empieza a traer cientos de filas.
+
+**Importa más de lo que parece:** ese mismo espacio es donde espera lo que se
+registra sin conexión ([ADR-0011](./0011-la-cola-offline-es-la-de-tanstack-query.md)),
+y la cola es lo que no se puede perder. Con un 3,6 % ocupado hay margen de sobra.
+
 ## Decisión
 
 Se persiste con **`@tanstack/query-sync-storage-persister` sobre `localStorage`**,
