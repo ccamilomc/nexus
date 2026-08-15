@@ -99,7 +99,7 @@ export function LogSetForm({
         </Button>
       </div>
 
-      {logSet.isError ? <FormAlert>{logSet.error.message}</FormAlert> : null}
+      {logSet.error ? <FormAlert>{logSet.error.message}</FormAlert> : null}
     </form>
   )
 }

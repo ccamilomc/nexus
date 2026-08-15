@@ -332,18 +332,25 @@ describe('workoutService.getActiveSession', () => {
 })
 
 describe('workoutService.logSet', () => {
-  it('numera la serie a continuación de la última de ese ejercicio', async () => {
-    findLastSetNumber.mockResolvedValue(2)
+  // La numeración se decide en el cliente y se prueba en `utils/add-set.test.ts`:
+  // aquí llega resuelta porque la serie puede haberse apuntado sin señal y
+  // enviarse al salir del gimnasio (ADR-0011).
+  it('guarda la serie tal y como se apuntó, con su id y su número', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
     await workoutService.logSet({
+      id: 'set-nuevo',
+      userId: 'u1',
       sessionId: 's1',
       exerciseId: BENCH.id,
       reps: 8,
       weightKg: 62.5,
+      setNumber: 3,
+      loggedAt: '2026-08-15T10:00:00.000Z',
     })
 
     expect(insertSet).toHaveBeenCalledExactlyOnceWith({
+      id: 'set-nuevo',
       session_id: 's1',
       exercise_id: BENCH.id,
       set_number: 3,
@@ -352,13 +359,21 @@ describe('workoutService.logSet', () => {
     })
   })
 
-  it('la primera serie de un ejercicio es la número uno', async () => {
-    findLastSetNumber.mockResolvedValue(0)
+  it('ya no pregunta a la base por el último número: sin señal esa consulta falla', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
-    await workoutService.logSet({ sessionId: 's1', exerciseId: BENCH.id, reps: 10, weightKg: 40 })
+    await workoutService.logSet({
+      id: 'set-nuevo',
+      userId: 'u1',
+      sessionId: 's1',
+      exerciseId: BENCH.id,
+      reps: 10,
+      weightKg: 40,
+      setNumber: 1,
+      loggedAt: '2026-08-15T10:00:00.000Z',
+    })
 
-    expect(insertSet).toHaveBeenCalledWith(expect.objectContaining({ set_number: 1 }))
+    expect(findLastSetNumber).not.toHaveBeenCalled()
   })
 })
 

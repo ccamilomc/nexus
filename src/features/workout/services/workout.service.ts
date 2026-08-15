@@ -225,16 +225,23 @@ export const workoutService = {
   },
 
   /** Registra una serie al final de las que ya tiene ese ejercicio. */
-  async logSet({ sessionId, exerciseId, reps, weightKg }: LogSetInput): Promise<void> {
+  /**
+   * Registra una serie.
+   *
+   * Recibe el id y el número de serie ya resueltos: antes preguntaba a la base
+   * cuál era el último número antes de insertar, y esa consulta sin señal falla
+   * —justo donde más falta hace, en el gimnasio— (ADR-0011). El número lo
+   * calcula la pantalla, que ya tiene las series delante.
+   */
+  async logSet(input: LogSetInput): Promise<void> {
     try {
-      const lastSetNumber = await workoutRepository.findLastSetNumber(sessionId, exerciseId)
-
       await workoutRepository.insertSet({
-        session_id: sessionId,
-        exercise_id: exerciseId,
-        set_number: lastSetNumber + 1,
-        reps,
-        weight: weightKg,
+        id: input.id,
+        session_id: input.sessionId,
+        exercise_id: input.exerciseId,
+        set_number: input.setNumber,
+        reps: input.reps,
+        weight: input.weightKg,
       })
     } catch (error) {
       throw toAppError(error)

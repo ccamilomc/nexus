@@ -151,11 +151,33 @@ export interface WorkoutPeriodSeries {
 }
 
 /** Datos necesarios para registrar una serie. */
+/**
+ * Una serie lista para registrarse **o para esperar a que vuelva la red**.
+ *
+ * Todo resuelto y serializable, sin `Date` ni nada del closure: en el gimnasio
+ * esto puede quedarse encolado y enviarse al salir a la calle (ADR-0011).
+ */
 export interface LogSetInput {
+  /** Generado en el cliente: la pantalla ya enseñó la serie con este id. */
+  readonly id: string
+  /** No va a la base —la RLS entra por la sesión— pero sí decide de quién es. */
+  readonly userId: string
   readonly sessionId: string
   readonly exerciseId: string
   readonly reps: number
   readonly weightKg: number
+  /**
+   * Se calcula en el cliente desde las series ya apuntadas.
+   *
+   * Antes lo preguntaba a la base justo antes de insertar, y esa consulta sin
+   * señal falla: no se podía registrar ni una serie. Que dos dispositivos a la
+   * vez repitan número es un riesgo asumido —la columna no es única y el orden
+   * lo da el momento— y sale mucho más barato que no poder apuntar en el
+   * gimnasio.
+   */
+  readonly setNumber: number
+  /** Cuándo se apuntó, no cuándo se llegó a enviar. */
+  readonly loggedAt: string
 }
 
 // ─── Rutinas ────────────────────────────────────────────────────────────────
