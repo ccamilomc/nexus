@@ -1,11 +1,12 @@
 import { createAppError, toAppError } from '@/core/error'
-import { type DayRange, dayRange, parseDateKey, toLoggedAt, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, weekRange } from '@/shared/utils'
 
 import { nextSubjectColor } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
-import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
+import type { CreateSubjectValues } from '../schemas/study.schema'
 import type {
   DayStudy,
+  LogStudyInput,
   StudyPeriodSeries,
   StudySessionWithSubject,
   Subject,
@@ -15,8 +16,6 @@ import { buildDayStudy } from '../utils/day-study'
 import { elapsedMinutes } from '../utils/elapsed-minutes'
 import { buildStudySeries } from '../utils/study-series'
 import { buildWeekStudy } from '../utils/week-study'
-
-const MS_PER_MINUTE = 60_000
 
 /** El formulario habla en horas; la base guarda minutos, que es su unidad. */
 function toWeeklyTargetMinutes(values: CreateSubjectValues): number | null {
@@ -192,35 +191,23 @@ export const studyService = {
   },
 
   /**
-   * Registra una sesión ya terminada, en el día que se indique.
+   * Registra una sesión ya terminada.
    *
-   * Se pide la duración, no las horas: quien registra después de estudiar
-   * recuerda «hora y media», no el minuto exacto en que empezó. La sesión se
-   * coloca **hacia atrás desde el final del día elegido**: si es hoy, desde
-   * ahora; si ya pasó, desde su mediodía, la misma regla que usan salud,
-   * nutrición y sueño para lo que se apunta tarde.
-   *
-   * **Antes se colgaba siempre de `new Date()`**, así que una tarde de estudio
-   * sin registrar no había forma de recuperarla: al apuntarla al día siguiente
-   * se sumaba al día equivocado.
+   * Recibe las horas ya resueltas, no un día y un reloj: la sesión puede
+   * quedarse esperando red y salir después, y entonces el momento que vale es
+   * cuando se apuntó (ADR-0011). El cálculo —hacia atrás desde el final del día
+   * elegido— vive en `utils/study-input.ts`.
    */
-  async logStudy(userId: string, values: LogStudyValues, now: Date): Promise<void> {
+  async logStudy(input: LogStudyInput): Promise<void> {
     try {
-      const day = parseDateKey(values.date)
-      if (Number.isNaN(day.getTime())) {
-        throw createAppError('validation', 'Revisa el día: no se entiende.')
-      }
-
-      const endedAt = new Date(toLoggedAt(day, now))
-      const startedAt = new Date(endedAt.getTime() - values.minutes * MS_PER_MINUTE)
-
       await studyRepository.insertSession({
-        user_id: userId,
-        subject_id: values.subjectId,
-        duration_minutes: values.minutes,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
-        ...(values.focusRating === undefined ? {} : { focus_rating: values.focusRating }),
+        id: input.id,
+        user_id: input.userId,
+        subject_id: input.subjectId,
+        duration_minutes: input.minutes,
+        started_at: input.startedAt,
+        ended_at: input.endedAt,
+        ...(input.focusRating === undefined ? {} : { focus_rating: input.focusRating }),
       })
     } catch (error) {
       throw toAppError(error)

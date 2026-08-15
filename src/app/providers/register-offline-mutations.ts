@@ -3,6 +3,8 @@ import type { QueryClient } from '@tanstack/react-query'
 import { registerFinanceOfflineMutations } from '@/features/finance'
 import { registerHabitsOfflineMutations } from '@/features/habits'
 import { registerNutritionOfflineMutations } from '@/features/nutrition'
+import { registerSleepOfflineMutations } from '@/features/sleep'
+import { registerStudyOfflineMutations } from '@/features/study'
 import { registerWorkoutOfflineMutations } from '@/features/workout'
 
 /**
@@ -19,5 +21,7 @@ export function registerOfflineMutations(client: QueryClient): void {
   registerFinanceOfflineMutations(client)
   registerHabitsOfflineMutations(client)
   registerNutritionOfflineMutations(client)
+  registerSleepOfflineMutations(client)
+  registerStudyOfflineMutations(client)
   registerWorkoutOfflineMutations(client)
 }

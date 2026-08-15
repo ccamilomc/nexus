@@ -53,8 +53,13 @@ estudio, gastos). La configuración no, porque se hace con red y porque devuelve
 filas que la pantalla necesita en el momento.
 
 **Estado:** encolados el **agua**, las **series de entreno**, **marcar un
-hábito** y los **gastos**. Faltan las comidas, el sueño y el estudio; se van
-sumando uno a uno.
+hábito**, los **gastos**, el **estudio** y el **sueño**. Falta registrar
+comidas, que es el único que crea dos filas encadenadas.
+
+**Ojo con los `onSuccess` de la interfaz.** Una mutación en cola nunca
+«termina», así que lo que limpie un formulario o cierre un diálogo desde ahí no
+llega a correr: parece que no se guardó. Va en un callback aparte que se dispara
+**al encolar** (`onApuntado`), cuando el registro ya está a salvo.
 
 **Lo que hay que mirar en cada uno, más allá de los cuatro pasos:** si lo que se
 pinta por adelantado **se puede calcular sin servidor**. Una mutación pausada no

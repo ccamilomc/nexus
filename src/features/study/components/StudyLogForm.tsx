@@ -30,13 +30,13 @@ const QUICK_MINUTES = [25, 50, 90]
  */
 export function StudyLogForm({ subjects }: StudyLogFormProps) {
   const today = useToday()
-  const logStudy = useLogStudy()
+  const logStudy = useLogStudy(today)
 
   const {
     register,
     handleSubmit,
     setValue,
-    reset,
+    resetField,
     formState: { errors },
   } = useForm<LogStudyValues>({
     resolver: zodResolver(logStudySchema),
@@ -45,9 +45,15 @@ export function StudyLogForm({ subjects }: StudyLogFormProps) {
 
   const onSubmit = handleSubmit((values) =>
     logStudy.mutate(values, {
-      // Se conservan el día y la materia: lo normal es seguir apuntando lo de la
-      // misma tarde, y volver a poner la fecha en cada sesión sería un estorbo.
-      onSuccess: () => reset({ date: values.date, subjectId: values.subjectId }),
+      // Se vacían **sólo** los minutos, y con `resetField`, que es la API que
+      // existe para esto: un `reset` con el día y la materia parecía hacerlo y
+      // dejaba los minutos puestos, así que la siguiente sesión se apuntaba con
+      // la duración de la anterior si no te fijabas. Es el mismo fallo que tenía
+      // el formulario de movimientos.
+      //
+      // El día y la materia se quedan: lo normal es seguir apuntando lo de la
+      // misma tarde, y volver a poner la fecha cada vez sería un estorbo.
+      onApuntado: () => resetField('minutes'),
     }),
   )
 
@@ -127,7 +133,7 @@ export function StudyLogForm({ subjects }: StudyLogFormProps) {
             ))}
           </div>
 
-          {logStudy.isError ? <FormAlert>{logStudy.error.message}</FormAlert> : null}
+          {logStudy.error ? <FormAlert>{logStudy.error.message}</FormAlert> : null}
 
           <Button type="submit" disabled={logStudy.isPending}>
             <Plus aria-hidden />
