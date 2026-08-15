@@ -7,6 +7,10 @@
 export const studyKeys = {
   all: ['study'] as const,
   subjects: (userId: string | undefined) => [...studyKeys.all, 'subjects', userId] as const,
+  // Cuelga de `subjects` para que retirar o recuperar una refresque las dos
+  // listas: lo que sale de una entra en la otra.
+  retiredSubjects: (userId: string | undefined) =>
+    [...studyKeys.subjects(userId), 'retired'] as const,
   days: () => [...studyKeys.all, 'days'] as const,
   activeSession: (userId: string | undefined) => [...studyKeys.all, 'active', userId] as const,
   day: (userId: string | undefined, dayKey: string) =>

@@ -81,6 +81,58 @@ export const studyService = {
   },
 
   /**
+   * Las materias retiradas, para poder consultarlas y recuperarlas.
+   *
+   * Retirar una era irreversible desde la pantalla: desaparecía de la lista y no
+   * había dónde volver a encontrarla, aunque sus horas siguieran contando. El
+   * botón dice «Retirar», que suena a que se puede deshacer, y ahora se puede.
+   */
+  async getRetiredSubjects(userId: string): Promise<readonly Subject[]> {
+    try {
+      return await studyRepository.listRetiredSubjects(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Devuelve una materia retirada a la lista, con su historial intacto. */
+  async restoreSubject(subjectId: string): Promise<void> {
+    try {
+      await studyRepository.updateSubject(subjectId, { deleted_at: null })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra del todo una materia que nunca se llegó a usar.
+   *
+   * Para la que se creó por error: se escribe mal, se retira, y hasta ahora se
+   * quedaba ahí sin manera de quitarla.
+   *
+   * **Sólo si no tiene ninguna sesión.** Con horas estudiadas la salida es
+   * retirarla: ese tiempo se estudió de verdad y sigue contando en los totales.
+   * La comprobación va aquí porque la base no la hace: su clave ajena es
+   * `on delete set null`, así que dejaría las sesiones sin materia en lugar de
+   * negarse, y la pantalla espera que la tengan.
+   */
+  async deleteSubjectForever(subjectId: string): Promise<void> {
+    try {
+      const sessions = await studyRepository.countSessions(subjectId)
+      if (sessions > 0) {
+        throw createAppError(
+          'conflict',
+          'Esta materia tiene horas estudiadas, así que no se borra: retírala y seguirán contando.',
+        )
+      }
+
+      await studyRepository.deleteSubjectForever(subjectId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
    * El estudio de un periodo y el del tramo anterior, para Analytics.
    *
    * Una sola consulta: los dos tramos son contiguos, así que se piden juntos y

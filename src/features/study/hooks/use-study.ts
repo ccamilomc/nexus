@@ -103,6 +103,43 @@ export function useDeleteSubject() {
   })
 }
 
+/**
+ * Las materias retiradas. **Sólo se piden al abrirlas.**
+ *
+ * Es algo que se mira de vez en cuando, así que traerlas al cargar la pantalla
+ * sería pagar una consulta por una lista que casi nunca se despliega.
+ */
+export function useRetiredSubjects(enabled: boolean) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<readonly Subject[], AppError>({
+    queryKey: studyKeys.retiredSubjects(userId),
+    queryFn: () => (userId ? studyService.getRetiredSubjects(userId) : []),
+    enabled,
+  })
+}
+
+/** Devuelve una materia retirada a la lista. */
+export function useRestoreSubject() {
+  const refresh = useRefreshStudy()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (subjectId) => studyService.restoreSubject(subjectId),
+    onSuccess: refresh,
+  })
+}
+
+/** Borra del todo una materia que nunca se llegó a usar. */
+export function useDeleteSubjectForever() {
+  const refresh = useRefreshStudy()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (subjectId) => studyService.deleteSubjectForever(subjectId),
+    onSuccess: refresh,
+  })
+}
+
 /** Registra una sesión de estudio ya terminada; el día va en los valores. */
 export function useLogStudy() {
   const { user } = useAuth()

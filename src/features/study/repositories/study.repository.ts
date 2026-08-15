@@ -19,6 +19,44 @@ export const studyRepository = {
     return data ?? []
   },
 
+  /** Las materias retiradas, de la última en retirarse a la primera. */
+  async listRetiredSubjects(userId: string): Promise<Subject[]> {
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('*')
+      .eq('user_id', userId)
+      .not('deleted_at', 'is', null)
+      .order('deleted_at', { ascending: false })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /** Cuántas sesiones tiene una materia. Sólo cuenta: no baja las filas. */
+  async countSessions(subjectId: string): Promise<number> {
+    const { count, error } = await supabase
+      .from('study_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('subject_id', subjectId)
+      .is('deleted_at', null)
+
+    if (error) throw error
+    return count ?? 0
+  },
+
+  /**
+   * Borra una materia de verdad.
+   *
+   * **Sólo para las que no tienen ninguna sesión.** La clave ajena de
+   * `study_sessions` es `on delete set null`, así que la base no se negaría:
+   * dejaría las sesiones sin materia, y la pantalla espera que la tengan.
+   */
+  async deleteSubjectForever(subjectId: string): Promise<void> {
+    const { error } = await supabase.from('subjects').delete().eq('id', subjectId)
+
+    if (error) throw error
+  },
+
   async insertSubject(input: TablesInsert<'subjects'>): Promise<Subject> {
     const { data, error } = await supabase.from('subjects').insert(input).select('*').single()
 
