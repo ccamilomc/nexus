@@ -191,10 +191,20 @@ describe('habitsService.getHabitsToday', () => {
 describe('habitsService.toggleHabit', () => {
   const TODAY_KEY = toDateKey(TODAY)
 
+  /** Lo que llega al servicio: ya resuelto, porque puede haber esperado sin red. */
+  const toggleInput = (overrides: { dateKey?: string; isDone: boolean }) => ({
+    id: 'log-1',
+    userId: USER_ID,
+    habitId: 'h1',
+    dateKey: TODAY_KEY,
+    ...overrides,
+  })
+
   it('marcar inserta el registro del día', async () => {
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
+    await habitsService.toggleHabit(toggleInput({ isDone: false }))
 
     expect(insertLog).toHaveBeenCalledExactlyOnceWith({
+      id: 'log-1',
       user_id: USER_ID,
       habit_id: 'h1',
       date: '2026-07-29',
@@ -205,14 +215,14 @@ describe('habitsService.toggleHabit', () => {
   it('desmarcar borra el registro en lugar de dejarlo a medias', async () => {
     // Borrado real: el índice único por (hábito, fecha) sólo mira filas vivas,
     // así que una tumba impediría volver a marcar ese mismo día.
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, true)
+    await habitsService.toggleHabit(toggleInput({ isDone: true }))
 
     expect(deleteLog).toHaveBeenCalledExactlyOnceWith('h1', '2026-07-29')
     expect(insertLog).not.toHaveBeenCalled()
   })
 
   it('marca un día ya pasado, para arreglar el olvido de ayer', async () => {
-    await habitsService.toggleHabit(USER_ID, 'h1', '2026-07-27', false)
+    await habitsService.toggleHabit(toggleInput({ dateKey: '2026-07-27', isDone: false }))
 
     expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-27' }))
   })
@@ -221,7 +231,7 @@ describe('habitsService.toggleHabit', () => {
     insertLog.mockRejectedValue(new Error('duplicate key value'))
 
     const error: unknown = await habitsService
-      .toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
+      .toggleHabit(toggleInput({ isDone: false }))
       .catch((e) => e)
 
     expect(isAppError(error)).toBe(true)

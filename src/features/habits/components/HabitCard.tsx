@@ -23,7 +23,7 @@ interface HabitCardProps {
 /** Un hábito: marcarlo hoy, corregir días pasados, su racha y su constancia. */
 export function HabitCard({ todayKey, entry }: HabitCardProps) {
   const { habit, isDoneToday, streak, recentDays, consistency } = entry
-  const toggle = useToggleHabit()
+  const toggle = useToggleHabit(todayKey)
   const archive = useArchiveHabit()
   const [isEditing, setIsEditing] = useState(false)
 
@@ -111,7 +111,7 @@ export function HabitCard({ todayKey, entry }: HabitCardProps) {
           </div>
         </div>
 
-        {toggle.isError ? <FormAlert>{toggle.error.message}</FormAlert> : null}
+        {toggle.error ? <FormAlert>{toggle.error.message}</FormAlert> : null}
         {archive.isError ? <FormAlert>{archive.error.message}</FormAlert> : null}
       </CardContent>
     </Card>
