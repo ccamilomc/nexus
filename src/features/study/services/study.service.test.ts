@@ -151,11 +151,15 @@ describe('studyService.deleteSubject', () => {
 })
 
 describe('studyService.logStudy', () => {
-  it('coloca la sesión hacia atrás desde ahora, con su duración', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(DATE)
+  /** El día de `DATE`, tal y como lo manda el formulario. */
+  const DATE_KEY = '2026-07-30'
 
-    await studyService.logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 90 })
+  it('coloca la sesión hacia atrás desde ahora, con su duración', async () => {
+    await studyService.logStudy(
+      USER_ID,
+      { date: DATE_KEY, subjectId: CALCULO.id, minutes: 90 },
+      DATE,
+    )
 
     const input = insertSession.mock.calls[0]?.[0]
     expect(input).toMatchObject({
@@ -166,12 +170,29 @@ describe('studyService.logStudy', () => {
     })
     // 90 minutos antes de las 18:00 son las 16:30.
     expect(input?.started_at).toBe(new Date(2026, 6, 30, 16, 30).toISOString())
+  })
 
-    vi.useRealTimers()
+  it('un día pasado se coloca en ese día, no en el de hoy', async () => {
+    // Una tarde de estudio sin registrar se sumaba al día equivocado al
+    // apuntarla al día siguiente.
+    await studyService.logStudy(
+      USER_ID,
+      { date: '2026-07-27', subjectId: CALCULO.id, minutes: 60 },
+      DATE,
+    )
+
+    const input = insertSession.mock.calls[0]?.[0]
+    // Termina al mediodía de aquel día y empieza una hora antes.
+    expect(input?.ended_at).toBe(new Date(2026, 6, 27, 12, 0).toISOString())
+    expect(input?.started_at).toBe(new Date(2026, 6, 27, 11, 0).toISOString())
   })
 
   it('sin valoración de foco no envía el campo', async () => {
-    await studyService.logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 25 })
+    await studyService.logStudy(
+      USER_ID,
+      { date: DATE_KEY, subjectId: CALCULO.id, minutes: 25 },
+      DATE,
+    )
 
     expect(insertSession.mock.calls[0]?.[0]).not.toHaveProperty('focus_rating')
   })
@@ -180,7 +201,7 @@ describe('studyService.logStudy', () => {
     insertSession.mockRejectedValue(new Error('violates row-level security policy'))
 
     const error: unknown = await studyService
-      .logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 25 })
+      .logStudy(USER_ID, { date: DATE_KEY, subjectId: CALCULO.id, minutes: 25 }, DATE)
       .catch((e) => e)
 
     expect(isAppError(error)).toBe(true)

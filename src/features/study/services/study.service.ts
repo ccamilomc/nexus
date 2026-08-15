@@ -1,5 +1,5 @@
 import { createAppError, toAppError } from '@/core/error'
-import { type DayRange, dayRange, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, parseDateKey, toLoggedAt, weekRange } from '@/shared/utils'
 
 import { nextSubjectColor } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
@@ -140,16 +140,26 @@ export const studyService = {
   },
 
   /**
-   * Registra una sesión ya terminada.
+   * Registra una sesión ya terminada, en el día que se indique.
    *
    * Se pide la duración, no las horas: quien registra después de estudiar
    * recuerda «hora y media», no el minuto exacto en que empezó. La sesión se
-   * coloca hacia atrás desde ahora, así queda a una hora verosímil y el día la
-   * recoge donde toca.
+   * coloca **hacia atrás desde el final del día elegido**: si es hoy, desde
+   * ahora; si ya pasó, desde su mediodía, la misma regla que usan salud,
+   * nutrición y sueño para lo que se apunta tarde.
+   *
+   * **Antes se colgaba siempre de `new Date()`**, así que una tarde de estudio
+   * sin registrar no había forma de recuperarla: al apuntarla al día siguiente
+   * se sumaba al día equivocado.
    */
-  async logStudy(userId: string, values: LogStudyValues): Promise<void> {
+  async logStudy(userId: string, values: LogStudyValues, now: Date): Promise<void> {
     try {
-      const endedAt = new Date()
+      const day = parseDateKey(values.date)
+      if (Number.isNaN(day.getTime())) {
+        throw createAppError('validation', 'Revisa el día: no se entiende.')
+      }
+
+      const endedAt = new Date(toLoggedAt(day, now))
       const startedAt = new Date(endedAt.getTime() - values.minutes * MS_PER_MINUTE)
 
       await studyRepository.insertSession({
