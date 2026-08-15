@@ -59,4 +59,26 @@ describe('periodWindow', () => {
       '2026-08-02',
     ])
   })
+
+  it('retroceder un periodo mueve el tramo entero, no solo el final', () => {
+    const { days } = periodWindow(TODAY, WEEK, 1)
+
+    // La semana anterior a la que acaba hoy: del 16 al 22 de julio.
+    expect(days.map(toDateKey)[0]).toBe('2026-07-16')
+    expect(days.map(toDateKey).at(-1)).toBe('2026-07-22')
+  })
+
+  it('el tramo de comparacion retrocede con el, para no cambiar la pregunta', () => {
+    const { previousDays } = periodWindow(TODAY, WEEK, 1)
+
+    expect(previousDays.map(toDateKey).at(-1)).toBe('2026-07-15')
+  })
+
+  it('sin retroceder se llama como siempre', () => {
+    expect(periodWindow(TODAY, WEEK, 0).description).toBe(WEEK.description)
+  })
+
+  it('al retroceder dice las fechas: «los ultimos 7 dias» ya no seria cierto', () => {
+    expect(periodWindow(TODAY, WEEK, 1).description).toBe('del 16 de jul al 22 de jul')
+  })
 })

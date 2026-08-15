@@ -49,7 +49,7 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
         <EmptyState
           icon={Apple}
           title="Sin comidas registradas"
-          description={`No hay nada apuntado ${window.period.description}. Lo que registres aparecerá aquí.`}
+          description={`No hay nada apuntado ${window.description}. Lo que registres aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -77,7 +77,7 @@ export function NutritionAnalytics({ window }: NutritionAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Calorías por día ${window.period.description}`}
+            label={`Calorías por día ${window.description}`}
             points={data.caloriePoints}
             recorded={{
               count: data.daysLogged,

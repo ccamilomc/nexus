@@ -51,7 +51,7 @@ export function FinanceAnalytics({ window }: FinanceAnalyticsProps) {
         <EmptyState
           icon={Wallet}
           title="Sin movimientos"
-          description={`No hay nada apuntado ${window.period.description}. Lo que registres aparecerá aquí.`}
+          description={`No hay nada apuntado ${window.description}. Lo que registres aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">

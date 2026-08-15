@@ -48,7 +48,7 @@ export function WorkoutAnalytics({ window }: WorkoutAnalyticsProps) {
         <EmptyState
           icon={Dumbbell}
           title="Sin entrenamientos"
-          description={`No hay entrenamientos terminados ${window.period.description}. Los que registres aparecerán aquí.`}
+          description={`No hay entrenamientos terminados ${window.description}. Los que registres aparecerán aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -83,7 +83,7 @@ export function WorkoutAnalytics({ window }: WorkoutAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Volumen levantado por día ${window.period.description}`}
+            label={`Volumen levantado por día ${window.description}`}
             points={data.volumePoints}
             recorded={{
               count: data.daysTrained,

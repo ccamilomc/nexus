@@ -10,6 +10,12 @@ interface AnalyticsPeriodState {
   readonly periodId: AnalyticsPeriodId
   readonly setPeriodId: (id: AnalyticsPeriodId) => void
   readonly window: PeriodWindow
+  /** Mueve el tramo un periodo hacia atras. */
+  readonly goBack: () => void
+  /** Lo acerca al presente. No hace nada si ya termina hoy. */
+  readonly goForward: () => void
+  /** Si se puede avanzar; falso cuando el tramo ya acaba hoy. */
+  readonly canGoForward: boolean
 }
 
 /**
@@ -23,9 +29,25 @@ interface AnalyticsPeriodState {
  */
 export function useDashboardPeriod(): AnalyticsPeriodState {
   const today = useToday()
-  const [periodId, setPeriodId] = useState<AnalyticsPeriodId>(DEFAULT_PERIOD_ID)
+  const [periodId, setPeriodIdState] = useState<AnalyticsPeriodId>(DEFAULT_PERIOD_ID)
+  const [offset, setOffset] = useState(0)
 
-  const window = useMemo(() => periodWindow(today, ANALYTICS_PERIODS[periodId]), [today, periodId])
+  const window = useMemo(
+    () => periodWindow(today, ANALYTICS_PERIODS[periodId], offset),
+    [today, periodId, offset],
+  )
 
-  return { periodId, setPeriodId, window }
+  return {
+    periodId,
+    // Cambiar de tamano vuelve al presente: retroceder tres tramos de 7 dias y
+    // pasar a 90 dejaria mirando hace nueve meses sin haberlo pedido.
+    setPeriodId: (id: AnalyticsPeriodId) => {
+      setPeriodIdState(id)
+      setOffset(0)
+    },
+    window,
+    goBack: () => setOffset((current) => current + 1),
+    goForward: () => setOffset((current) => Math.max(0, current - 1)),
+    canGoForward: offset > 0,
+  }
 }

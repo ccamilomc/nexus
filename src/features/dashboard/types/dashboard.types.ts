@@ -21,6 +21,13 @@ export interface AnalyticsPeriod {
  */
 export interface PeriodWindow {
   readonly period: AnalyticsPeriod
+  /** Cuantos periodos hacia atras se esta mirando; 0 es el que acaba hoy. */
+  readonly offset: number
+  /**
+   * Como se llama este tramo en las frases: «en los ultimos 30 dias» cuando
+   * acaba hoy, y las fechas concretas en cuanto se retrocede.
+   */
+  readonly description: string
   /** Los días del periodo, del más antiguo al más reciente. */
   readonly days: readonly Date[]
   /** Rango del periodo actual, para acotar las consultas. */

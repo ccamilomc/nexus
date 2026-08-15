@@ -48,7 +48,7 @@ export function HealthAnalytics({ window }: HealthAnalyticsProps) {
         <EmptyState
           icon={HeartPulse}
           title="Sin pesajes"
-          description={`No hay peso registrado ${window.period.description}. Lo que apuntes aparecerá aquí.`}
+          description={`No hay peso registrado ${window.description}. Lo que apuntes aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -78,7 +78,7 @@ export function HealthAnalytics({ window }: HealthAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Peso ${window.period.description}`}
+            label={`Peso ${window.description}`}
             points={data.points}
             recorded={{ count: data.measurements, singular: 'pesaje', plural: 'pesajes' }}
             variant="line"

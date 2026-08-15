@@ -47,7 +47,7 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
         <EmptyState
           icon={Moon}
           title="Sin noches registradas"
-          description={`No hay sueño apuntado ${window.period.description}. En cuanto registres alguna noche aparecerá aquí.`}
+          description={`No hay sueño apuntado ${window.description}. En cuanto registres alguna noche aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -75,7 +75,7 @@ export function SleepAnalytics({ window }: SleepAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Sueño por noche ${window.period.description}`}
+            label={`Sueño por noche ${window.description}`}
             points={data.points}
             recorded={{ count: data.nightsLogged, singular: 'noche', plural: 'noches' }}
             variant="line"

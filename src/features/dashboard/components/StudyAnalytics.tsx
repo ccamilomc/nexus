@@ -48,7 +48,7 @@ export function StudyAnalytics({ window }: StudyAnalyticsProps) {
         <EmptyState
           icon={BookOpen}
           title="Sin sesiones de estudio"
-          description={`No hay estudio registrado ${window.period.description}. Lo que apuntes aparecerá aquí.`}
+          description={`No hay estudio registrado ${window.description}. Lo que apuntes aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -83,7 +83,7 @@ export function StudyAnalytics({ window }: StudyAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Tiempo estudiado por día ${window.period.description}`}
+            label={`Tiempo estudiado por día ${window.description}`}
             points={data.points}
             recorded={{
               count: data.daysStudied,
