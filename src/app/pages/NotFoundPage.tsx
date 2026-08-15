@@ -11,7 +11,7 @@ export function NotFoundPage() {
       description="Puede que el enlace haya cambiado o que la dirección esté mal escrita."
       action={
         <Button asChild>
-          <Link to={ROUTES.dashboard}>Volver al inicio</Link>
+          <Link to={ROUTES.today}>Volver al inicio</Link>
         </Button>
       }
     />

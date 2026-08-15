@@ -1,6 +1,6 @@
 import { type DayRange, dayRange, lastDays, minusDays } from '@/shared/utils'
 
-import type { AnalyticsPeriod, PeriodWindow } from '../types/analytics.types'
+import type { AnalyticsPeriod, PeriodWindow } from '../types/dashboard.types'
 
 /**
  * Resuelve un periodo en fechas concretas, con su tramo anterior.

@@ -5,8 +5,8 @@ import { useHabitsSeries } from '@/features/habits'
 import { EmptyState } from '@/shared/components/feedback'
 import { countDaysWithData } from '@/shared/utils'
 
-import { NO_PREVIOUS_PERIOD_HINT } from '../constants/analytics.constants'
-import type { PeriodWindow } from '../types/analytics.types'
+import { NO_PREVIOUS_PERIOD_HINT } from '../constants/dashboard.constants'
+import type { PeriodWindow } from '../types/dashboard.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
@@ -84,7 +84,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
               singular: 'día con hábitos',
               plural: 'días con hábitos',
             }}
-            variant="bar"
+            variant="area"
             colorIndex={5}
             formatValue={(percent) => `${Math.round(percent)} %`}
             formatAxisValue={(percent) => `${Math.round(percent)}`}

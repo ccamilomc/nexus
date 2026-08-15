@@ -1,4 +1,7 @@
+import { useId } from 'react'
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
@@ -13,7 +16,7 @@ import {
 import { EmptyState } from '@/shared/components/feedback'
 import type { SeriesPoint } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { MIN_DAYS_FOR_TREND } from '../constants/dashboard.constants'
 import type { VerticalAxis } from '../utils/axis'
 import { formatChartDate, formatCount } from '../utils/format'
 
@@ -31,10 +34,19 @@ interface TrendChartProps {
     readonly plural: string
   }
   /**
-   * `line` para magnitudes continuas que admiten huecos (el sueño);
-   * `bar` para lo que ocurre por episodios (el volumen de un entrenamiento).
+   * Qué forma le toca a la serie, y no es una preferencia estética:
+   *
+   * - `bar` para lo que **ocurre por episodios y se acumula**, donde un día sin
+   *   nada es un cero de verdad: el volumen de un entrenamiento, los minutos
+   *   estudiados, el gasto del día.
+   * - `line` para **magnitudes continuas que se miden** y donde el hueco es
+   *   ausencia de medida, no un cero: el peso, las horas de sueño.
+   * - `area` para **proporciones**, que no se acumulan ni se miden: el
+   *   porcentaje de hábitos cumplidos. Con barras, noventa días de una ratio
+   *   que salta entre 0, 33, 66 y 100 se leen como un código de barras; el
+   *   relleno bajo la línea deja ver el nivel, que es lo que se pregunta.
    */
-  readonly variant: 'line' | 'bar'
+  readonly variant: 'line' | 'bar' | 'area'
   /** Cifra completa, para el tooltip y la tabla equivalente. */
   readonly formatValue: (value: number) => string
   /** Versión corta para el eje; por defecto, la misma. */
@@ -79,6 +91,11 @@ export function TrendChart({
   verticalAxis,
   colorIndex = 1,
 }: TrendChartProps) {
+  // Antes de cualquier salida: es un hook. Un id por instancia, porque dos
+  // áreas en la misma página compartirían el degradado y la segunda se pintaría
+  // con el color de la primera.
+  const fillId = `trend-fill-${useId()}`
+
   if (recorded.count < MIN_DAYS_FOR_TREND) {
     return (
       <EmptyState
@@ -130,7 +147,32 @@ export function TrendChart({
           `overflow-hidden` para que un SVG aún sin remedir no empuje la página. */}
       <div className="h-56 w-full min-w-0 overflow-hidden" aria-hidden>
         <ResponsiveContainer width="100%" height="100%">
-          {variant === 'line' ? (
+          {variant === 'area' ? (
+            <AreaChart data={[...points]} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+              {axes}
+              <defs>
+                {/* El relleno se desvanece hacia abajo para que la línea siga
+                    siendo el dato y el área sólo acompañe. */}
+                <linearGradient id={fillId} x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={color} stopOpacity={0.35} />
+                  <stop offset="100%" stopColor={color} stopOpacity={0.04} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={color}
+                strokeWidth={2}
+                fill={`url(#${fillId})`}
+                // Sin puntos: con noventa días son noventa manchas sobre la
+                // línea. El valor exacto lo da el tooltip y la tabla de abajo.
+                dot={false}
+                activeDot={{ r: 4 }}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          ) : variant === 'line' ? (
             <LineChart data={[...points]} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
               {axes}
               <Line

@@ -1,51 +1,48 @@
-import { InstallBanner } from '@/app/layout/InstallBanner'
-import { TodayFocus } from '@/features/planning'
-import { SleepQuickLog } from '@/features/sleep'
+import { PageHeader } from '@/shared/components/layout'
 
-import { DomainSummary } from '../components/DomainSummary'
-import { WaterQuickAdd } from '../components/WaterQuickAdd'
-import { useDashboard } from '../hooks/use-dashboard'
+import { FinanceAnalytics } from '../components/FinanceAnalytics'
+import { HabitsAnalytics } from '../components/HabitsAnalytics'
+import { HealthAnalytics } from '../components/HealthAnalytics'
+import { NutritionAnalytics } from '../components/NutritionAnalytics'
+import { PeriodSelector } from '../components/PeriodSelector'
+import { SleepAnalytics } from '../components/SleepAnalytics'
+import { StudyAnalytics } from '../components/StudyAnalytics'
+import { WorkoutAnalytics } from '../components/WorkoutAnalytics'
+import { useDashboardPeriod } from '../hooks/use-dashboard-period'
 
 /**
- * La primera pantalla: cómo va el día.
+ * El dashboard: cómo han ido las cosas en un periodo, dominio por dominio.
  *
- * **El saludo no manda.** Era lo más grande de la pantalla y es lo que menos
- * dice; ahora comparte fila con el agua y deja el tamaño a los datos, que son
- * lo que se viene a mirar.
+ * **Es la otra mitad de «Hoy»**, y por eso va justo debajo en la navegación:
+ * «Hoy» contesta cómo va el día y esto cómo van las semanas. Se llamaba
+ * «Analíticas» y vivía al final de la lista, entre lo transversal, donde
+ * parecía una herramienta aparte en vez de la vista de conjunto que es.
  *
- * **Lo accionable va antes que el resumen.** Los siete módulos cuentan cómo va
- * el día; lo que hay que hacer con él lo sabe el motor, y hasta ahora sólo se
- * veía entrando en Plan. La pregunta «¿y ahora qué?» se responde aquí.
+ * La página no calcula nada. Elige el periodo y lo reparte; cada dominio trae
+ * sus propias cifras desde su barrel, porque sólo él sabe cómo se cuenta lo
+ * suyo (ver docs/adr/0006).
  */
 export function DashboardPage() {
-  const { name, greeting, todayLabel } = useDashboard()
+  const { periodId, setPeriodId, window } = useDashboardPeriod()
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">{todayLabel}</p>
-          <h1 className="mt-0.5 truncate text-xl font-semibold tracking-tight sm:text-2xl">
-            {greeting}
-            {name ? `, ${name}` : ''}
-          </h1>
-        </div>
+    <>
+      <PageHeader title="Dashboard" description="Cómo han ido tus últimas semanas." />
 
-        <WaterQuickAdd />
-      </header>
+      <div className="space-y-6">
+        <PeriodSelector value={periodId} onChange={setPeriodId} />
 
-      {/* Tras el saludo y no encima: se ofrece, no se interrumpe. */}
-      <InstallBanner />
-
-      {/* Por delante de todo, pero sólo por la mañana y sólo si falta: apuntar
-          la noche cambia lo que el motor recomienda después, así que hacerlo
-          primero evita leer un plan que ya no vale. Se calla sola el resto del
-          día. */}
-      <SleepQuickLog />
-
-      <TodayFocus />
-
-      <DomainSummary />
-    </div>
+        {/* El mismo orden que la navegación, para que la página no obligue a
+            buscar. Salud va al final: es la única sección que no compara ni
+            opina, y cierra sin arrastrar ese tono a las demás. */}
+        <FinanceAnalytics window={window} />
+        <WorkoutAnalytics window={window} />
+        <NutritionAnalytics window={window} />
+        <HabitsAnalytics window={window} />
+        <StudyAnalytics window={window} />
+        <SleepAnalytics window={window} />
+        <HealthAnalytics window={window} />
+      </div>
+    </>
   )
 }

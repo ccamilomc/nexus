@@ -4,7 +4,7 @@ import { ROUTES } from '@/app/router/routes'
 import { formatChange, formatValue, useWeightSeries } from '@/features/health'
 import { EmptyState } from '@/shared/components/feedback'
 
-import type { PeriodWindow } from '../types/analytics.types'
+import type { PeriodWindow } from '../types/dashboard.types'
 import { fittedAxis } from '../utils/axis'
 import { AnalyticsSection } from './AnalyticsSection'
 import { KpiCard } from './KpiCard'

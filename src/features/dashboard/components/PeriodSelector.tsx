@@ -1,7 +1,7 @@
 import { cn } from '@/shared/lib/utils'
 
-import { ANALYTICS_PERIOD_LIST } from '../constants/analytics.constants'
-import type { AnalyticsPeriodId } from '../types/analytics.types'
+import { ANALYTICS_PERIOD_LIST } from '../constants/dashboard.constants'
+import type { AnalyticsPeriodId } from '../types/dashboard.types'
 
 interface PeriodSelectorProps {
   readonly value: AnalyticsPeriodId

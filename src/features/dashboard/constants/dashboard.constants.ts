@@ -1,4 +1,4 @@
-import type { AnalyticsPeriod, AnalyticsPeriodId } from '../types/analytics.types'
+import type { AnalyticsPeriod, AnalyticsPeriodId } from '../types/dashboard.types'
 
 /**
  * Periodos que se pueden mirar, indexados por su id.

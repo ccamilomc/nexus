@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
 
 import { Card, CardContent } from '@/shared/components/ui/card'
 
-import type { Comparison } from '../types/analytics.types'
+import type { Comparison } from '../types/dashboard.types'
 
 interface KpiCardProps {
   readonly label: string

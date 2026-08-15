@@ -23,7 +23,7 @@ export function BottomNav() {
       <ul className="mx-auto grid max-w-lg grid-cols-5 gap-1 px-2 pb-[env(safe-area-inset-bottom)]">
         {PRIMARY_NAV_ITEMS.map(({ to, label, Icon }) => (
           <li key={to}>
-            <NavLink to={to} end={to === ROUTES.dashboard} className={itemClassName}>
+            <NavLink to={to} end={to === ROUTES.today} className={itemClassName}>
               <Icon className="h-5 w-5" aria-hidden />
               {label}
             </NavLink>
