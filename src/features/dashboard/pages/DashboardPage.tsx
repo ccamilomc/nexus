@@ -24,14 +24,21 @@ import { useDashboardPeriod } from '../hooks/use-dashboard-period'
  * suyo (ver docs/adr/0006).
  */
 export function DashboardPage() {
-  const { periodId, setPeriodId, window } = useDashboardPeriod()
+  const { periodId, setPeriodId, window, goBack, goForward, canGoForward } = useDashboardPeriod()
 
   return (
     <>
       <PageHeader title="Dashboard" description="Cómo han ido tus últimas semanas." />
 
       <div className="space-y-6">
-        <PeriodSelector value={periodId} onChange={setPeriodId} />
+        <PeriodSelector
+          value={periodId}
+          onChange={setPeriodId}
+          description={window.description}
+          onBack={goBack}
+          onForward={goForward}
+          canGoForward={canGoForward}
+        />
 
         {/* Lo primero: por dónde empezar a mirar. Debajo, el detalle. */}
         <PeriodHighlights window={window} />

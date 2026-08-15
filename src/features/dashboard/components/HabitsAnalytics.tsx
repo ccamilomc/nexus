@@ -45,7 +45,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
         <EmptyState
           icon={CircleCheck}
           title="Sin hábitos que medir"
-          description={`No había ningún hábito activo ${window.period.description}. En cuanto crees uno, su constancia aparecerá aquí.`}
+          description={`No había ningún hábito activo ${window.description}. En cuanto crees uno, su constancia aparecerá aquí.`}
         />
       ) : (
         <div className="space-y-3">
@@ -77,7 +77,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
           </div>
 
           <TrendChart
-            label={`Porcentaje de hábitos cumplidos por día ${window.period.description}`}
+            label={`Porcentaje de hábitos cumplidos por día ${window.description}`}
             points={data.points}
             recorded={{
               count: daysWithHabits,
