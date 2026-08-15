@@ -145,8 +145,11 @@ export function TransactionForm({
       return
     }
 
+    // `onApuntado` y no `onSuccess`: sin red el movimiento queda encolado y
+    // nunca «termina», así que el formulario se quedaría con el monto puesto
+    // como si no se hubiera guardado. Aquí ya está a salvo.
     create.mutate(values, {
-      onSuccess: () => {
+      onApuntado: () => {
         // Se vacían **sólo** el monto y la nota, y con `resetField`, que es la
         // API que existe para esto: un `reset` con las demás claves parecía
         // funcionar y dejaba el monto puesto, así que el siguiente gasto se

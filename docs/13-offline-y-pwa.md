@@ -52,16 +52,20 @@ Una mutación encolable se escribe distinto de una de configuración:
 estudio, gastos). La configuración no, porque se hace con red y porque devuelve
 filas que la pantalla necesita en el momento.
 
-**Estado:** encolados el **agua**, las **series de entreno** y **marcar un
-hábito**. Faltan las comidas, los gastos, el sueño y el estudio; se van sumando
-uno a uno.
+**Estado:** encolados el **agua**, las **series de entreno**, **marcar un
+hábito** y los **gastos**. Faltan las comidas, el sueño y el estudio; se van
+sumando uno a uno.
 
-**Lo que hay que mirar en cada uno, más allá de los cuatro pasos:** si el
-servicio **consulta algo antes de escribir**, porque esa consulta sin red falla
-—le pasaba a las series, que preguntaban el último número— y si lo que se pinta
-por adelantado **se puede calcular bien** con lo que hay en pantalla. Cuando no
-se pueda, es mejor dejar esa cifra quieta hasta que vuelva la conexión que
-enseñarla mal.
+**Lo que hay que mirar en cada uno, más allá de los cuatro pasos:** si lo que se
+pinta por adelantado **se puede calcular sin servidor**. Una mutación pausada no
+llega a ejecutar su `mutationFn` —corre entera al volver la red—, así que una
+consulta previa dentro del servicio no estorba; lo que no se puede es _esperar a
+esa consulta para enseñar algo_. Le pasaba a las series: el número salía de la
+base y hasta que no había red no se podía pintar «Serie 3».
+
+Y cuando una cifra derivada **no se pueda calcular bien** con lo que hay en
+pantalla, es mejor dejarla quieta hasta que vuelva la conexión que enseñarla
+mal: es lo que se hace con la racha de un hábito al tocar un día pasado.
 
 ### Resolución de conflictos
 

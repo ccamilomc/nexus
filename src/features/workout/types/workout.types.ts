@@ -169,11 +169,11 @@ export interface LogSetInput {
   /**
    * Se calcula en el cliente desde las series ya apuntadas.
    *
-   * Antes lo preguntaba a la base justo antes de insertar, y esa consulta sin
-   * señal falla: no se podía registrar ni una serie. Que dos dispositivos a la
-   * vez repitan número es un riesgo asumido —la columna no es única y el orden
-   * lo da el momento— y sale mucho más barato que no poder apuntar en el
-   * gimnasio.
+   * Antes lo preguntaba a la base justo antes de insertar, y así no se puede
+   * enseñar la serie hasta que hay red: la pantalla necesita el número para
+   * pintarla como «Serie 3». Que dos dispositivos a la vez repitan número es un
+   * riesgo asumido —la columna no es única y las series se ordenan por él— y
+   * sale más barato que no poder ver lo apuntado en el gimnasio.
    */
   readonly setNumber: number
   /** Cuándo se apuntó, no cuándo se llegó a enviar. */

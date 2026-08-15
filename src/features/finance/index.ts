@@ -1,6 +1,8 @@
 export type { FinanceSeries } from './hooks/use-finance-series'
 export { useFinanceSeries } from './hooks/use-finance-series'
 export { useFinanceSummary } from './hooks/use-finance-summary'
+// Lo que finanzas deja pendiente sin red; lo registra `app/` (ADR-0011).
+export { registerFinanceOfflineMutations } from './offline'
 export { AccountsPage } from './pages/AccountsPage'
 export { CategoriesPage } from './pages/CategoriesPage'
 export { DebtsPage } from './pages/DebtsPage'

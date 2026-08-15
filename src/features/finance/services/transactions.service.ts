@@ -8,12 +8,23 @@ import type {
   FinancePeriodSeries,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
+import { RECENT_LIMIT } from '../utils/add-transaction'
 import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { monthRange } from '../utils/month-range'
 
-/** Cuántos movimientos recientes se enseñan sin pedir «ver todos». */
-const RECENT_LIMIT = 8
+/**
+ * Un movimiento listo para apuntarse **o para esperar a que vuelva la red**.
+ *
+ * Sin nada del closure: esto puede quedarse encolado y salir mucho después
+ * (ADR-0011). `values` ya es serializable tal cual sale del formulario.
+ */
+export interface CreateTransactionInput {
+  /** Generado en el cliente: la pantalla ya enseñó el movimiento con este id. */
+  readonly id: string
+  readonly userId: string
+  readonly values: TransactionValues
+}
 
 /**
  * Traduce el formulario a la fila de la base.
@@ -110,9 +121,21 @@ export const transactionsService = {
     }
   },
 
-  async createTransaction(userId: string, values: TransactionValues): Promise<void> {
+  /**
+   * Apunta un movimiento.
+   *
+   * Recibe el id ya puesto porque **un gasto se apunta en la calle**, donde
+   * puede no haber señal: la pantalla lo enseña con ese id antes de que salga, y
+   * reenviarlo —un reintento, dos pestañas— choca con la clave primaria en vez
+   * de apuntar el gasto dos veces (ADR-0011).
+   */
+  async createTransaction(input: CreateTransactionInput): Promise<void> {
     try {
-      await financeRepository.insertTransaction({ user_id: userId, ...toTransactionRow(values) })
+      await financeRepository.insertTransaction({
+        id: input.id,
+        user_id: input.userId,
+        ...toTransactionRow(input.values),
+      })
     } catch (error) {
       throw toAppError(error)
     }
