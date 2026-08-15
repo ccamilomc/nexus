@@ -3,15 +3,14 @@ import { CircleCheck } from 'lucide-react'
 import { ROUTES } from '@/app/router/routes'
 import { useHabitsSeries } from '@/features/habits'
 import { EmptyState } from '@/shared/components/feedback'
-import { countDaysWithData } from '@/shared/utils'
 
 import { NO_PREVIOUS_PERIOD_HINT } from '../constants/dashboard.constants'
 import type { PeriodWindow } from '../types/dashboard.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
+import { HabitCalendar } from './HabitCalendar'
 import { KpiCard } from './KpiCard'
-import { TrendChart } from './TrendChart'
 
 interface HabitsAnalyticsProps {
   readonly window: PeriodWindow
@@ -28,8 +27,6 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
     window.days,
     window.previousDays,
   )
-
-  const daysWithHabits = data ? countDaysWithData(data.points) : 0
 
   return (
     <AnalyticsSection
@@ -76,19 +73,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
             />
           </div>
 
-          <TrendChart
-            label={`Porcentaje de hábitos cumplidos por día ${window.description}`}
-            points={data.points}
-            recorded={{
-              count: daysWithHabits,
-              singular: 'día con hábitos',
-              plural: 'días con hábitos',
-            }}
-            variant="area"
-            colorIndex={5}
-            formatValue={(percent) => `${Math.round(percent)} %`}
-            formatAxisValue={(percent) => `${Math.round(percent)}`}
-          />
+          <HabitCalendar points={data.points} description={window.description} />
         </div>
       )}
     </AnalyticsSection>
