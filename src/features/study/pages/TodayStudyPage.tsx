@@ -53,7 +53,7 @@ export function TodayStudyPage() {
   return (
     <div className="space-y-4">
       <DayStudyCard day={day.data} isPending={false} />
-      <WeekStudyCard week={week.data ?? null} isPending={week.isPending} />
+      <WeekStudyCard week={week.data ?? null} isPending={week.isPending} today={today} />
       <StudyTimerCard subjects={subjects.data} active={active.data ?? null} />
       <StudyLogForm subjects={subjects.data} />
       <StudySessionList sessions={day.data?.sessions ?? []} />

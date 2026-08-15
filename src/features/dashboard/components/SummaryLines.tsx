@@ -79,7 +79,7 @@ function ProgressRow({ item }: { readonly item: SummaryProgress }) {
       <Progress
         value={percent}
         label={`${item.label}: ${item.display}`}
-        isExceeded={item.value > item.target}
+        tone={item.value > item.target ? 'warning' : 'default'}
       />
     </div>
   )

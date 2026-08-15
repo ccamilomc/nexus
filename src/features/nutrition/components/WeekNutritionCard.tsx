@@ -171,7 +171,7 @@ function WeekMacroRow({ label, value, target, format }: WeekMacroRowProps) {
         <Progress
           value={progress.percent}
           label={`${label}: ${progress.percent}% del objetivo diario, de media esta semana`}
-          isExceeded={progress.isExceeded}
+          tone={progress.isExceeded ? 'warning' : 'default'}
         />
       ) : null}
     </li>
