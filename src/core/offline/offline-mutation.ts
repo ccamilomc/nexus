@@ -8,6 +8,7 @@ import type { QueryClient } from '@tanstack/react-query'
  * mañana. Renombrar una es dejar huérfano lo que hubiera pendiente.
  */
 export const OFFLINE_MUTATIONS = {
+  addFoods: ['offline', 'add-foods'],
   addWater: ['offline', 'add-water'],
   createTransaction: ['offline', 'create-transaction'],
   logSet: ['offline', 'log-set'],

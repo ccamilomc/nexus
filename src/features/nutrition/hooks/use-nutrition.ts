@@ -5,7 +5,7 @@ import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 import { OFFLINE_MUTATIONS } from '@/core/offline'
 import { useNow } from '@/core/time'
-import { toDateKey } from '@/shared/utils'
+import { toDateKey, toLoggedAt } from '@/shared/utils'
 
 import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
 import type { AddFoodsInput, AddWaterInput } from '../services/nutrition.service'
@@ -22,6 +22,7 @@ import type {
   WaterLog,
   WeekNutrition,
 } from '../types/nutrition.types'
+import { addFoodsToDay, knownFoods } from '../utils/add-foods'
 import { buildAddWaterInput } from '../utils/water-input'
 import { nutritionKeys } from './nutrition.keys'
 
@@ -143,23 +144,93 @@ interface AddFoodsVariables {
   readonly items: readonly { readonly foodId: string; readonly servings: number }[]
 }
 
-/** Registra los alimentos elegidos en una comida del día indicado. */
-export function useAddFoodsToMeal(date: Date) {
+/** Lo que el formulario necesita, sin las variables internas de la mutación. */
+interface AddFoodsMutation {
+  readonly isPending: boolean
+  readonly error: AppError | null
+  /**
+   * `onApuntado` corre **en cuanto la comida queda a salvo**, esté enviada o
+   * esperando red. No es `onSuccess`: una mutación pausada nunca lo llamaría, y
+   * el formulario se quedaría abierto como si no hubiera guardado.
+   */
+  readonly mutate: (
+    variables: AddFoodsVariables,
+    options?: { readonly onApuntado?: () => void },
+  ) => void
+}
+
+/**
+ * Registra los alimentos elegidos en una comida del día indicado.
+ *
+ * Sobrevive a quedarse sin red (ADR-0011): los alimentos aparecen en su comida
+ * al momento, esperan guardados y salen solos al recuperar la conexión.
+ *
+ * Es el único registro que crea **dos filas encadenadas** —la comida y sus
+ * alimentos—, y la de arriba la sigue creando el servidor: cuando esto se
+ * reanuda ya hay red, así que puede mirar si el almuerzo existía. Lo que sí
+ * lleva id de cliente es cada alimento, para que reenviar la lista no apunte
+ * el desayuno dos veces.
+ */
+export function useAddFoodsToMeal(date: Date): AddFoodsMutation {
   const { user } = useAuth()
   const now = useNow()
+  const queryClient = useQueryClient()
   const refresh = useRefreshDays()
+  const dayKey = nutritionKeys.day(user?.id, toDateKey(date))
 
-  return useMutation<void, AppError, AddFoodsVariables>({
-    mutationFn: ({ mealType, items }) =>
-      nutritionService.addFoodsToMeal({
-        userId: requireUserId(user?.id),
-        date,
-        mealType,
-        items,
-        now,
-      } satisfies AddFoodsInput),
-    onSuccess: refresh,
+  const mutation = useMutation<void, AppError, AddFoodsInput>({
+    mutationKey: OFFLINE_MUTATIONS.addFoods,
+    mutationFn: (input) => nutritionService.addFoodsToMeal(input),
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: dayKey })
+      const previous = queryClient.getQueryData<DayNutrition | null>(dayKey)
+
+      if (previous) {
+        const known = knownFoods(
+          queryClient.getQueryData<Food[]>(nutritionKeys.foods()),
+          queryClient.getQueryData<RepeatableMeals>(
+            nutritionKeys.repeatable(user?.id, toDateKey(date)),
+          ),
+          previous,
+        )
+
+        queryClient.setQueryData<DayNutrition | null>(dayKey, addFoodsToDay(previous, input, known))
+      }
+
+      return { previous }
+    },
+
+    // Si falla de verdad (sin red se pausa, no falla) se deshace: unos macros
+    // que no se comieron descuadran lo que queda del día.
+    onError: (_error, _input, context) => {
+      const previous = (context as { previous?: DayNutrition | null } | undefined)?.previous
+      if (previous !== undefined) queryClient.setQueryData(dayKey, previous)
+    },
+
+    onSettled: refresh,
   })
+
+  const { mutate } = mutation
+
+  return {
+    isPending: mutation.isPending && !mutation.isPaused,
+    error: mutation.error,
+
+    mutate: useCallback(
+      ({ mealType, items }, options) => {
+        mutate({
+          userId: requireUserId(user?.id),
+          dateKey: toDateKey(date),
+          mealType,
+          items: items.map((item) => ({ ...item, id: crypto.randomUUID() })),
+          loggedAt: toLoggedAt(date, now),
+        })
+        options?.onApuntado?.()
+      },
+      [mutate, user?.id, date, now],
+    ),
+  }
 }
 
 /** Objetivos vigentes, o `null` si aún no se han fijado. */

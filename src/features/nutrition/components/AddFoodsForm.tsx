@@ -84,7 +84,7 @@ export function AddFoodsForm({ date, mealType, choices, onAdded, onBack }: AddFo
   }, 0)
 
   const onSubmit = handleSubmit((values) =>
-    addFoods.mutate({ mealType, items: values.items }, { onSuccess: onAdded }),
+    addFoods.mutate({ mealType, items: values.items }, { onApuntado: onAdded }),
   )
 
   return (
@@ -155,7 +155,7 @@ export function AddFoodsForm({ date, mealType, choices, onAdded, onBack }: AddFo
             </p>
           ) : null}
 
-          {addFoods.isError ? <FormAlert>{addFoods.error.message}</FormAlert> : null}
+          {addFoods.error ? <FormAlert>{addFoods.error.message}</FormAlert> : null}
 
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={addFoods.isPending}>
