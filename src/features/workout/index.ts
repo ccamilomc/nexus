@@ -4,6 +4,8 @@ export type { WorkoutSeries } from './hooks/use-workout-series'
 export { useWorkoutSeries } from './hooks/use-workout-series'
 export type { WorkoutSummary } from './hooks/use-workout-summary'
 export { useWorkoutSummary } from './hooks/use-workout-summary'
+// Lo que entrenamiento deja pendiente sin red; lo registra `app/` (ADR-0011).
+export { registerWorkoutOfflineMutations } from './offline'
 export { ExercisesPage } from './pages/ExercisesPage'
 export { RoutineDetailPage } from './pages/RoutineDetailPage'
 export { RoutinesPage } from './pages/RoutinesPage'

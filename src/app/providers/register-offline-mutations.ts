@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query'
 
 import { registerNutritionOfflineMutations } from '@/features/nutrition'
+import { registerWorkoutOfflineMutations } from '@/features/workout'
 
 /**
  * Deja registrado cómo se envía todo lo que se pueda haber quedado pendiente.
@@ -14,4 +15,5 @@ import { registerNutritionOfflineMutations } from '@/features/nutrition'
  */
 export function registerOfflineMutations(client: QueryClient): void {
   registerNutritionOfflineMutations(client)
+  registerWorkoutOfflineMutations(client)
 }
