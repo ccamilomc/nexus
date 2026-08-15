@@ -42,6 +42,23 @@ const RECENT_DAYS = 7
 const CONSISTENCY_DAYS = 30
 
 /**
+ * Marcar (o desmarcar) un día, **ya resuelto y serializable**.
+ *
+ * Sin nada del closure: esto puede quedarse esperando red y salir mucho después
+ * (ADR-0011).
+ */
+export interface ToggleHabitInput {
+  /** Generado en el cliente; sólo se usa al marcar. */
+  readonly id: string
+  readonly userId: string
+  readonly habitId: string
+  /** Día en `YYYY-MM-DD`: puede ser hoy o uno ya pasado. */
+  readonly dateKey: string
+  /** Estado **actual**: el servicio lo invierte. */
+  readonly isDone: boolean
+}
+
+/**
  * Registros necesarios para pintar la pantalla y calcular las rachas.
  *
  * Se trae una ventana reciente y, **sólo si alguna racha sigue viva en su día
@@ -155,20 +172,24 @@ export const habitsService = {
    * Desmarcar **borra** el registro en lugar de dejarlo en `completed: false`:
    * «no lo hice» y «no lo registré» son lo mismo para una racha, y así el
    * índice único por (hábito, fecha) permite volver a marcarlo.
+   *
+   * Se encola si no hay red (ADR-0011), y las dos mitades aguantan repetirse:
+   * borrar dos veces no hace nada, e insertar dos veces choca con ese mismo
+   * índice único en vez de duplicar el día.
    */
-  async toggleHabit(
-    userId: string,
-    habitId: string,
-    dateKey: string,
-    isDone: boolean,
-  ): Promise<void> {
+  async toggleHabit(input: ToggleHabitInput): Promise<void> {
     try {
-      if (isDone) {
-        await habitsRepository.deleteLog(habitId, dateKey)
+      if (input.isDone) {
+        await habitsRepository.deleteLog(input.habitId, input.dateKey)
         return
       }
 
-      await habitsRepository.insertLog({ user_id: userId, habit_id: habitId, date: dateKey })
+      await habitsRepository.insertLog({
+        id: input.id,
+        user_id: input.userId,
+        habit_id: input.habitId,
+        date: input.dateKey,
+      })
     } catch (error) {
       throw toAppError(error)
     }

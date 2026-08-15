@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query'
 
+import { registerHabitsOfflineMutations } from '@/features/habits'
 import { registerNutritionOfflineMutations } from '@/features/nutrition'
 import { registerWorkoutOfflineMutations } from '@/features/workout'
 
@@ -14,6 +15,7 @@ import { registerWorkoutOfflineMutations } from '@/features/workout'
  * sin que ninguna dependa de otra; cada una aporta las suyas (ADR-0011).
  */
 export function registerOfflineMutations(client: QueryClient): void {
+  registerHabitsOfflineMutations(client)
   registerNutritionOfflineMutations(client)
   registerWorkoutOfflineMutations(client)
 }

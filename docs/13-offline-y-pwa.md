@@ -52,8 +52,16 @@ Una mutación encolable se escribe distinto de una de configuración:
 estudio, gastos). La configuración no, porque se hace con red y porque devuelve
 filas que la pantalla necesita en el momento.
 
-**Estado:** hecho el mecanismo y el primer caso (agua). El resto de registros se
-van sumando uno a uno.
+**Estado:** encolados el **agua**, las **series de entreno** y **marcar un
+hábito**. Faltan las comidas, los gastos, el sueño y el estudio; se van sumando
+uno a uno.
+
+**Lo que hay que mirar en cada uno, más allá de los cuatro pasos:** si el
+servicio **consulta algo antes de escribir**, porque esa consulta sin red falla
+—le pasaba a las series, que preguntaban el último número— y si lo que se pinta
+por adelantado **se puede calcular bien** con lo que hay en pantalla. Cuando no
+se pueda, es mejor dejar esa cifra quieta hasta que vuelva la conexión que
+enseñarla mal.
 
 ### Resolución de conflictos
 
