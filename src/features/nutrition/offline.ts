@@ -2,7 +2,8 @@ import type { QueryClient } from '@tanstack/react-query'
 
 import { registerOfflineMutation } from '@/core/offline'
 
-import { type AddWaterInput, nutritionService } from './services/nutrition.service'
+import type { AddFoodsInput, AddWaterInput } from './services/nutrition.service'
+import { nutritionService } from './services/nutrition.service'
 
 /**
  * Cómo se envía lo que nutrición dejó pendiente por falta de red.
@@ -14,5 +15,8 @@ import { type AddWaterInput, nutritionService } from './services/nutrition.servi
 export function registerNutritionOfflineMutations(client: QueryClient): void {
   registerOfflineMutation<AddWaterInput>(client, 'addWater', (input) =>
     nutritionService.addWater(input),
+  )
+  registerOfflineMutation<AddFoodsInput>(client, 'addFoods', (input) =>
+    nutritionService.addFoodsToMeal(input),
   )
 }

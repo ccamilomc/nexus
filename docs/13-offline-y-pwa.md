@@ -52,9 +52,16 @@ Una mutación encolable se escribe distinto de una de configuración:
 estudio, gastos). La configuración no, porque se hace con red y porque devuelve
 filas que la pantalla necesita en el momento.
 
-**Estado:** encolados el **agua**, las **series de entreno**, **marcar un
-hábito**, los **gastos**, el **estudio** y el **sueño**. Falta registrar
-comidas, que es el único que crea dos filas encadenadas.
+**Estado: los siete registros están encolados** — agua, comidas, series de
+entreno, hábitos, gastos, estudio y sueño. Registrar ya no depende de la
+conexión en ninguna parte de la aplicación.
+
+**Lo que se pinta por adelantado hay que buscarlo donde esté, no donde
+"debería".** Cada pantalla carga lo suyo, y dos veces se dio por hecho que
+había datos en una caché vacía: las series de entreno buscaban el ejercicio en
+el catálogo cuando venía del plan del día, y las comidas buscaban los alimentos
+en un catálogo que sólo se trae al abrir el buscador. En los dos casos no se
+pintaba nada y sólo se vio **probándolo en el navegador**.
 
 **Ojo con los `onSuccess` de la interfaz.** Una mutación en cola nunca
 «termina», así que lo que limpie un formulario o cierre un diálogo desde ahí no

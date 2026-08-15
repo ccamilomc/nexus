@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { type DayRange, dayRange, toLoggedAt, weekDays, weekRange } from '@/shared/utils'
+import { type DayRange, dayRange, parseDateKey, weekDays, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -65,14 +65,12 @@ const GOAL_HISTORY_LIMIT = 10
  * se notaba mientras la pantalla estaba clavada en hoy, y en cuanto se pudo
  * retroceder, apuntar la cena de ayer la habría guardado en hoy.
  */
-async function ensureMealLog(userId: string, date: Date, mealType: MealType, now: Date) {
+async function ensureMealLog(userId: string, date: Date, mealType: MealType, loggedAt: string) {
   const { fromIso, toIso } = dayRange(date)
   const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
   const existing = logs.find((log) => log.meal_type === mealType)
 
-  return (
-    existing ?? (await nutritionRepository.insertMealLog(userId, mealType, toLoggedAt(date, now)))
-  )
+  return existing ?? (await nutritionRepository.insertMealLog(userId, mealType, loggedAt))
 }
 
 /**
@@ -96,16 +94,31 @@ function toFoodRow(values: CreateFoodValues) {
   }
 }
 
-/** Datos necesarios para registrar alimentos en una comida. */
+/**
+ * Datos para registrar alimentos en una comida, **ya resueltos y serializables**.
+ *
+ * Sin `Date` ni nada del closure: esto puede quedarse esperando red y salir
+ * mucho después (ADR-0011).
+ */
 export interface AddFoodsInput {
   readonly userId: string
-  /** El día al que se apunta, que no tiene por qué ser hoy. */
-  readonly date: Date
+  /** El día al que se apunta, en `YYYY-MM-DD`; no tiene por qué ser hoy. */
+  readonly dateKey: string
   readonly mealType: MealType
-  /** Los alimentos con su cantidad; una comida son varias cosas. */
-  readonly items: readonly { readonly foodId: string; readonly servings: number }[]
-  /** El instante actual, para fechar la comida si hay que crearla. */
-  readonly now: Date
+  /**
+   * Los alimentos con su cantidad; una comida son varias cosas.
+   *
+   * **Cada uno lleva su id, generado en el cliente.** Reenviar la lista —un
+   * reintento, dos pestañas— choca así con la clave primaria en vez de apuntar
+   * el desayuno dos veces.
+   */
+  readonly items: readonly {
+    readonly id: string
+    readonly foodId: string
+    readonly servings: number
+  }[]
+  /** Cuándo se apuntó, para fechar la comida si hay que crearla. */
+  readonly loggedAt: string
 }
 
 /**
@@ -245,16 +258,25 @@ export const nutritionService = {
    * almuerzo», no «creo un almuerzo y luego le añado pollo». Se reutiliza la
    * del día para no partir el almuerzo en varios registros.
    */
-  async addFoodsToMeal({ userId, date, mealType, items, now }: AddFoodsInput): Promise<void> {
+  async addFoodsToMeal({
+    userId,
+    dateKey,
+    mealType,
+    items,
+    loggedAt,
+  }: AddFoodsInput): Promise<void> {
     try {
       // Sin nada elegido no se crea la comida: quedaría un almuerzo vacío que
       // ni siquiera cuenta como día registrado.
       if (items.length === 0) return
 
-      const mealLog = await ensureMealLog(userId, date, mealType, now)
+      // La consulta previa se queda: una mutación en cola no llega a ejecutarse
+      // hasta que vuelve la red, así que cuando esto corre siempre hay conexión.
+      const mealLog = await ensureMealLog(userId, parseDateKey(dateKey), mealType, loggedAt)
 
       await nutritionRepository.insertMealLogItems(
-        items.map(({ foodId, servings }) => ({
+        items.map(({ id, foodId, servings }) => ({
+          id,
           meal_log_id: mealLog.id,
           food_id: foodId,
           servings,

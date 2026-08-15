@@ -144,10 +144,10 @@ const SAVED_ITEM: MealLogItem = {
 
 const ADD_LUNCH = {
   userId: USER_ID,
-  date: DATE,
+  dateKey: '2026-07-29',
   mealType: 'lunch',
-  items: [{ foodId: CHICKEN.id, servings: 1.5 }],
-  now: DATE,
+  items: [{ id: 'item-1', foodId: CHICKEN.id, servings: 1.5 }],
+  loggedAt: DATE.toISOString(),
 } as const
 
 const GOAL_VALUES = {
@@ -177,7 +177,7 @@ describe('nutritionService.addFoodsToMeal', () => {
     expect(insertMealLog).toHaveBeenCalledTimes(1)
     expect(insertMealLog.mock.calls[0]?.slice(0, 2)).toEqual([USER_ID, 'lunch'])
     expect(insertMealLogItems).toHaveBeenCalledExactlyOnceWith([
-      { meal_log_id: 'nuevo', food_id: CHICKEN.id, servings: 1.5 },
+      { id: 'item-1', meal_log_id: 'nuevo', food_id: CHICKEN.id, servings: 1.5 },
     ])
   })
 
@@ -188,9 +188,9 @@ describe('nutritionService.addFoodsToMeal', () => {
     await nutritionService.addFoodsToMeal({
       ...ADD_LUNCH,
       items: [
-        { foodId: 'arroz', servings: 1 },
-        { foodId: 'pollo', servings: 1.5 },
-        { foodId: 'ensalada', servings: 2 },
+        { id: 'i-arroz', foodId: 'arroz', servings: 1 },
+        { id: 'i-pollo', foodId: 'pollo', servings: 1.5 },
+        { id: 'i-ensalada', foodId: 'ensalada', servings: 2 },
       ],
     })
 
@@ -205,8 +205,8 @@ describe('nutritionService.addFoodsToMeal', () => {
     await nutritionService.addFoodsToMeal({
       ...ADD_LUNCH,
       items: [
-        { foodId: 'arroz', servings: 1 },
-        { foodId: 'pollo', servings: 1 },
+        { id: 'i-arroz', foodId: 'arroz', servings: 1 },
+        { id: 'i-pollo', foodId: 'pollo', servings: 1 },
       ],
     })
 
@@ -255,26 +255,24 @@ describe('nutritionService.addFoodsToMeal', () => {
     expect(toIso).toBe(new Date(2026, 6, 30).toISOString())
   })
 
-  it('fecha la comida nueva en el día que se apunta, no en el de hoy', async () => {
-    // Apuntar la cena de anteayer creaba la comida con la hora actual, así que
-    // el alimento acababa en el día equivocado. No se veía mientras la pantalla
-    // estaba clavada en hoy.
+  it('fecha la comida nueva con el momento que trae, no con la hora actual', async () => {
+    // Apuntar la cena de anteayer la creaba con la hora de ahora, asi que el
+    // alimento acababa en el dia equivocado. El calculo vive ahora en el hook,
+    // con el resto de lo que se resuelve antes de encolar.
     listMealLogsBetween.mockResolvedValue([])
-    const ANTEAYER = new Date(2026, 6, 27)
+    const MEDIODIA = new Date(2026, 6, 27, 12, 0).toISOString()
 
-    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, date: ANTEAYER, now: DATE })
+    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, loggedAt: MEDIODIA })
 
-    const loggedAt = new Date(insertMealLog.mock.calls[0]?.[2] ?? '')
-    expect(loggedAt.getDate()).toBe(27)
-    expect(loggedAt.getHours()).toBe(12)
+    expect(insertMealLog.mock.calls[0]?.[2]).toBe(MEDIODIA)
   })
 
-  it('si el día es hoy conserva la hora real', async () => {
-    listMealLogsBetween.mockResolvedValue([])
-
+  it('guarda cada alimento con el id que trae, para que reenviar no duplique', async () => {
     await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
-    expect(insertMealLog.mock.calls[0]?.[2]).toBe(DATE.toISOString())
+    expect(insertMealLogItems).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'item-1', food_id: CHICKEN.id, servings: 1.5 }),
+    ])
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
