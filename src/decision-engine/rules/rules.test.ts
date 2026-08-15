@@ -294,11 +294,22 @@ describe('studyBehindRule', () => {
     expect(studyBehindRule.appliesTo(withStudy(200, 700))).toBe(true)
   })
 
-  it('dice cuánto falta y cuántos días quedan', () => {
+  it('reparte lo que falta entre los días que quedan, contando hoy', () => {
+    // Jueves: quedan cuatro días con el de hoy, no tres. Decia uno menos, y el
+    // sabado avisaba de que «queda 1 dia» cuando aun se podia estudiar hoy.
     const [recommendation] = studyBehindRule.evaluate(withStudy(100, 700))
 
     expect(recommendation?.message).toContain('10 h')
-    expect(recommendation?.message).toContain('3 días')
+    expect(recommendation?.message).toContain('2 h 30 min al día')
+    expect(recommendation?.data?.daysLeft).toBe(4)
+  })
+
+  it('el sábado quedan dos días, que es lo que dice también la pantalla de Estudio', () => {
+    // 1 de agosto de 2026 es sábado.
+    const [recommendation] = studyBehindRule.evaluate(withStudy(100, 700, '2026-08-01'))
+
+    expect(recommendation?.data?.daysLeft).toBe(2)
+    expect(recommendation?.message).toContain('5 h al día')
   })
 
   it('el último día de la semana el aviso es urgente', () => {
