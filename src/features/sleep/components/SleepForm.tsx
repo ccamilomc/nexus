@@ -8,7 +8,7 @@ import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
 import { cn } from '@/shared/lib/utils'
-import { formatMinutes, formatTime } from '@/shared/utils'
+import { formatMinutes, formatTime, toDateKey } from '@/shared/utils'
 
 import { QUALITY_LABELS, QUALITY_VALUES } from '../constants/sleep.constants'
 import { useLogSleep } from '../hooks/use-sleep'
@@ -38,7 +38,7 @@ const FALLBACK_PATTERN: SleepPattern = { bedtime: '23:00', wakeTime: '07:00' }
  * son las que se querían poner.
  */
 export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: SleepFormProps) {
-  const logSleep = useLogSleep(today)
+  const logSleep = useLogSleep()
   // Sin costumbre registrada se cae a un horario de fábrica; con ella, el
   // formulario arranca donde el usuario suele estar y casi nunca hay que tocarlo.
   const start = pattern ?? FALLBACK_PATTERN
@@ -52,6 +52,7 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
   } = useForm<LogSleepValues>({
     resolver: zodResolver(logSleepSchema),
     defaultValues: {
+      date: toDateKey(today),
       bedtime: log?.bedtime ? formatTime(log.bedtime) : start.bedtime,
       wakeTime: log?.wake_time ? formatTime(log.wake_time) : start.wakeTime,
       ...(log?.quality_rating === null || log?.quality_rating === undefined
@@ -69,6 +70,27 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
     <Card>
       <CardContent className="p-4">
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
+          {/* La fecha va en su propia fila y las dos horas juntas debajo: son
+              cosas distintas —qué noche, y de cuándo a cuándo— y apretadas en
+              una sola fila el móvil dejaba «Desperté el día» arriba y «Desperté»
+              suelto abajo, que se leen casi igual. El campo no se estira: es
+              corto y estirarlo sólo deja hueco. */}
+          <FormField
+            id="sleep-date"
+            label="Desperté el día"
+            error={errors.date?.message}
+            className="max-w-44"
+          >
+            <Input
+              id="sleep-date"
+              type="date"
+              // Una noche del futuro todavía no se ha dormido.
+              max={toDateKey(today)}
+              aria-invalid={Boolean(errors.date)}
+              {...register('date')}
+            />
+          </FormField>
+
           <div className="flex flex-wrap gap-3">
             <FormField id="sleep-bedtime" label="Me acosté" error={errors.bedtime?.message}>
               <Input id="sleep-bedtime" type="time" {...register('bedtime')} />

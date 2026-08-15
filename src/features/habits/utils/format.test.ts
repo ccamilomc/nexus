@@ -1,17 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDayAndMonth, parseDateKey, weekdayInitial } from './format'
+import { parseDateKey } from '@/shared/utils'
 
-describe('parseDateKey', () => {
-  it('interpreta la clave en hora local, no en UTC', () => {
-    // `new Date('2026-07-29')` daría el 28 en Colombia: por eso se parte a mano.
-    const date = parseDateKey('2026-07-29')
-
-    expect(date.getFullYear()).toBe(2026)
-    expect(date.getMonth()).toBe(6)
-    expect(date.getDate()).toBe(29)
-  })
-})
+import { formatDayAndMonth, weekdayInitial } from './format'
 
 describe('weekdayInitial', () => {
   it('usa la equis del miércoles para no confundirlo con el martes', () => {

@@ -1,5 +1,5 @@
 import { createAppError, toAppError } from '@/core/error'
-import { toDateKey } from '@/shared/utils'
+import { parseDateKey, toDateKey } from '@/shared/utils'
 
 import { sleepRepository } from '../repositories/sleep.repository'
 import type { LogSleepValues, SleepGoalValues } from '../schemas/sleep.schema'
@@ -99,22 +99,31 @@ export const sleepService = {
   },
 
   /**
-   * Registra (o corrige) la noche.
+   * Registra (o corrige) una noche.
    *
    * La duración se **calcula** de las horas: nadie sabe cuántos minutos durmió,
    * pero todo el mundo recuerda cuándo se acostó y cuándo sonó el despertador.
    * Si ya había registro para esa fecha se actualiza, porque una noche sólo se
    * duerme una vez y volver a la pantalla debe corregir, no duplicar.
+   *
+   * **La noche llega en los valores y no como el día de hoy.** El sueño se
+   * apunta al levantarse y olvidarse un par de días es lo normal; sin poder
+   * elegirla, esas noches no había manera de recuperarlas.
    */
-  async logSleep(userId: string, today: Date, values: LogSleepValues): Promise<void> {
+  async logSleep(userId: string, values: LogSleepValues): Promise<void> {
     try {
+      const date = parseDateKey(values.date)
+      if (Number.isNaN(date.getTime())) {
+        throw createAppError('validation', 'Revisa el día: no se entiende.')
+      }
+
       const minutes = sleepMinutes(values.bedtime, values.wakeTime)
-      const instants = sleepInstants(today, values.bedtime, values.wakeTime)
+      const instants = sleepInstants(date, values.bedtime, values.wakeTime)
       if (minutes === null || instants === null) {
         throw createAppError('validation', 'Revisa las horas: no son válidas.')
       }
 
-      const dateKey = toDateKey(today)
+      const dateKey = values.date
       const row = {
         bedtime: instants.bedtimeIso,
         wake_time: instants.wakeTimeIso,

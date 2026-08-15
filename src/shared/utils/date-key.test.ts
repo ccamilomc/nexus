@@ -1,6 +1,23 @@
 import { describe, expect, it } from 'vitest'
 
-import { lastDays, previousDay, toDateKey, toDateKeyFromIso } from './date-key'
+import { lastDays, parseDateKey, previousDay, toDateKey, toDateKeyFromIso } from './date-key'
+
+describe('parseDateKey', () => {
+  it('interpreta la clave en hora local, no en UTC', () => {
+    // `new Date('2026-07-29')` daría el 28 en Colombia: por eso se parte a mano.
+    const date = parseDateKey('2026-07-29')
+
+    expect(date.getFullYear()).toBe(2026)
+    expect(date.getMonth()).toBe(6)
+    expect(date.getDate()).toBe(29)
+  })
+
+  it('deshace lo que hace `toDateKey`', () => {
+    const original = new Date(2026, 7, 14, 23, 30)
+
+    expect(toDateKey(parseDateKey(toDateKey(original)))).toBe(toDateKey(original))
+  })
+})
 
 describe('toDateKey', () => {
   it('usa el formato que entiende Postgres', () => {

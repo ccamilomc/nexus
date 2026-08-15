@@ -16,6 +16,14 @@ const time = z.string().regex(TIME_PATTERN, 'Usa una hora como 23:30.')
  * añade fricción a un registro que ya se hace medio dormido.
  */
 export const logSleepSchema = z.object({
+  /**
+   * La mañana en que se despertó, en `YYYY-MM-DD`.
+   *
+   * Va en el formulario para poder apuntar una noche que se pasó por alto: el
+   * sueño se registra al levantarse y olvidarse un par de días es lo normal.
+   * Por defecto es hoy, que es el caso de casi siempre.
+   */
+  date: z.string().min(1, 'Elige la noche.'),
   bedtime: time,
   wakeTime: time,
   qualityRating: z.number().int().min(1).max(5).optional(),
