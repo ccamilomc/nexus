@@ -369,22 +369,18 @@ describe('nutritionService.getRepeatableMeals', () => {
 })
 
 describe('nutritionService.addWater', () => {
-  it('apunta el agua en el día que se está mirando, no en el de hoy', async () => {
-    // Fechaba siempre en el momento de apuntarlo: desde que se puede retroceder
-    // de día, el vaso de ayer caía en hoy y la tarjeta ni se movía.
-    const ANTEAYER = new Date(2026, 6, 27)
+  // El día correcto se decide al armar el registro, y se prueba en
+  // `utils/water-input.test.ts`: aquí ya llega resuelto porque esto puede
+  // enviarse horas después, sin red de por medio (ADR-0011).
+  it('guarda el registro con el id que trae, para que reenviarlo no duplique', async () => {
+    await nutritionService.addWater({
+      id: 'w1',
+      userId: USER_ID,
+      amountMl: 250,
+      loggedAt: DATE.toISOString(),
+    })
 
-    await nutritionService.addWater(USER_ID, 250, ANTEAYER, DATE)
-
-    const loggedAt = new Date(insertWaterLog.mock.calls[0]?.[2] ?? '')
-    expect(loggedAt.getDate()).toBe(27)
-    expect(loggedAt.getHours()).toBe(12)
-  })
-
-  it('si el día es hoy conserva la hora real, que es cuando se bebió', async () => {
-    await nutritionService.addWater(USER_ID, 250, DATE, DATE)
-
-    expect(insertWaterLog.mock.calls[0]?.[2]).toBe(DATE.toISOString())
+    expect(insertWaterLog).toHaveBeenCalledWith('w1', USER_ID, 250, DATE.toISOString())
   })
 })
 

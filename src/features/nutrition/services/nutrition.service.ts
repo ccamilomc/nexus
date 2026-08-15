@@ -108,6 +108,21 @@ export interface AddFoodsInput {
   readonly now: Date
 }
 
+/**
+ * Datos para registrar agua, **ya resueltos y serializables**.
+ *
+ * Sin `Date` ni nada del closure: este registro se encola cuando no hay red y
+ * se reanuda cuando ya no queda rastro de la pantalla que lo pidió (ADR-0011).
+ */
+export interface AddWaterInput {
+  /** Generado en el cliente: la pantalla ya enseñó el registro con este id. */
+  readonly id: string
+  readonly userId: string
+  readonly amountMl: number
+  /** El momento en que se tocó el botón, no en el que se llegó a enviar. */
+  readonly loggedAt: string
+}
+
 /** Reglas de negocio de nutrición. Traduce errores técnicos a `AppError`. */
 export const nutritionService = {
   async getFoods(): Promise<Food[]> {
@@ -398,9 +413,22 @@ export const nutritionService = {
    * retroceder de día eso ponía el agua de ayer en hoy: la tarjeta enseñaba el
    * día elegido y el vaso caía en otro, así que el número ni se movía.
    */
-  async addWater(userId: string, amountMl: number, date: Date, now: Date): Promise<void> {
+  /**
+   * Registra agua.
+   *
+   * Recibe el `id` y el momento ya resueltos, no un día y un reloj: este
+   * registro puede quedarse esperando red y enviarse horas después, y entonces
+   * el momento que vale es **cuando se tocó el botón**, no cuando salió
+   * (ADR-0011).
+   */
+  async addWater(input: AddWaterInput): Promise<void> {
     try {
-      await nutritionRepository.insertWaterLog(userId, amountMl, toLoggedAt(date, now))
+      await nutritionRepository.insertWaterLog(
+        input.id,
+        input.userId,
+        input.amountMl,
+        input.loggedAt,
+      )
     } catch (error) {
       throw toAppError(error)
     }

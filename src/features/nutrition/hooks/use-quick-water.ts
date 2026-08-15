@@ -43,7 +43,7 @@ export function useQuickWater(): QuickWater {
     amountLabel: formatVolumeMl(QUICK_AMOUNT.ml),
     totalLabel: isPending ? null : formatVolumeMl(data?.totalMl ?? 0),
     isPending: addWater.isPending,
-    errorMessage: addWater.isError ? addWater.error.message : null,
+    errorMessage: addWater.error?.message ?? null,
     add: () => addWater.mutate(QUICK_AMOUNT.ml),
   }
 }

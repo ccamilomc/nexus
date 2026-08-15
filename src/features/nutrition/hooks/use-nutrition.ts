@@ -3,11 +3,12 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { OFFLINE_MUTATIONS } from '@/core/offline'
 import { useNow } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateFoodValues, NutritionGoalValues } from '../schemas/nutrition.schema'
-import type { AddFoodsInput } from '../services/nutrition.service'
+import type { AddFoodsInput, AddWaterInput } from '../services/nutrition.service'
 import { nutritionService } from '../services/nutrition.service'
 import type {
   DayNutrition,
@@ -18,8 +19,10 @@ import type {
   NutritionGoal,
   RepeatableMeals,
   RepricedFood,
+  WaterLog,
   WeekNutrition,
 } from '../types/nutrition.types'
+import { buildAddWaterInput } from '../utils/water-input'
 import { nutritionKeys } from './nutrition.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -220,17 +223,110 @@ export function useRepeatableMeals(date: Date) {
   })
 }
 
-/** Registra agua en el día indicado, que no tiene por qué ser hoy. */
-export function useAddWater(date: Date) {
+/**
+ * Registra agua en el día indicado, que no tiene por qué ser hoy.
+ *
+ * **Es la primera mutación que sobrevive a quedarse sin red** (ADR-0011), y por
+ * eso está escrita distinto de las de configuración:
+ *
+ * - lleva `mutationKey`, que es lo que permite reanudarla tras cerrar la
+ *   aplicación;
+ * - **no captura nada del closure**: el usuario, el momento y el id viajan en
+ *   las variables, porque al reanudarse no queda nada de esta pantalla;
+ * - se aplica **antes de salir** (`onMutate`), así que el vaso se ve en el acto
+ *   con red o sin ella. Antes el botón se quedaba deshabilitado y el total en
+ *   `0 ml`, que parecía que la aplicación se había colgado.
+ */
+export function useAddWater(date: Date): AddWaterMutation {
   const { user } = useAuth()
   const now = useNow()
+  const queryClient = useQueryClient()
   const refresh = useRefreshDays()
+  const waterKey = nutritionKeys.water(user?.id, toDateKey(date))
 
-  return useMutation<void, AppError, number>({
-    mutationFn: (amountMl) =>
-      nutritionService.addWater(requireUserId(user?.id), amountMl, date, now),
-    onSuccess: refresh,
+  const mutation = useMutation<void, AppError, AddWaterInput>({
+    mutationKey: OFFLINE_MUTATIONS.addWater,
+    mutationFn: (input) => nutritionService.addWater(input),
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: waterKey })
+      const previous = queryClient.getQueryData<DayWater | null>(waterKey)
+
+      queryClient.setQueryData<DayWater | null>(waterKey, (current) =>
+        addWaterOptimistically(current ?? null, input),
+      )
+
+      return { previous }
+    },
+
+    // Si falla de verdad (no por falta de red: eso pausa, no falla) se deshace,
+    // porque dejar en pantalla un vaso que no existe es peor que no pintarlo.
+    onError: (_error, _input, context) => {
+      const previous = (context as { previous?: DayWater | null } | undefined)?.previous
+      if (previous !== undefined) queryClient.setQueryData(waterKey, previous)
+    },
+
+    onSettled: refresh,
   })
+
+  const { mutate } = mutation
+
+  return {
+    // Pausada no es «en marcha»: sin red el registro ya está guardado y a la
+    // espera, así que bloquear el botón sólo impediría apuntar el segundo vaso.
+    isPending: mutation.isPending && !mutation.isPaused,
+    error: mutation.error,
+
+    // El componente sigue pidiendo mililitros: que el registro lleve id propio
+    // y fecha resuelta es asunto de aquí, no suyo. El id y el reloj se fijan en
+    // este momento —al tocar el botón— y no cuando la mutación llegue a salir.
+    mutate: useCallback(
+      (amountMl, options) => {
+        const input = buildAddWaterInput({
+          id: crypto.randomUUID(),
+          userId: requireUserId(user?.id),
+          amountMl,
+          date,
+          now,
+        })
+
+        mutate(input, options)
+      },
+      [mutate, user?.id, date, now],
+    ),
+  }
+}
+
+/**
+ * Lo que el componente necesita del registro de agua, y nada más.
+ *
+ * Se declara en vez de devolver la mutación entera porque sus variables ya no
+ * son los mililitros que se piden desde fuera, y dejar las dos formas a la vista
+ * invita a mandar la que no toca.
+ */
+interface AddWaterMutation {
+  readonly isPending: boolean
+  /** El fallo, o `null`. Un solo dato: `isError` y `error` podían contradecirse. */
+  readonly error: AppError | null
+  readonly mutate: (amountMl: number, options?: { readonly onSuccess?: () => void }) => void
+}
+
+/** Lo que la pantalla enseña mientras el registro todavía no ha salido. */
+function addWaterOptimistically(current: DayWater | null, input: AddWaterInput): DayWater {
+  const log: WaterLog = {
+    id: input.id,
+    user_id: input.userId,
+    amount_ml: input.amountMl,
+    logged_at: input.loggedAt,
+    created_at: input.loggedAt,
+    updated_at: input.loggedAt,
+    deleted_at: null,
+  }
+
+  return {
+    logs: [log, ...(current?.logs ?? [])],
+    totalMl: (current?.totalMl ?? 0) + input.amountMl,
+  }
 }
 
 /** Quita un registro de agua hecho por error. */

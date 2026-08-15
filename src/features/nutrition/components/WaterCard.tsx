@@ -152,7 +152,7 @@ export function WaterCard({ date }: WaterCardProps) {
         ) : null}
 
         {isError ? <FormAlert>{error.message}</FormAlert> : null}
-        {addWater.isError ? <FormAlert>{addWater.error.message}</FormAlert> : null}
+        {addWater.error ? <FormAlert>{addWater.error.message}</FormAlert> : null}
         {removeWater.isError ? <FormAlert>{removeWater.error.message}</FormAlert> : null}
 
         {data && data.logs.length > 0 ? (

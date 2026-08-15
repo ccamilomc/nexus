@@ -8,8 +8,10 @@ La app debe sentirse nativa e instalable. Esta capa se implementa en los Sprints
 
 ### Preparación desde el diseño
 
-- Los **repositorios** son la costura: escriben en Supabase con red, o en la
-  **cola local** sin red. El resto de capas no sabe si hay conexión.
+- La costura online/offline es la **mutación**, no el repositorio: se pausa la
+  llamada entera. El resto de capas no sabe si hay conexión. _(El diseño inicial
+  la ponía en el repositorio; el porqué del cambio está en
+  [ADR-0011](./adr/0011-la-cola-offline-es-la-de-tanstack-query.md).)_
 - Toda tabla sincronizable tiene `updated_at` (resolución de conflictos) y
   `deleted_at` (tombstones para borrados). Ver [05](./05-base-de-datos.md).
 - Los ids son **UUID generados en cliente**: una entidad creada offline ya tiene
@@ -24,20 +26,34 @@ La app debe sentirse nativa e instalable. Esta capa se implementa en los Sprints
 
 ### Cola de escritura offline
 
+**La cola es el `MutationCache` de TanStack Query**, que ya pausa las mutaciones
+sin red y ya se persiste. No hay cola propia ni IndexedDB
+([ADR-0011](./adr/0011-la-cola-offline-es-la-de-tanstack-query.md)).
+
 ```mermaid
 flowchart LR
-    UI["Acción del usuario"] --> S["Service"]
-    S --> R["Repository"]
-    R -->|online| SB[("Supabase")]
-    R -->|offline| Q["Cola persistente (IndexedDB)"]
-    Q -->|reconexión| SYNC["Sincronizador"]
-    SYNC --> SB
-    SB --> QC["Actualiza cache TanStack Query"]
+    UI["Acción del usuario"] --> M["Mutación con mutationKey"]
+    M --> OPT["onMutate: se ve al instante"]
+    M -->|online| S["Service → Repository"] --> SB[("Supabase")]
+    M -->|offline| P["Pausada y guardada en localStorage"]
+    P -->|"vuelve la red o se reabre la app"| S
 ```
 
-- Las mutaciones offline se **encolan** de forma persistente y se aplican de forma
-  **optimista** en la cache (la UI responde al instante).
-- Al recuperar conexión, el **sincronizador** reproduce la cola en orden.
+Una mutación encolable se escribe distinto de una de configuración:
+
+| Pieza                                | Por qué                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mutationKey` de `OFFLINE_MUTATIONS` | Lo que se guarda son **las variables, no la función**: al restaurar sólo se reanuda si la clave tiene un `mutationFn` registrado.          |
+| Variables completas y serializables  | Al reanudar **no queda closure**: el usuario, el id y el momento viajan dentro.                                                            |
+| `onMutate` optimista                 | El registro se ve en el acto, con red o sin ella.                                                                                          |
+| El `userId` dentro de las variables  | Lo pendiente de una sesión no puede enviarse en nombre de quien entre después ([ADR-0010](./adr/0010-la-cache-lleva-firmado-su-dueno.md)). |
+
+**Qué se encola:** sólo registrar (agua, comidas, series, hábitos, sueño,
+estudio, gastos). La configuración no, porque se hace con red y porque devuelve
+filas que la pantalla necesita en el momento.
+
+**Estado:** hecho el mecanismo y el primer caso (agua). El resto de registros se
+van sumando uno a uno.
 
 ### Resolución de conflictos
 

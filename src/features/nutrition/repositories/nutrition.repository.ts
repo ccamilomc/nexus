@@ -296,10 +296,23 @@ export const nutritionRepository = {
     return data ?? []
   },
 
-  async insertWaterLog(userId: string, amountMl: number, loggedAtIso: string): Promise<WaterLog> {
+  /**
+   * Registra agua con **el id que trae**, generado en el cliente.
+   *
+   * No lo pone la base porque este registro puede salir sin conexión y llegar
+   * mucho después: la pantalla ya lo enseñó con ese id, y reenviarlo dos veces
+   * —dos pestañas, un reintento— tiene que chocar con la clave primaria en vez
+   * de crear un vaso de agua de más (ADR-0004).
+   */
+  async insertWaterLog(
+    id: string,
+    userId: string,
+    amountMl: number,
+    loggedAtIso: string,
+  ): Promise<WaterLog> {
     const { data, error } = await supabase
       .from('water_logs')
-      .insert({ user_id: userId, amount_ml: amountMl, logged_at: loggedAtIso })
+      .insert({ id, user_id: userId, amount_ml: amountMl, logged_at: loggedAtIso })
       .select('*')
       .single()
 
