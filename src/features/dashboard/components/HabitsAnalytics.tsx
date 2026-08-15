@@ -84,7 +84,7 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
               singular: 'día con hábitos',
               plural: 'días con hábitos',
             }}
-            variant="bar"
+            variant="area"
             colorIndex={5}
             formatValue={(percent) => `${Math.round(percent)} %`}
             formatAxisValue={(percent) => `${Math.round(percent)}`}
