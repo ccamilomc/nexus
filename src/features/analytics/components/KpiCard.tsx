@@ -18,6 +18,22 @@ const DIRECTION_ICONS = { up: ArrowUp, down: ArrowDown, flat: Minus }
 const DIRECTION_LABELS = { up: 'más', down: 'menos', flat: 'igual' }
 
 /**
+ * Cómo cambió, en una frase.
+ *
+ * **Sin cifra cuando el cambio es enorme.** «993 % más» no se procesa y encima
+ * engaña: casi siempre significa que antes no había casi nada apuntado, no que
+ * se haya multiplicado el esfuerzo por diez.
+ */
+function comparisonText(comparison: Comparison): string {
+  if (comparison.direction === 'flat') return 'Igual que el periodo anterior'
+
+  const label = DIRECTION_LABELS[comparison.direction]
+  if (comparison.percent === null) return `Mucho ${label} que el periodo anterior`
+
+  return `${comparison.percent} % ${label} que el periodo anterior`
+}
+
+/**
  * Una cifra del periodo, con su comparación.
  *
  * La comparación va en gris y sin colores de estado, a propósito. Una flecha
@@ -43,9 +59,7 @@ export function KpiCard({ label, value, comparison, hint }: KpiCardProps) {
         {comparison && Icon ? (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
             <Icon className="h-3.5 w-3.5" aria-hidden />
-            {comparison.direction === 'flat'
-              ? 'Igual que el periodo anterior'
-              : `${comparison.percent} % ${DIRECTION_LABELS[comparison.direction]} que el periodo anterior`}
+            {comparisonText(comparison)}
           </p>
         ) : hint ? (
           <p className="text-xs text-muted-foreground">{hint}</p>

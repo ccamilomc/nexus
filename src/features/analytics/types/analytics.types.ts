@@ -38,6 +38,11 @@ export interface PeriodWindow {
  */
 export interface Comparison {
   readonly direction: 'up' | 'down' | 'flat'
-  /** Variación relativa, en porcentaje y en valor absoluto. */
-  readonly percent: number
+  /**
+   * Variación relativa, en porcentaje y en valor absoluto.
+   *
+   * `null` cuando el cambio es tan grande que la cifra estorba: se dice con
+   * palabras, igual que cuando el periodo anterior estaba en cero.
+   */
+  readonly percent: number | null
 }
