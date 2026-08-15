@@ -37,7 +37,7 @@ export function SleepQuickLog() {
   const now = useNow()
   const lastNight = useLastNight(today)
   const history = useSleepHistory()
-  const logSleep = useLogSleep()
+  const logSleep = useLogSleep(today)
 
   // Nada que ofrecer si ya está apuntada, si no es por la mañana o si aún no hay
   // costumbre de la que hablar.
@@ -94,7 +94,7 @@ export function SleepQuickLog() {
           </Button>
         </div>
 
-        {logSleep.isError ? (
+        {logSleep.error ? (
           <p role="alert" className="text-xs text-destructive">
             {logSleep.error.message}
           </p>

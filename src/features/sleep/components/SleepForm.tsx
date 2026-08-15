@@ -38,7 +38,7 @@ const FALLBACK_PATTERN: SleepPattern = { bedtime: '23:00', wakeTime: '07:00' }
  * son las que se querían poner.
  */
 export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: SleepFormProps) {
-  const logSleep = useLogSleep()
+  const logSleep = useLogSleep(today)
   // Sin costumbre registrada se cae a un horario de fábrica; con ella, el
   // formulario arranca donde el usuario suele estar y casi nunca hay que tocarlo.
   const start = pattern ?? FALLBACK_PATTERN
@@ -64,7 +64,7 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
   const [bedtime, wakeTime, quality] = watch(['bedtime', 'wakeTime', 'qualityRating'])
   const minutes = sleepMinutes(bedtime ?? '', wakeTime ?? '')
 
-  const onSubmit = handleSubmit((values) => logSleep.mutate(values, { onSuccess: onSaved }))
+  const onSubmit = handleSubmit((values) => logSleep.mutate(values, { onApuntado: onSaved }))
 
   return (
     <Card>
@@ -130,7 +130,7 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
             </div>
           </fieldset>
 
-          {logSleep.isError ? <FormAlert>{logSleep.error.message}</FormAlert> : null}
+          {logSleep.error ? <FormAlert>{logSleep.error.message}</FormAlert> : null}
 
           <div className="flex flex-wrap gap-2">
             <Button type="submit" disabled={logSleep.isPending}>

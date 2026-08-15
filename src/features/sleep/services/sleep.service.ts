@@ -1,12 +1,17 @@
-import { createAppError, toAppError } from '@/core/error'
-import { parseDateKey, toDateKey } from '@/shared/utils'
+import { toAppError } from '@/core/error'
+import { toDateKey } from '@/shared/utils'
 
 import { sleepRepository } from '../repositories/sleep.repository'
-import type { LogSleepValues, SleepGoalValues } from '../schemas/sleep.schema'
-import type { SleepGoal, SleepHistory, SleepLog, SleepPeriodSeries } from '../types/sleep.types'
+import type { SleepGoalValues } from '../schemas/sleep.schema'
+import type {
+  LogSleepInput,
+  SleepGoal,
+  SleepHistory,
+  SleepLog,
+  SleepPeriodSeries,
+} from '../types/sleep.types'
 import { buildSleepHistory } from '../utils/sleep-history'
 import { buildSleepSeries } from '../utils/sleep-series'
-import { sleepInstants, sleepMinutes } from '../utils/sleep-time'
 
 /** Noches que se traen para el historial y su media. */
 const HISTORY_NIGHTS = 7
@@ -109,35 +114,33 @@ export const sleepService = {
    * **La noche llega en los valores y no como el día de hoy.** El sueño se
    * apunta al levantarse y olvidarse un par de días es lo normal; sin poder
    * elegirla, esas noches no había manera de recuperarlas.
+   *
+   * Las horas llegan ya convertidas a instantes y minutos (`utils/sleep-input`)
+   * porque esto puede quedarse esperando red y salir después (ADR-0011).
    */
-  async logSleep(userId: string, values: LogSleepValues): Promise<void> {
+  async logSleep(input: LogSleepInput): Promise<void> {
     try {
-      const date = parseDateKey(values.date)
-      if (Number.isNaN(date.getTime())) {
-        throw createAppError('validation', 'Revisa el día: no se entiende.')
-      }
-
-      const minutes = sleepMinutes(values.bedtime, values.wakeTime)
-      const instants = sleepInstants(date, values.bedtime, values.wakeTime)
-      if (minutes === null || instants === null) {
-        throw createAppError('validation', 'Revisa las horas: no son válidas.')
-      }
-
-      const dateKey = values.date
       const row = {
-        bedtime: instants.bedtimeIso,
-        wake_time: instants.wakeTimeIso,
-        duration_minutes: minutes,
-        quality_rating: values.qualityRating ?? null,
+        bedtime: input.bedtimeIso,
+        wake_time: input.wakeTimeIso,
+        duration_minutes: input.minutes,
+        quality_rating: input.qualityRating,
       }
 
-      const existing = await sleepRepository.findLogByDate(userId, dateKey)
+      // La consulta se queda aquí: una mutación en cola no llega a ejecutarse
+      // hasta que vuelve la red, así que cuando esto corre siempre hay conexión.
+      const existing = await sleepRepository.findLogByDate(input.userId, input.dateKey)
       if (existing) {
         await sleepRepository.updateLog(existing.id, row)
         return
       }
 
-      await sleepRepository.insertLog({ user_id: userId, date: dateKey, ...row })
+      await sleepRepository.insertLog({
+        id: input.id,
+        user_id: input.userId,
+        date: input.dateKey,
+        ...row,
+      })
     } catch (error) {
       throw toAppError(error)
     }

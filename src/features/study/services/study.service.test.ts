@@ -187,48 +187,33 @@ describe('studyService.deleteSubjectForever', () => {
 })
 
 describe('studyService.logStudy', () => {
-  /** El día de `DATE`, tal y como lo manda el formulario. */
-  const DATE_KEY = '2026-07-30'
+  // Las horas se calculan al armar el registro, y se prueban en
+  // `utils/study-input.test.ts`: aquí llegan resueltas porque la sesión puede
+  // haber esperado sin red y salir después (ADR-0011).
+  const INPUT = {
+    id: 's-nueva',
+    userId: USER_ID,
+    subjectId: CALCULO.id,
+    minutes: 90,
+    startedAt: '2026-07-30T21:30:00.000Z',
+    endedAt: '2026-07-30T23:00:00.000Z',
+  }
 
-  it('coloca la sesión hacia atrás desde ahora, con su duración', async () => {
-    await studyService.logStudy(
-      USER_ID,
-      { date: DATE_KEY, subjectId: CALCULO.id, minutes: 90 },
-      DATE,
-    )
+  it('guarda la sesión con el id que trae, para que reenviarla no duplique', async () => {
+    await studyService.logStudy(INPUT)
 
-    const input = insertSession.mock.calls[0]?.[0]
-    expect(input).toMatchObject({
+    expect(insertSession).toHaveBeenCalledExactlyOnceWith({
+      id: 's-nueva',
       user_id: USER_ID,
       subject_id: CALCULO.id,
       duration_minutes: 90,
-      ended_at: DATE.toISOString(),
+      started_at: INPUT.startedAt,
+      ended_at: INPUT.endedAt,
     })
-    // 90 minutos antes de las 18:00 son las 16:30.
-    expect(input?.started_at).toBe(new Date(2026, 6, 30, 16, 30).toISOString())
-  })
-
-  it('un día pasado se coloca en ese día, no en el de hoy', async () => {
-    // Una tarde de estudio sin registrar se sumaba al día equivocado al
-    // apuntarla al día siguiente.
-    await studyService.logStudy(
-      USER_ID,
-      { date: '2026-07-27', subjectId: CALCULO.id, minutes: 60 },
-      DATE,
-    )
-
-    const input = insertSession.mock.calls[0]?.[0]
-    // Termina al mediodía de aquel día y empieza una hora antes.
-    expect(input?.ended_at).toBe(new Date(2026, 6, 27, 12, 0).toISOString())
-    expect(input?.started_at).toBe(new Date(2026, 6, 27, 11, 0).toISOString())
   })
 
   it('sin valoración de foco no envía el campo', async () => {
-    await studyService.logStudy(
-      USER_ID,
-      { date: DATE_KEY, subjectId: CALCULO.id, minutes: 25 },
-      DATE,
-    )
+    await studyService.logStudy(INPUT)
 
     expect(insertSession.mock.calls[0]?.[0]).not.toHaveProperty('focus_rating')
   })
@@ -236,9 +221,7 @@ describe('studyService.logStudy', () => {
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     insertSession.mockRejectedValue(new Error('violates row-level security policy'))
 
-    const error: unknown = await studyService
-      .logStudy(USER_ID, { date: DATE_KEY, subjectId: CALCULO.id, minutes: 25 }, DATE)
-      .catch((e) => e)
+    const error: unknown = await studyService.logStudy(INPUT).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')
