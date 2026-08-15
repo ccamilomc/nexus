@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { toDateKey } from '@/shared/utils'
 
-import type { AnalyticsPeriod } from '../types/analytics.types'
+import type { AnalyticsPeriod } from '../types/dashboard.types'
 import { periodWindow } from './period'
 
 const WEEK: AnalyticsPeriod = {

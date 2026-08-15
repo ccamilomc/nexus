@@ -13,7 +13,7 @@ import {
 import { EmptyState } from '@/shared/components/feedback'
 import type { SeriesPoint } from '@/shared/utils'
 
-import { MIN_DAYS_FOR_TREND } from '../constants/analytics.constants'
+import { MIN_DAYS_FOR_TREND } from '../constants/dashboard.constants'
 import type { VerticalAxis } from '../utils/axis'
 import { formatChartDate, formatCount } from '../utils/format'
 

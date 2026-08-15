@@ -41,7 +41,7 @@ export function RedirectIfAuth() {
   if (status === 'authenticated') {
     // Si llegó redirigido desde una ruta protegida, vuelve a ella tras entrar.
     const from: unknown = location.state?.from
-    return <Navigate to={typeof from === 'string' ? from : ROUTES.dashboard} replace />
+    return <Navigate to={typeof from === 'string' ? from : ROUTES.today} replace />
   }
   return <Outlet />
 }

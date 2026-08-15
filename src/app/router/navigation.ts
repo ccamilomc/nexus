@@ -49,11 +49,21 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     title: null,
     items: [
       {
-        to: ROUTES.dashboard,
+        to: ROUTES.today,
         label: 'Hoy',
         description: 'Tu resumen del día y las acciones rápidas.',
         Icon: LayoutDashboard,
         isPrimary: true,
+      },
+      // Justo debajo de «Hoy» porque contesta la otra mitad de la misma
+      // pregunta: «Hoy» es cómo va el día y esto es cómo van las semanas. Al
+      // final de la lista, entre lo transversal, parecía una herramienta aparte.
+      {
+        to: ROUTES.dashboard,
+        label: 'Dashboard',
+        description: 'Cómo va todo: tendencias y comparativas.',
+        Icon: ChartColumn,
+        isPrimary: false,
       },
       {
         to: ROUTES.planning,
@@ -126,13 +136,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     title: null,
     items: [
-      {
-        to: ROUTES.analytics,
-        label: 'Analíticas',
-        description: 'Tendencias y comparativas de tus módulos.',
-        Icon: ChartColumn,
-        isPrimary: false,
-      },
       {
         to: ROUTES.settings,
         label: 'Ajustes',

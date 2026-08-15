@@ -4,7 +4,7 @@ import { ROUTES } from '@/app/router/routes'
 import { formatCalories, formatVolumeMl, useNutritionSeries } from '@/features/nutrition'
 import { EmptyState } from '@/shared/components/feedback'
 
-import type { PeriodWindow } from '../types/analytics.types'
+import type { PeriodWindow } from '../types/dashboard.types'
 import { compareValues } from '../utils/comparison'
 import { formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'

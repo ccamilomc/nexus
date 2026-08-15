@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 
 import { useToday } from '@/core/time'
 
-import { ANALYTICS_PERIODS, DEFAULT_PERIOD_ID } from '../constants/analytics.constants'
-import type { AnalyticsPeriodId, PeriodWindow } from '../types/analytics.types'
+import { ANALYTICS_PERIODS, DEFAULT_PERIOD_ID } from '../constants/dashboard.constants'
+import type { AnalyticsPeriodId, PeriodWindow } from '../types/dashboard.types'
 import { periodWindow } from '../utils/period'
 
 interface AnalyticsPeriodState {
@@ -21,7 +21,7 @@ interface AnalyticsPeriodState {
  * El día lo da `useToday()`, nunca `new Date()`: así la página no se recalcula
  * sola a medianoche ni difiere de lo que muestra el resto de la aplicación.
  */
-export function useAnalyticsPeriod(): AnalyticsPeriodState {
+export function useDashboardPeriod(): AnalyticsPeriodState {
   const today = useToday()
   const [periodId, setPeriodId] = useState<AnalyticsPeriodId>(DEFAULT_PERIOD_ID)
 

@@ -9,7 +9,7 @@ export const ROUTES = {
   forgotPassword: '/recuperar',
   resetPassword: '/restablecer',
   // Protegidas (requieren sesión)
-  dashboard: '/',
+  today: '/',
   planning: '/plan',
   workout: '/entrenamiento',
   workoutHistory: '/entrenamiento/historial',
@@ -28,7 +28,7 @@ export const ROUTES = {
   financeDebts: '/finanzas/deudas',
   financeAccounts: '/finanzas/cuentas',
   financeCategories: '/finanzas/categorias',
-  analytics: '/analiticas',
+  dashboard: '/dashboard',
   // `assistant` volverá con la capa de IA. Mientras no exista no tiene ruta:
   // una pantalla que promete algo que no llega resta más de lo que suma.
   settings: '/ajustes',

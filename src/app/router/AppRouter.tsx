@@ -9,8 +9,8 @@ import { ROUTES, WORKOUT_ROUTINE_DETAIL_PATTERN } from '@/app/router/routes'
 import { ForgotPasswordPage, LoginPage, RegisterPage, ResetPasswordPage } from '@/features/auth'
 
 // Las pantallas de auth van eager (son la entrada). Los módulos, perezosos.
-const DashboardPage = lazy(async () => ({
-  default: (await import('@/features/dashboard')).DashboardPage,
+const TodayPage = lazy(async () => ({
+  default: (await import('@/features/today')).TodayPage,
 }))
 const PlanningPage = lazy(async () => ({
   default: (await import('@/features/planning')).PlanningPage,
@@ -36,7 +36,7 @@ const RoutineDetailPage = lazy(async () => ({
 const NutritionLayout = lazy(async () => ({
   default: (await import('@/features/nutrition')).NutritionLayout,
 }))
-const TodayPage = lazy(async () => ({
+const NutritionTodayPage = lazy(async () => ({
   default: (await import('@/features/nutrition')).TodayPage,
 }))
 const FoodsPage = lazy(async () => ({
@@ -78,8 +78,8 @@ const FinanceAccountsPage = lazy(async () => ({
 const FinanceCategoriesPage = lazy(async () => ({
   default: (await import('@/features/finance')).CategoriesPage,
 }))
-const AnalyticsPage = lazy(async () => ({
-  default: (await import('@/features/analytics')).AnalyticsPage,
+const DashboardPage = lazy(async () => ({
+  default: (await import('@/features/dashboard')).DashboardPage,
 }))
 const SettingsPage = lazy(async () => ({
   default: (await import('@/features/settings')).SettingsPage,
@@ -102,7 +102,7 @@ export function AppRouter() {
         {/* Protegidas: requieren sesión */}
         <Route element={<RequireAuth />}>
           <Route element={<AppShell />}>
-            <Route path={ROUTES.dashboard} element={<DashboardPage />} />
+            <Route path={ROUTES.today} element={<TodayPage />} />
             <Route path={ROUTES.planning} element={<PlanningPage />} />
             <Route path={ROUTES.workout} element={<WorkoutLayout />}>
               <Route index element={<TrainPage />} />
@@ -112,7 +112,7 @@ export function AppRouter() {
               <Route path={ROUTES.workoutExercises} element={<ExercisesPage />} />
             </Route>
             <Route path={ROUTES.nutrition} element={<NutritionLayout />}>
-              <Route index element={<TodayPage />} />
+              <Route index element={<NutritionTodayPage />} />
               <Route path={ROUTES.nutritionFoods} element={<FoodsPage />} />
               <Route path={ROUTES.nutritionGoals} element={<GoalsPage />} />
             </Route>
@@ -128,7 +128,7 @@ export function AppRouter() {
             <Route path={ROUTES.financeDebts} element={<FinanceDebtsPage />} />
             <Route path={ROUTES.financeAccounts} element={<FinanceAccountsPage />} />
             <Route path={ROUTES.financeCategories} element={<FinanceCategoriesPage />} />
-            <Route path={ROUTES.analytics} element={<AnalyticsPage />} />
+            <Route path={ROUTES.dashboard} element={<DashboardPage />} />
             <Route path={ROUTES.settings} element={<SettingsPage />} />
             <Route path={ROUTES.more} element={<MorePage />} />
             <Route path="*" element={<NotFoundPage />} />

@@ -1,4 +1,4 @@
-import type { Comparison } from '../types/analytics.types'
+import type { Comparison } from '../types/dashboard.types'
 
 /**
  * Variación relativa que se considera un cambio real.

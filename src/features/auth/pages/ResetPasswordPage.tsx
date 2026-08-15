@@ -31,7 +31,7 @@ export function ResetPasswordPage() {
     setFormError(null)
     try {
       await updatePassword(password)
-      navigate(ROUTES.dashboard, { replace: true })
+      navigate(ROUTES.today, { replace: true })
     } catch (error) {
       setFormError(isAppError(error) ? error.message : createAppError('unknown').message)
     }
