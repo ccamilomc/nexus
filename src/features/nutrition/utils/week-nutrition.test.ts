@@ -6,6 +6,7 @@ import { buildWeekNutrition } from './week-nutrition'
 const LUNES = new Date(2026, 7, 10)
 const MARTES = new Date(2026, 7, 11)
 const MIERCOLES = new Date(2026, 7, 12)
+const DOMINGO = new Date(2026, 7, 16)
 const SEMANA = [
   LUNES,
   MARTES,
@@ -13,7 +14,7 @@ const SEMANA = [
   new Date(2026, 7, 13),
   new Date(2026, 7, 14),
   new Date(2026, 7, 15),
-  new Date(2026, 7, 16),
+  DOMINGO,
 ]
 
 function log(id: string, day: Date): MealLogSample {
@@ -35,13 +36,13 @@ function item(logId: string, servings = 1): MealItemSample {
 describe('buildWeekNutrition', () => {
   it('no promedia con un solo día registrado', () => {
     // Esa «media» sería el día de hoy, que ya está encima en la pantalla.
-    const week = buildWeekNutrition([log('a', LUNES)], [item('a')], SEMANA)
+    const week = buildWeekNutrition([log('a', LUNES)], [item('a')], SEMANA, DOMINGO)
 
     expect(week).toBeNull()
   })
 
   it('sin registros no hay semana que contar', () => {
-    expect(buildWeekNutrition([], [], SEMANA)).toBeNull()
+    expect(buildWeekNutrition([], [], SEMANA, DOMINGO)).toBeNull()
   })
 
   it('reparte entre los días registrados, no entre siete', () => {
@@ -51,11 +52,38 @@ describe('buildWeekNutrition', () => {
       [log('a', LUNES), log('b', MARTES)],
       [item('a', 2), item('b', 2)],
       SEMANA,
+      DOMINGO,
     )
 
     expect(week?.averages.calories).toBe(200)
     expect(week?.daysLogged).toBe(2)
-    expect(week?.daysInWeek).toBe(7)
+    expect(week?.daysElapsed).toBe(7)
+  })
+
+  it('los días que aún no han llegado no cuentan como días sin apuntar', () => {
+    // El martes, «2 de 7» hace parecer floja una semana apuntada entera hasta
+    // ese momento. Los cinco días que faltan no se pudieron apuntar.
+    const week = buildWeekNutrition(
+      [log('a', LUNES), log('b', MARTES)],
+      [item('a'), item('b')],
+      SEMANA,
+      MARTES,
+    )
+
+    expect(week?.daysElapsed).toBe(2)
+    expect(week?.daysLogged).toBe(2)
+  })
+
+  it('hoy cuenta aunque esté a medias: sin apuntar nada, es un día sin apuntar', () => {
+    const week = buildWeekNutrition(
+      [log('a', LUNES), log('b', MARTES)],
+      [item('a'), item('b')],
+      SEMANA,
+      MIERCOLES,
+    )
+
+    expect(week?.daysElapsed).toBe(3)
+    expect(week?.daysLogged).toBe(2)
   })
 
   it('junta las comidas del mismo día antes de promediar', () => {
@@ -64,6 +92,7 @@ describe('buildWeekNutrition', () => {
       [log('desayuno', LUNES), log('almuerzo', LUNES), log('cena', MARTES)],
       [item('desayuno'), item('almuerzo'), item('cena', 2)],
       SEMANA,
+      DOMINGO,
     )
 
     expect(week?.daysLogged).toBe(2)
@@ -75,6 +104,7 @@ describe('buildWeekNutrition', () => {
       [log('a', LUNES), log('b', MARTES)],
       [item('a', 3), item('b', 1)],
       SEMANA,
+      DOMINGO,
     )
 
     expect(week?.averages.proteinG).toBe(20)
@@ -88,6 +118,7 @@ describe('buildWeekNutrition', () => {
       [log('a', LUNES), log('b', MARTES), log('vacia', MIERCOLES)],
       [item('a'), item('b')],
       SEMANA,
+      DOMINGO,
     )
 
     expect(week?.daysLogged).toBe(2)
@@ -99,6 +130,7 @@ describe('buildWeekNutrition', () => {
       [log('a', LUNES), log('b', MARTES), log('viejo', new Date(2026, 6, 1))],
       [item('a'), item('b'), item('viejo', 10)],
       SEMANA,
+      DOMINGO,
     )
 
     expect(week?.daysLogged).toBe(2)

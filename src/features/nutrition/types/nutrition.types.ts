@@ -79,11 +79,12 @@ export type WaterSample = Pick<WaterLog, 'amount_ml' | 'logged_at'>
  * `averages` reparte entre los **días registrados**, no entre siete: un día sin
  * apuntar es un día sin registrar, no un día de ayuno. Por eso viaja también
  * `daysLogged` —una media de dos días no vale lo que una de siete— junto a los
- * días que lleva la semana, para poder decir «5 de 7».
+ * días que ya han pasado, para poder decir «5 de 6».
  */
 export interface WeekNutrition {
   readonly daysLogged: number
-  readonly daysInWeek: number
+  /** Días de la semana que ya llegaron, contando hoy; los que faltan no cuentan. */
+  readonly daysElapsed: number
   readonly averages: Macros
 }
 

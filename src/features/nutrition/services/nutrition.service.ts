@@ -419,7 +419,7 @@ export const nutritionService = {
       const mealLogs = await nutritionRepository.listMealLogsForSeries(userId, fromIso, toIso)
       const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
 
-      return buildWeekNutrition(mealLogs, items, weekDays(date))
+      return buildWeekNutrition(mealLogs, items, weekDays(date), date)
     } catch (error) {
       throw toAppError(error)
     }
