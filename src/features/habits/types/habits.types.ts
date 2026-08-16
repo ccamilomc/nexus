@@ -78,7 +78,13 @@ export interface HabitsPeriodSeries {
   /** Días en los que se cumplió todo lo que tocaba. */
   readonly perfectDays: number
   readonly previousPerfectDays: number
-  readonly trackedHabits: number
+  /**
+   * El habito con menos cumplimiento del periodo; `null` con menos de dos.
+   *
+   * La constancia global no dice si el 63 % son tres a medias o dos perfectos y
+   * uno abandonado, y lo que se hace con esa informacion es distinto.
+   */
+  readonly hardest: { readonly name: string; readonly percent: number } | null
   /** La mejor racha viva al final del periodo. */
   readonly bestStreak: number
 }

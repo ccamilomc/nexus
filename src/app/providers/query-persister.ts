@@ -17,9 +17,14 @@ const STORAGE_KEY = 'nexus.query-cache'
  *
  * Al cambiarla se descarta lo guardado en vez de rehidratar datos con una forma
  * que el código ya no entiende. **Se sube a mano** cuando cambie la forma de lo
- * que devuelven los servicios.
+ * que devuelven los servicios; olvidarlo se paga con una pantalla de error, que
+ * es lo que pasa al leer un campo que la caché vieja no trae.
+ *
+ * A mano y no por build: al descartarse se va también lo que estuviera en cola
+ * sin conexión, así que tiene que ser un acto consciente y no un efecto de cada
+ * despliegue.
  */
-export const CACHE_BUSTER = 'v1'
+export const CACHE_BUSTER = 'v2'
 
 /**
  * Cuánto se considera aprovechable lo guardado.

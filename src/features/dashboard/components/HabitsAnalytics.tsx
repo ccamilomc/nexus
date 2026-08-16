@@ -65,11 +65,20 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
               comparison={null}
               hint="Seguidos, sin fallar"
             />
+            {/* «Hábitos activos» vivía aquí y no cambiaba con el periodo: es
+                configuración, no resultado, y esta pantalla cuenta cómo fue el
+                tramo. El que menos se cumple sí lo cuenta, y es lo que la
+                constancia global no puede decir. */}
             <KpiCard
-              label="Hábitos activos"
-              value={String(data.trackedHabits)}
+              label="El que menos"
+              value={data.hardest?.name ?? '—'}
+              isName
               comparison={null}
-              hint={null}
+              hint={
+                data.hardest === null
+                  ? 'Con un solo hábito no hay con qué compararlo'
+                  : `${data.hardest.percent} % de los días`
+              }
             />
           </div>
 
