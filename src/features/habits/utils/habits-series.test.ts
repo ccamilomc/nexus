@@ -128,3 +128,38 @@ describe('buildHabitsSeries', () => {
     expect(buildHabitsSeries(habits, logs, DAYS, []).bestStreak).toBe(3)
   })
 })
+
+describe('buildHabitsSeries: el que menos se cumple', () => {
+  it('señala el hábito con menos cumplimiento y con qué porcentaje', () => {
+    // La constancia global no distingue tres a medias de dos perfectos y uno
+    // abandonado, y lo que se hace con esa información es distinto.
+    const habits = [habit('a', OLD), habit('b', OLD)]
+    const logs = [
+      log('a', '2026-07-27'),
+      log('a', '2026-07-28'),
+      log('a', '2026-07-29'),
+      log('b', '2026-07-27'),
+    ]
+
+    const series = buildHabitsSeries(habits, logs, DAYS, [])
+
+    expect(series.hardest).toEqual({ name: 'Hábito b', percent: 33 })
+  })
+
+  it('con un solo hábito no dice nada: sería la constancia global repetida', () => {
+    const series = buildHabitsSeries([habit('a', OLD)], [log('a', '2026-07-27')], DAYS, [])
+
+    expect(series.hardest).toBeNull()
+  })
+
+  it('sólo cuenta desde que el hábito existe, como el resto de cifras', () => {
+    // El de ayer no puede salir peor por los días en que no existía.
+    const habits = [habit('a', OLD), habit('nuevo', new Date(2026, 6, 29))]
+    const logs = [log('a', '2026-07-27'), log('nuevo', '2026-07-29')]
+
+    const series = buildHabitsSeries(habits, logs, DAYS, [])
+
+    // «nuevo» cumplió su único día vigente: el que peor va es «a», con 1 de 3.
+    expect(series.hardest).toEqual({ name: 'Hábito a', percent: 33 })
+  })
+})

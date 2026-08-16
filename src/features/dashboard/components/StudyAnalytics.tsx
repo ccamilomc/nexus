@@ -77,6 +77,7 @@ export function StudyAnalytics({ window }: StudyAnalyticsProps) {
             <KpiCard
               label="Más estudiada"
               value={data.topSubject?.name ?? '—'}
+              isName
               comparison={null}
               hint={data.topSubject ? formatMinutes(data.topSubject.minutes) : null}
             />

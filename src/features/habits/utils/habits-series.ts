@@ -45,11 +45,47 @@ export function buildHabitsSeries(
     previousCompletionPercent: previous.percent,
     perfectDays: current.perfectDays,
     previousPerfectDays: previous.perfectDays,
-    trackedHabits: habits.length,
+    hardest: hardestOf(habits, completed, days),
     bestStreak: streaks.length === 0 ? 0 : Math.max(...streaks),
   }
 }
 
+/**
+ * El habito con menos cumplimiento del periodo, y cuanto.
+ *
+ * Es la pregunta que la constancia global no contesta: un 63 % puede ser tres
+ * habitos a medias o dos perfectos y uno abandonado, y **lo que se hace con esa
+ * informacion es distinto**. Simetrico con la materia mas estudiada.
+ *
+ * Se dice el dato y no se juzga —«40 % de los dias», no «el que mas fallas»—,
+ * que es como habla el resto de la aplicacion.
+ *
+ * Solo cuenta desde que el habito existe, como el resto de cifras, y devuelve
+ *  con menos de dos habitos: con uno solo, «el que menos» es el mismo que
+ * la constancia global dicha dos veces.
+ */
+function hardestOf(
+  habits: readonly Habit[],
+  completed: ReadonlyMap<string, ReadonlySet<string>>,
+  days: readonly Date[],
+): { readonly name: string; readonly percent: number } | null {
+  if (habits.length < 2) return null
+
+  let hardest: { name: string; percent: number } | null = null
+
+  for (const habit of habits) {
+    const since = toDateKey(new Date(habit.created_at))
+    const due = days.map(toDateKey).filter((dateKey) => dateKey >= since)
+    if (due.length === 0) continue
+
+    const done = due.filter((dateKey) => completed.get(habit.id)?.has(dateKey)).length
+    const percent = Math.round((done / due.length) * 100)
+
+    if (!hardest || percent < hardest.percent) hardest = { name: habit.name, percent }
+  }
+
+  return hardest
+}
 /** Fechas cumplidas de cada hábito, que es lo que consultan los cálculos. */
 function completedByHabit(logs: readonly HabitLog[]): Map<string, Set<string>> {
   const byHabit = new Map<string, Set<string>>()

@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
 
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { cn } from '@/shared/lib/utils'
 
 import type { Comparison } from '../types/dashboard.types'
 
@@ -12,6 +13,16 @@ interface KpiCardProps {
   readonly comparison: Comparison | null
   /** Aclaración breve: el denominador, o por qué no se compara. */
   readonly hint: string | null
+  /**
+   * Si el valor es un nombre y no una cifra.
+   *
+   * Cambia cómo se parte al no caber. Un nombre lo escribe el usuario y puede
+   * ser una sola palabra más ancha que la tarjeta —«Estiramientos» pide 123 px
+   * y a 320 px quedan 104—, así que se parte por donde sea antes que salirse.
+   * Una cifra no: partir «$ 3.700.200» por la mitad deja un número que se lee
+   * mal, y las cifras además van en dígitos de ancho fijo para que no bailen.
+   */
+  readonly isName?: boolean
 }
 
 const DIRECTION_ICONS = { up: ArrowUp, down: ArrowDown, flat: Minus }
@@ -41,7 +52,7 @@ function comparisonText(comparison: Comparison): string {
  * acompaña sin regañar: la dirección se ve, el juicio lo pone el usuario. Es la
  * misma decisión que ya se tomó con el peso en Salud.
  */
-export function KpiCard({ label, value, comparison, hint }: KpiCardProps) {
+export function KpiCard({ label, value, comparison, hint, isName = false }: KpiCardProps) {
   const Icon = comparison ? DIRECTION_ICONS[comparison.direction] : null
 
   return (
@@ -54,7 +65,14 @@ export function KpiCard({ label, value, comparison, hint }: KpiCardProps) {
             104 px útiles y una cifra en pesos —«-$ 380.000»— pedía 115: se
             comía el último dígito sin que la página desbordara, así que no se
             veía sin medir el `scrollWidth`. */}
-        <p className="text-xl font-semibold tabular-nums sm:text-2xl">{value}</p>
+        <p
+          className={cn(
+            'text-xl font-semibold sm:text-2xl',
+            isName ? 'break-words' : 'tabular-nums',
+          )}
+        >
+          {value}
+        </p>
 
         {comparison && Icon ? (
           <p className="flex items-center gap-1 text-xs text-muted-foreground">
