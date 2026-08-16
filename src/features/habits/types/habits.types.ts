@@ -85,6 +85,15 @@ export interface HabitsPeriodSeries {
    * uno abandonado, y lo que se hace con esa informacion es distinto.
    */
   readonly hardest: { readonly name: string; readonly percent: number } | null
-  /** La mejor racha viva al final del periodo. */
-  readonly bestStreak: number
+  /** La racha mas larga del periodo, o `null` si no hubo ninguna. */
+  readonly bestStreak: StreakRun | null
+}
+
+/** Una racha: cuantos dias seguidos y entre que fechas. */
+export interface StreakRun {
+  readonly days: number
+  /** Clave `YYYY-MM-DD` del primer dia. */
+  readonly from: string
+  /** Clave `YYYY-MM-DD` del ultimo. */
+  readonly to: string
 }
