@@ -1,19 +1,34 @@
 import { CircleCheck } from 'lucide-react'
 
 import { ROUTES } from '@/app/router/routes'
+import type { StreakRun } from '@/features/habits'
 import { useHabitsSeries } from '@/features/habits'
 import { EmptyState } from '@/shared/components/feedback'
 
 import { NO_PREVIOUS_PERIOD_HINT } from '../constants/dashboard.constants'
 import type { PeriodWindow } from '../types/dashboard.types'
 import { compareValues } from '../utils/comparison'
-import { formatCount } from '../utils/format'
+import { formatChartDate, formatCount } from '../utils/format'
 import { AnalyticsSection } from './AnalyticsSection'
 import { HabitCalendar } from './HabitCalendar'
 import { KpiCard } from './KpiCard'
 
 interface HabitsAnalyticsProps {
   readonly window: PeriodWindow
+}
+
+/**
+ * Cuándo fue la racha: «Del 5 al 12 de ago».
+ *
+ * Las fechas son lo que hace útil la cifra —invitan a mirar qué tenía de
+ * distinto esa semana— y de paso dejan claro que esto no es la racha de hoy,
+ * que es lo que enseña la pantalla de inicio.
+ */
+function describeRun(run: StreakRun | null): string | null {
+  if (run === null) return 'Ningún hábito encadenó días'
+  if (run.from === run.to) return `El ${formatChartDate(run.from)}`
+
+  return `Del ${formatChartDate(run.from)} al ${formatChartDate(run.to)}`
 }
 
 /**
@@ -61,9 +76,9 @@ export function HabitsAnalytics({ window }: HabitsAnalyticsProps) {
             />
             <KpiCard
               label="Mejor racha"
-              value={formatCount(data.bestStreak, 'día', 'días')}
+              value={data.bestStreak ? formatCount(data.bestStreak.days, 'día', 'días') : '—'}
               comparison={null}
-              hint="Seguidos, sin fallar"
+              hint={describeRun(data.bestStreak)}
             />
             {/* «Hábitos activos» vivía aquí y no cambiaba con el periodo: es
                 configuración, no resultado, y esta pantalla cuenta cómo fue el

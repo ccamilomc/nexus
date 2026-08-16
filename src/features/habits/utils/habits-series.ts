@@ -1,7 +1,6 @@
 import { toDateKey } from '@/shared/utils'
 
-import type { Habit, HabitLog, HabitsPeriodSeries } from '../types/habits.types'
-import { calculateStreak } from './streak'
+import type { Habit, HabitLog, HabitsPeriodSeries, StreakRun } from '../types/habits.types'
 
 /** Un día con su recuento de hábitos cumplidos frente a los que tocaban. */
 interface DayTally {
@@ -35,10 +34,6 @@ export function buildHabitsSeries(
   const current = summarize(habits, completed, days)
   const previous = summarize(habits, completed, previousDays)
 
-  const streaks = habits.map((habit) =>
-    calculateStreak(completed.get(habit.id) ?? new Set(), lastDayOf(days)),
-  )
-
   return {
     points: current.points,
     completionPercent: current.percent,
@@ -46,8 +41,54 @@ export function buildHabitsSeries(
     perfectDays: current.perfectDays,
     previousPerfectDays: previous.perfectDays,
     hardest: hardestOf(habits, completed, days),
-    bestStreak: streaks.length === 0 ? 0 : Math.max(...streaks),
+    bestStreak: longestRunOf(habits, completed, days),
   }
+}
+
+/**
+ * La racha mas larga del periodo, con los dias en que fue.
+ *
+ * **La mas larga del tramo, no la que siguiera viva al acabar.** Esta pantalla
+ * cuenta como fue el periodo: quien encadeno ocho dias a principios de mes y
+ * luego lo dejo, encadeno ocho, y decir «3» porque son los que quedaban en pie
+ * el ultimo dia borra lo unico que habia que contar. En «Hoy» la racha si es la
+ * viva, porque alli la pregunta es como va la cosa ahora mismo.
+ *
+ * Se devuelven las fechas porque **saber cuando se fue bien es lo accionable**:
+ * el numero solo felicita, el tramo invita a mirar que tenia de distinto esa
+ * semana. Ademas distingue de un vistazo esta cifra de la de «Hoy».
+ *
+ * Cada habito lleva su propia cuenta: una racha es de un habito, no del
+ * conjunto —eso ya lo cuentan los dias perfectos—.
+ */
+function longestRunOf(
+  habits: readonly Habit[],
+  completed: ReadonlyMap<string, ReadonlySet<string>>,
+  days: readonly Date[],
+): StreakRun | null {
+  const dateKeys = days.map(toDateKey)
+  let longest: StreakRun | null = null
+
+  for (const habit of habits) {
+    const dates = completed.get(habit.id)
+    let start: string | null = null
+    let length = 0
+
+    for (const dateKey of dateKeys) {
+      if (dates?.has(dateKey)) {
+        start ??= dateKey
+        length += 1
+        if (!longest || length > longest.days) {
+          longest = { days: length, from: start, to: dateKey }
+        }
+      } else {
+        start = null
+        length = 0
+      }
+    }
+  }
+
+  return longest
 }
 
 /**
@@ -142,9 +183,4 @@ function summarize(
     percent: totalDue === 0 ? null : Math.round((totalDone / totalDue) * 100),
     perfectDays: withHabits.filter(({ done, due }) => done === due).length,
   }
-}
-
-/** El último día del tramo; las rachas se miran desde ahí, no desde hoy. */
-function lastDayOf(days: readonly Date[]): Date {
-  return days[days.length - 1] ?? new Date(0)
 }

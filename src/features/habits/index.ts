@@ -11,3 +11,4 @@ export { useQuickHabits } from './hooks/use-quick-habits'
 // Lo que hábitos deja pendiente sin red; lo registra `app/` (ADR-0011).
 export { registerHabitsOfflineMutations } from './offline'
 export { HabitsPage } from './pages/HabitsPage'
+export type { StreakRun } from './types/habits.types'

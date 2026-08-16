@@ -121,11 +121,62 @@ describe('buildHabitsSeries', () => {
     expect(series.previousCompletionPercent).toBe(67)
   })
 
-  it('la racha se mide desde el final del periodo', () => {
+  it('la racha son los días encadenados, con sus fechas', () => {
     const habits = [habit('a', OLD)]
     const logs = [log('a', '2026-07-27'), log('a', '2026-07-28'), log('a', '2026-07-29')]
 
-    expect(buildHabitsSeries(habits, logs, DAYS, []).bestStreak).toBe(3)
+    expect(buildHabitsSeries(habits, logs, DAYS, []).bestStreak).toEqual({
+      days: 3,
+      from: '2026-07-27',
+      to: '2026-07-29',
+    })
+  })
+})
+
+describe('buildHabitsSeries: la mejor racha del periodo', () => {
+  const SEMANA = [
+    new Date(2026, 6, 20),
+    new Date(2026, 6, 21),
+    new Date(2026, 6, 22),
+    new Date(2026, 6, 23),
+    new Date(2026, 6, 24),
+  ]
+
+  it('es la más larga del tramo, aunque se rompiera antes de acabar', () => {
+    // Quien encadenó tres días y lo dejó, encadenó tres: decir «1» porque es lo
+    // que quedaba en pie el último día borra lo único que había que contar.
+    const logs = [
+      log('a', '2026-07-20'),
+      log('a', '2026-07-21'),
+      log('a', '2026-07-22'),
+      log('a', '2026-07-24'),
+    ]
+
+    const series = buildHabitsSeries([habit('a', OLD)], logs, SEMANA, [])
+
+    expect(series.bestStreak).toEqual({ days: 3, from: '2026-07-20', to: '2026-07-22' })
+  })
+
+  it('cada hábito lleva su cuenta: no se suman entre ellos', () => {
+    // Días alternos entre dos hábitos no son una racha de nadie.
+    const logs = [log('a', '2026-07-20'), log('b', '2026-07-21'), log('a', '2026-07-22')]
+
+    const series = buildHabitsSeries([habit('a', OLD), habit('b', OLD)], logs, SEMANA, [])
+
+    expect(series.bestStreak?.days).toBe(1)
+  })
+
+  it('no mira fuera del periodo', () => {
+    // La racha venía de antes, pero esta pantalla cuenta este tramo.
+    const logs = [log('a', '2026-07-18'), log('a', '2026-07-19'), log('a', '2026-07-20')]
+
+    const series = buildHabitsSeries([habit('a', OLD)], logs, SEMANA, [])
+
+    expect(series.bestStreak).toEqual({ days: 1, from: '2026-07-20', to: '2026-07-20' })
+  })
+
+  it('sin ningún día cumplido no hay racha que enseñar', () => {
+    expect(buildHabitsSeries([habit('a', OLD)], [], SEMANA, []).bestStreak).toBeNull()
   })
 })
 

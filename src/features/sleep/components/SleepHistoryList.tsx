@@ -22,6 +22,18 @@ function describeDate(dateKey: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
+/**
+ * Cuántas noches se están mirando.
+ *
+ * **La media tiene que decir de qué noches sale.** Son las últimas apuntadas,
+ * no las de la última semana: si se saltan noches, siete registros alcanzan
+ * hacia atrás lo que haga falta. Sin el número, esta media y la del Dashboard
+ * —que sí va por días— se leen como la misma cifra y no cuadran.
+ */
+function describeWindow(nights: number): string {
+  return nights === 1 ? 'Tu última noche' : `Tus últimas ${nights} noches`
+}
+
 /** Las últimas noches y lo que dicen en conjunto. */
 export function SleepHistoryList({ history }: SleepHistoryListProps) {
   const removeLog = useRemoveSleepLog()
@@ -36,7 +48,9 @@ export function SleepHistoryList({ history }: SleepHistoryListProps) {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Últimas noches</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {describeWindow(history.logs.length)}
+        </h2>
         {history.averageMinutes === null ? null : (
           <p className="text-sm text-muted-foreground">
             Media:{' '}
