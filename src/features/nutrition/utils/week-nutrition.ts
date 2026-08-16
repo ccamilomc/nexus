@@ -34,6 +34,7 @@ export function buildWeekNutrition(
   mealLogs: readonly MealLogSample[],
   items: readonly MealItemSample[],
   days: readonly Date[],
+  today: Date,
 ): WeekNutrition | null {
   const inWeek = new Set(days.map(toDateKey))
   const itemsByLog = new Map<string, MealItemSample[]>()
@@ -66,7 +67,7 @@ export function buildWeekNutrition(
 
   return {
     daysLogged,
-    daysInWeek: days.length,
+    daysElapsed: elapsedDays(days, today),
     averages: {
       calories: round(total.calories / daysLogged),
       proteinG: round(total.proteinG / daysLogged),
@@ -74,6 +75,24 @@ export function buildWeekNutrition(
       fatG: round(total.fatG / daysLogged),
     },
   }
+}
+
+/**
+ * Días de la semana que ya han llegado, contando hoy.
+ *
+ * **Un día que no ha llegado no es un día sin apuntar.** El contador dice qué
+ * tan sólida es la media, y el martes «2 de 7» hace parecer floja una semana
+ * apuntada entera hasta ese momento. Es lo que ya hacen Estudio —«2 h 25 min al
+ * día para llegar el domingo»— y Finanzas —«va el 48 % del mes»—: las dos saben
+ * que el tramo está a medias.
+ *
+ * Hoy cuenta aunque esté a medias: si no se ha apuntado nada todavía, es un día
+ * sin apuntar de verdad, y el total de hoy está justo encima diciéndolo.
+ */
+function elapsedDays(days: readonly Date[], today: Date): number {
+  const todayKey = toDateKey(today)
+
+  return days.filter((day) => toDateKey(day) <= todayKey).length
 }
 
 function addMacros(current: Macros | undefined, next: Macros): Macros {

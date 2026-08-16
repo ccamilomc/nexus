@@ -112,7 +112,7 @@ export function WeekNutritionCard({ week, goal, date, today, isPending }: WeekNu
             <span className="truncate">{weekTitle(date, today)}</span>
           </h2>
           <p className="shrink-0 text-xs text-muted-foreground">
-            {week.daysLogged} de {week.daysInWeek} días apuntados
+            {week.daysLogged} de {week.daysElapsed} días apuntados
           </p>
         </div>
 

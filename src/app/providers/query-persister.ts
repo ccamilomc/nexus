@@ -24,7 +24,7 @@ const STORAGE_KEY = 'nexus.query-cache'
  * sin conexión, así que tiene que ser un acto consciente y no un efecto de cada
  * despliegue.
  */
-export const CACHE_BUSTER = 'v3'
+export const CACHE_BUSTER = 'v4'
 
 /**
  * Cuánto se considera aprovechable lo guardado.
