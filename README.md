@@ -36,6 +36,30 @@ npm run dev
 | `npm run test`         | Tests (Vitest, una pasada).         |
 | `npm run test:watch`   | Tests en modo watch.                |
 
+## Despliegue
+
+El frontend se despliega en **Vercel** (Preview por PR, Production al mergear en
+`main`) y `vercel.json` deja fijo lo que no se puede dejar a la detección
+automática:
+
+- **`rewrites`**: sin ella, entrar directo a `/finanzas/deudas` o recargar ahí
+  devuelve un 404. Es una SPA: el servidor sirve siempre `index.html` y el router
+  decide. Los archivos reales (`/sw.js`, `/assets/…`) se sirven antes de llegar a
+  la regla, así que no los tapa.
+- **`Cache-Control` del service worker**: si la CDN lo cachea, el navegador sigue
+  pidiendo la versión vieja y la aplicación no se entera de que hay una nueva.
+
+Variables que hay que poner en el proyecto de Vercel: **`VITE_SUPABASE_URL`** y
+**`VITE_SUPABASE_ANON_KEY`**, y ninguna más. Las tres de desarrollo
+(`VITE_AUTH_DISABLED`, `VITE_DEV_USER_*`) no se ponen: aunque alguien las
+pusiera, `core/config/env.ts` sólo las honra cuando `import.meta.env.DEV` es
+cierto, así que un build de producción las ignora.
+
+En Supabase hay que registrar el dominio en **Authentication → URL
+Configuration**: `Site URL` con la dirección de producción y, en `Redirect URLs`,
+`https://<dominio>/restablecer`. Es a donde lleva el correo de recuperar
+contraseña, y Supabase no redirige a un destino que no esté en esa lista.
+
 ## Stack
 
 React · Vite · TypeScript (strict) · Tailwind CSS · shadcn/ui · React Router ·
