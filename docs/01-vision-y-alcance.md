@@ -42,17 +42,27 @@ Cada dominio es una **feature** independiente (ver [arquitectura](./02-arquitect
 
 | Dominio       | Qué gestiona                                  | Señales que aporta al motor              |
 | ------------- | --------------------------------------------- | ---------------------------------------- |
-| **Dashboard** | Resumen del día, acciones rápidas             | — (consume del resto)                    |
+| **Today**     | Cómo va el día, con acciones rápidas          | — (consume del resto)                    |
+| **Dashboard** | KPIs, gráficas y comparativas por periodo     | — (lee y agrega)                         |
 | **Planning**  | Plan diario adaptativo, recálculo             | Estado de cumplimiento del día           |
+| **Finance**   | Gastos, ingresos, fijos, deudas, topes        | Presupuesto disponible                   |
 | **Workout**   | Rutinas, ejercicios, sesiones, historial      | Volumen, frecuencia, fatiga, adherencia  |
-| **Nutrition** | Comidas, agua, macros, presupuesto            | Calorías, macros, gasto, hidratación     |
+| **Nutrition** | Comidas, agua, macros, precio por porción     | Calorías, macros, hidratación            |
 | **Habits**    | Hábitos, rachas, calendario                   | Adherencia, rachas activas               |
 | **Study**     | Materias, sesiones, bloques (horas variables) | Horas de foco, cumplimiento de objetivos |
 | **Sleep**     | Registro y calidad del sueño                  | Duración, calidad, regularidad           |
-| **Health**    | Peso, medidas, fotos, IMC                     | Tendencia de peso/composición            |
-| **Analytics** | KPIs, gráficas, comparativas                  | — (lee y agrega)                         |
-| **Assistant** | Capa de IA: interpreta y explica              | — (lee del motor)                        |
-| **Settings**  | Preferencias, objetivos, notificaciones       | Objetivos y restricciones del usuario    |
+| **Health**    | Peso, medidas, IMC                            | Tendencia de peso/composición            |
+| **Settings**  | Cuenta, tema e instalación                    | —                                        |
+
+> **Lo que esta tabla ya no lista, y por qué.** _Assistant_ (la capa de IA) no
+> tiene pantalla: era un cascarón que anunciaba lo que no existía y se retiró
+> ([ADR-0003](./adr/0003-ia-como-capa-de-interpretacion.md)). Los **objetivos**
+> no viven en Ajustes sino donde se usan —las calorías en nutrición, las horas en
+> sueño, los minutos por materia en estudio—, y las **notificaciones** están
+> aplazadas ([ADR-0008](./adr/0008-notificaciones-aplazadas.md)). Las **fotos de
+> progreso** de salud se descartaron. El **dinero sólo se cuenta en Finanzas**:
+> nutrición usa el precio por porción para decidir qué comer, nunca para
+> totalizar.
 
 ## Características adaptativas (el corazón del producto)
 

@@ -91,7 +91,7 @@ debajo. El `Component` no importa el `Repository`; el `Service` no importa React
 
 ```mermaid
 flowchart LR
-    W["workout"] -->|index.ts| APP["capa app / planning / analytics"]
+    W["workout"] -->|index.ts| APP["capa app / planning / dashboard"]
     N["nutrition"] -->|index.ts| APP
     S["study"] -->|index.ts| APP
     APP --> E["decision-engine (contratos)"]
@@ -102,7 +102,7 @@ flowchart LR
 ### Un dominio puede depender de otro, pero sólo en un sentido
 
 Lo habitual es que quien consume a varios dominios sea una feature compositora
-(`dashboard`, `planning`, `analytics`). **`finance → nutrition` es el primer caso
+(`dashboard`, `planning`). **`finance → nutrition` es el primer caso
 de dominio a dominio**, y se permite con tres condiciones:
 
 1. **Sólo por el barrel.** Lo hace cumplir ESLint (`@/features/*/*` está
@@ -127,11 +127,11 @@ recalcula nada.
 
 | Hook            | Devuelve                     | Lo consume      |
 | --------------- | ---------------------------- | --------------- |
-| `useXSummary()` | frases ya formadas           | dashboard       |
+| `useXSummary()` | frases ya formadas           | Hoy             |
 | `useXContext()` | datos del día, sin formatear | Decision Engine |
-| `useXSeries()`  | serie diaria de un rango     | Analytics       |
+| `useXSeries()`  | serie diaria de un rango     | Dashboard       |
 
-Las features que **componen** (`planning`, `analytics`) no tienen repositorio
+Las features que **componen** (`planning`, `dashboard`) no tienen repositorio
 propio: si lo tuvieran, conocerían las tablas de los seis dominios y romperían
 este aislamiento. Ver [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
 

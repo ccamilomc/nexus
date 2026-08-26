@@ -20,7 +20,7 @@ dependencias.
 | **Zod**                 | Validación & esquemas | Fuente única de verdad de la validación; infiere tipos TS.                 |
 | **Zustand**             | Estado global de UI   | Ligero, sin boilerplate. **Sólo** estado de UI, no server state.           |
 | **Lucide React**        | Iconografía           | **Única** librería de iconos, para consistencia visual.                    |
-| **Recharts**            | Gráficas              | Declarativo sobre SVG; suficiente para Analytics.                          |
+| **Recharts**            | Gráficas              | Declarativo sobre SVG; suficiente para el Dashboard.                       |
 
 Las **animaciones no llevan librería**: salen de los tokens de `globals.css`
 (`--duration-fast`, `--duration-base`, `--duration-slow`, `--ease-out`), de las

@@ -53,7 +53,7 @@ flowchart TB
     P --> HE["health"]
     WK & NU & HA & ST & SL & HE --> REC["recommendations"]
     REC --> AS["assistant (IA)"]
-    WK & NU & HA & ST & SL & HE --> AN["analytics (vistas)"]
+    WK & NU & HA & ST & SL & HE --> AN["dashboard (agrega en el cliente)"]
 ```
 
 ## Núcleo (identidad y preferencias)
@@ -170,7 +170,7 @@ qué comer, igual que las calorías. Sostiene la regla `meal_swap` del Decision
 Engine («cámbialo por atún y ahorras $3.400 sin perder proteína»).
 
 **Lo que nutrición NO hace es sumar precios como si fueran gasto.** Lo hacía:
-`nutrition_goals` llevaba un `weekly_food_budget` y Analytics enseñaba un «Gasto
+`nutrition_goals` llevaba un `weekly_food_budget` y Dashboard enseñaba un «Gasto
 en comida» que salía de multiplicar el precio por las porciones consumidas. Pero
 **el dinero no sale al comer, sale al comprar**: ese total no correspondía a
 ningún desembolso y competía con el de finanzas, que sí.
@@ -281,7 +281,7 @@ Sale de los registros que ya se consultan para la racha, así que no cuesta
 ninguna consulta extra. Es deliberadamente **una línea y no un calendario
 mensual**: responde «¿lo estoy manteniendo?», que es lo que se consulta a
 diario. Las vistas históricas ricas (gráficas, comparativas) pertenecen a
-[Analytics](./09-roadmap-y-sprints.md), no a cada dominio.
+[Dashboard](./09-roadmap-y-sprints.md), no a cada dominio.
 
 ### La fecha es local
 
@@ -549,13 +549,13 @@ erDiagram
 - **notifications**: notificaciones (`type`, `title`, `body`, `scheduled_for`,
   `sent_at`, `read_at`, `channel`).
 
-## Analytics
+## Dashboard
 
-Analytics **no** introduce tablas nuevas de datos primarios. Tampoco vistas: la
+Dashboard **no** introduce tablas nuevas de datos primarios. Tampoco vistas: la
 agregación ocurre en el cliente, en TypeScript, porque las reglas de cálculo
 (volumen, rachas, macros, IMC) ya viven probadas ahí y duplicarlas en SQL crearía
 dos fuentes de verdad. Cada dominio expone su serie por rango en su barrel
-(`useXSeries`) y Analytics compone. Ver
+(`useXSeries`) y Dashboard compone. Ver
 [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md).
 
 La tabla de _rollup_ **daily_summaries** (agregados por día y dominio, recalculada

@@ -263,10 +263,10 @@ create policy "workout_sets_own" on public.workout_sets
 - Políticas de Storage que restringen a `auth.uid() = (storage.foldername(name))[1]`.
 - El acceso a las imágenes se hace con **URLs firmadas** de vida corta.
 
-## Analytics: vistas y rollups
+## Dashboard: vistas y rollups
 
-Analytics **no** define tablas de datos primarios (ver
-[04](./04-modelo-de-datos.md#analytics)):
+Dashboard **no** define tablas de datos primarios (ver
+[04](./04-modelo-de-datos.md#dashboard)):
 
 - **No usa vistas.** Se evaluaron en el Sprint 12 y se descartaron: obligarían a
   reimplementar en SQL reglas que ya están probadas en TypeScript. La agregación
@@ -277,9 +277,9 @@ Analytics **no** define tablas de datos primarios (ver
   se definiría **sólo si** el rendimiento lo exige (evidencia primero, evitar
   optimización prematura). Si se crea, se recalcula de forma **idempotente** y
   lleva `user_id` + RLS como cualquier otra tabla de usuario. Entraría por detrás
-  de `useXSeries`, sin que Analytics se entere.
+  de `useXSeries`, sin que Dashboard se entere.
 
-### Coste medido de Analytics
+### Coste medido de Dashboard
 
 Medido en el navegador sobre la cuenta de desarrollo con ~10 semanas de historia
 (`scripts/seed-dev-data.mjs`), en el **peor caso: periodo de 90 días y caché
