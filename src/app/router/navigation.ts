@@ -20,7 +20,15 @@ export interface NavItem {
   readonly label: string
   readonly description: string
   readonly Icon: LucideIcon
-  /** Los primarios ocupan la barra inferior en móvil; el resto vive en «Más». */
+  /**
+   * Los primarios ocupan la barra inferior en móvil; el resto vive en «Más».
+   *
+   * Son **cuatro y los elige el usuario**, no un criterio de diseño: los eligió
+   * él tras una semana usando la aplicación instalada en el teléfono —Hoy,
+   * Dashboard, Finanzas y Entreno—. Antes estaban Plan y Nutrición en vez de
+   * Dashboard y Finanzas. **No reordenarlos ni cambiarlos sin que lo pida**:
+   * esta barra la elige quien la usa a diario, no quien la programa.
+   */
   readonly isPrimary: boolean
 }
 
@@ -63,21 +71,21 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Dashboard',
         description: 'Cómo va todo: tendencias y comparativas.',
         Icon: ChartColumn,
-        isPrimary: false,
+        isPrimary: true,
       },
       {
         to: ROUTES.planning,
         label: 'Plan',
         description: 'Tu plan del día, recalculado cuando algo cambia.',
         Icon: CalendarCheck,
-        isPrimary: true,
+        isPrimary: false,
       },
       {
         to: ROUTES.finance,
         label: 'Finanzas',
         description: 'Gastos, ingresos y en qué se va el mes.',
         Icon: Wallet,
-        isPrimary: false,
+        isPrimary: true,
       },
     ],
   },
@@ -96,7 +104,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Nutrición',
         description: 'Comidas, macros, agua y presupuesto.',
         Icon: UtensilsCrossed,
-        isPrimary: true,
+        isPrimary: false,
       },
       {
         to: ROUTES.sleep,
