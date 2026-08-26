@@ -49,7 +49,7 @@ nexus/
 │   │   ├── study/
 │   │   ├── sleep/
 │   │   ├── health/
-│   │   ├── analytics/
+│   │   ├── dashboard/
 │   │   ├── assistant/             # Capa de IA — AÚN NO EXISTE (llega con la IA)
 │   │   └── settings/
 │   │
@@ -97,7 +97,7 @@ features/workout/
 ```
 
 > No todas las features necesitan todas las subcarpetas. Se crean **cuando hacen
-> falta** (YAGNI). Una feature de sólo lectura como `analytics` puede no tener
+> falta** (YAGNI). Una feature de sólo lectura como `dashboard` puede no tener
 > `repositories` propios y componer datos de otras features vía sus barrels.
 
 ## Por qué el shell vive en `app/` y no en `shared/`
@@ -126,19 +126,35 @@ mano. El módulo de entrenamiento se organiza en sub-pestañas
 
 | Ruta             | Módulo                               | Primario (móvil) |
 | ---------------- | ------------------------------------ | ---------------- |
-| `/`              | Dashboard                            | ✅               |
+| `/`              | Today («Hoy»)                        | ✅               |
+| `/dashboard`     | Dashboard                            | —                |
 | `/plan`          | Planning                             | ✅               |
+| `/finanzas`      | Finance                              | —                |
 | `/entrenamiento` | Workout                              | ✅               |
 | `/nutricion`     | Nutrition                            | ✅               |
-| `/habitos`       | Habits                               | —                |
-| `/estudio`       | Study                                | —                |
 | `/sueno`         | Sleep                                | —                |
 | `/salud`         | Health                               | —                |
-| `/analiticas`    | Analytics                            | —                |
-| `/asistente`     | Assistant                            | —                |
+| `/habitos`       | Habits                               | —                |
+| `/estudio`       | Study                                | —                |
 | `/ajustes`       | Settings                             | —                |
 | `/mas`           | Índice de módulos (navegación móvil) | ✅               |
 | `*`              | 404                                  | —                |
+
+Los módulos con sub-pestañas cuelgan de su ruta: `/entrenamiento/{rutinas,
+historial, ejercicios}`, `/nutricion/{alimentos, objetivos}`,
+`/estudio/materias` y `/finanzas/{fijos, deudas, cuentas, categorias}`. Las de
+acceso van aparte y sin layout: `/entrar`, `/crear-cuenta`, `/recuperar` y
+`/restablecer`.
+
+> **Dos «hoy» que no son el mismo.** `features/today/` es la pantalla **Hoy**
+> (`/`), que cuenta cómo va el día; `features/dashboard/` es el **Dashboard**
+> (`/dashboard`), que cuenta cómo van las semanas. La segunda se llamó
+> `analytics` hasta que se rediseñó, y por eso [ADR-0006](./adr/0006-analytics-agrega-en-el-cliente.md)
+> conserva ese nombre: los ADR aceptados no se editan.
+>
+> En la barra lateral los módulos van agrupados por área —**Cuerpo** (entreno,
+> nutrición, sueño, salud) y **Mente** (hábitos, estudio)—; Hoy, Dashboard, Plan
+> y Finanzas van sueltos arriba.
 
 **Navegación responsive** (mobile-first, ver [11 · UX/UI](./11-ux-ui-y-diseno.md)):
 barra inferior en móvil con los destinos primarios + «Más»; barra lateral en
