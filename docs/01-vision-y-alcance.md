@@ -90,10 +90,15 @@ volumen) para generar una sesión alternativa válida.
 
 ## Alcance de la v1 (Release 1.0)
 
-**Incluye:** los 11 dominios anteriores en su forma esencial, autenticación,
-Decision Engine con las tres reglas descritas, capa de IA para explicación,
-offline-first en el registro de datos, y PWA instalable. El detalle por sprint
-está en el [roadmap](./09-roadmap-y-sprints.md).
+**Incluye:** los dominios anteriores en su forma esencial, autenticación,
+Decision Engine con las tres reglas descritas, offline-first en el registro de
+datos y PWA instalable. El detalle por sprint está en el
+[roadmap](./09-roadmap-y-sprints.md).
+
+**No incluye la capa de IA.** Necesita una función de servidor y la clave de un
+proveedor, y la aplicación funciona entera sin ella: el motor da sus
+recomendaciones por reglas y la IA sólo las explicaría
+([ADR-0003](./adr/0003-ia-como-capa-de-interpretacion.md)).
 
 ## Fuera de alcance (No-Goals) de la v1
 
