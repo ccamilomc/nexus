@@ -2474,9 +2474,9 @@ Utilizar layouts fluidos.
 
 # DARK MODE
 
-Dark Mode será el tema principal.
+Nexus tiene un solo tema, y es oscuro.
 
-Light Mode será soportado.
+El tema claro se retiró el 2026-08-27 por decisión del usuario: no lo usaba nadie y obligaba a comprobar cada pantalla dos veces. Los fallos de contraste de este proyecto salieron siempre en el claro. Ver docs/adr/0012-un-solo-tema.md, que explica también qué haría falta para recuperarlo.
 
 Nunca utilizar colores absolutos directamente.
 

@@ -21,7 +21,7 @@ importante?, ¿cuál es la siguiente acción? El usuario nunca debería pregunta
 
 ## Design tokens y temas
 
-- **Dark mode es el tema principal**; light mode está soportado.
+- **Un solo tema, y es oscuro.** El claro se quitó el 2026-08-27: no lo usaba nadie y obligaba a comprobar cada pantalla dos veces ([ADR-0012](./adr/0012-un-solo-tema.md)).
 - **Prohibido** usar colores absolutos o hex repetidos en el código. Todo pasa por
   **design tokens** (variables CSS mapeadas en Tailwind):
 
