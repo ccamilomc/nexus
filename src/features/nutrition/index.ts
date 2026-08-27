@@ -21,3 +21,7 @@ export type { FoodPurchase, RepricedFood } from './types/nutrition.types'
 // Las cifras de nutrición las formatea nutrición, aquí y en Analytics: dos
 // criterios distintos para los mismos pesos o calorías se notarían en pantalla.
 export { formatCalories, formatCop, formatVolumeMl } from './utils/format'
+// Los objetivos también se fijan desde la bienvenida, que necesita dejar la
+// aplicación lista sin obligar a pasar por la pantalla de nutrición.
+export { useSaveGoal } from './hooks/use-nutrition'
+export type { NutritionGoalValues } from './schemas/nutrition.schema'

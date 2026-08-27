@@ -9,3 +9,5 @@ export type { SleepSummary } from './hooks/use-sleep-summary'
 export { useSleepSummary } from './hooks/use-sleep-summary'
 export { registerSleepOfflineMutations } from './offline'
 export { SleepPage } from './pages/SleepPage'
+// El objetivo de sueño también se fija desde la bienvenida.
+export { useSaveSleepGoal } from './hooks/use-sleep'
