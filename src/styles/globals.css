@@ -219,6 +219,60 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
+
+    /**
+     * Instalada se comporta como aplicación, no como página.
+     *
+     * Al instalarla en el teléfono desaparece la barra del navegador pero **los
+     * gestos del navegador siguen ahí**, y se notan: al llegar al final de una
+     * lista la pantalla rebota y arrastra lo de detrás, y tirar hacia abajo
+     * recarga. En una página es lo esperado; dentro de algo que parece una
+     * aplicación se siente como que la interfaz «se mueve sola».
+     *
+     * `contain` corta esa cadena sin quitarle el desplazamiento a nada.
+     */
+    overscroll-behavior-y: contain;
+  }
+
+  /**
+   * Nada de zoom por doble toque ni destello gris al tocar.
+   *
+   * El doble toque para ampliar obliga al navegador a **esperar** por si el
+   * segundo toque llega, y ese retraso es justo lo que hace sentir lenta una
+   * aplicación instalada. `manipulation` conserva el desplazamiento y el pellizco
+   * —ampliar con dos dedos sigue funcionando, que es un requisito de
+   * accesibilidad— y sólo renuncia al doble toque, que aquí no sirve para nada.
+   *
+   * El destello gris de Android se quita porque **ya hay respuesta propia**:
+   * cada control tiene su estado `:active` y su anillo de foco, con el color de
+   * la marca en vez de un recuadro del sistema.
+   */
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /**
+   * El texto de la interfaz no se selecciona; el contenido sí.
+   *
+   * Mantener pulsado un botón en el móvil selecciona su etiqueta y saca las
+   * manijas azules de selección, que es un gesto sin ningún sentido aquí y
+   * ensucia la pantalla. Se apaga **sólo en los controles**: las cifras, las
+   * frases y las tablas se siguen pudiendo copiar, que para eso están.
+   */
+  button,
+  [role='button'],
+  nav,
+  label {
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /**
