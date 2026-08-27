@@ -24,6 +24,10 @@ export interface LogSetRequest {
   readonly exerciseId: string
   readonly reps: number
   readonly weightKg: number
+  /** Si fue de calentamiento: no cuenta para el volumen ni para el progreso. */
+  readonly isWarmup: boolean
+  /** El esfuerzo en RPE, o `null` si no se contestó. */
+  readonly rpe: number | null
 }
 
 /** Lo que el componente necesita de la mutación, sin sus variables internas. */
