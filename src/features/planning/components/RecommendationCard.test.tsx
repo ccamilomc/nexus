@@ -46,24 +46,31 @@ describe('RecommendationCard', () => {
   })
 
   it('se aparta antes de guardar el descarte', async () => {
+    // **Se mira cómo estaba la tarjeta en el momento de guardar**, no después.
+    //
+    // Comprobarlo tras el clic era una carrera perdida: la tarjeta espera 200
+    // ms a irse antes de guardar, y en la tanda completa el clic tardaba a
+    // veces más que eso, así que el guardado ya había ocurrido y la prueba
+    // fallaba sin que nada estuviera roto. Preguntándolo desde dentro del
+    // guardado se comprueba justo lo que se quiere —que para entonces ya se
+    // estaba yendo— y da igual lo que tarde cada paso.
     const user = userEvent.setup()
-    let dismissed = false
+    let seIbaAlGuardar: boolean | null = null
     const onDismiss = vi.fn(() => {
-      dismissed = true
+      seIbaAlGuardar = isLeaving()
       return Promise.resolve()
     })
 
     renderCard(onDismiss)
     await user.click(screen.getByRole('button', { name: /Descartar/ }))
 
-    // El orden es lo que se prueba: si se guardara primero, el plan se
-    // refrescaría y la tarjeta se desmontaría sin que diera tiempo a verla irse.
-    expect(isLeaving()).toBe(true)
-    expect(dismissed).toBe(false)
-
     await waitFor(() => {
       expect(onDismiss).toHaveBeenCalledOnce()
     })
+
+    // El orden es lo que se prueba: si se guardara primero, el plan se
+    // refrescaría y la tarjeta se desmontaría sin que diera tiempo a verla irse.
+    expect(seIbaAlGuardar).toBe(true)
   })
 
   it('vuelve si el descarte no se pudo guardar', async () => {
