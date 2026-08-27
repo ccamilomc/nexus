@@ -25,6 +25,7 @@ function entry(overrides: Partial<HabitToday> = {}): HabitToday {
       updated_at: '2026-01-01T00:00:00.000Z',
     },
     isDoneToday: false,
+    appliesToday: true,
     streak: 3,
     daysSinceDone: 1,
     recentDays: [
@@ -48,14 +49,22 @@ describe('toggleHabitDay', () => {
   })
 
   it('desmarca hoy y la acorta en uno', () => {
-    const actual = toggleHabitDay(entry({ isDoneToday: true, streak: 4 }), HOY, true)
+    const actual = toggleHabitDay(
+      entry({ isDoneToday: true, appliesToday: true, streak: 4 }),
+      HOY,
+      true,
+    )
 
     expect(actual.isDoneToday).toBe(false)
     expect(actual.streak).toBe(3)
   })
 
   it('nunca deja la racha en negativo', () => {
-    const actual = toggleHabitDay(entry({ isDoneToday: true, streak: 0 }), HOY, true)
+    const actual = toggleHabitDay(
+      entry({ isDoneToday: true, appliesToday: true, streak: 0 }),
+      HOY,
+      true,
+    )
 
     expect(actual.streak).toBe(0)
   })

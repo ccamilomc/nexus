@@ -1,6 +1,7 @@
 import { toDateKey } from '@/shared/utils'
 
 import type { Habit, HabitLog, HabitsPeriodSeries, StreakRun } from '../types/habits.types'
+import { appliesOn } from './applies-on'
 
 /** Un día con su recuento de hábitos cumplidos frente a los que tocaban. */
 interface DayTally {
@@ -16,9 +17,8 @@ interface DayTally {
  * hundiría una gráfica de cuenta absoluta justo cuando el usuario se propone
  * más cosas, que es lo contrario de lo que ocurrió.
  *
- * Un hábito sólo cuenta desde el día en que se creó. Es la misma regla que ya
- * aplica `calculateConsistency`: penalizar días en los que el hábito no existía
- * sería falso y castigaría precisamente al empezar.
+ * Qué días cuentan para cada hábito lo decide `appliesOn`, igual que en la
+ * pantalla de hábitos: ni antes de crearlo ni los días que no le tocan.
  *
  * Los días **sin ningún hábito vigente** quedan como hueco, no como cero: no se
  * incumplió nada, es que no había nada que cumplir.
@@ -74,7 +74,12 @@ function longestRunOf(
     let start: string | null = null
     let length = 0
 
-    for (const dateKey of dateKeys) {
+    for (const [index, dateKey] of dateKeys.entries()) {
+      const day = days[index]
+      // Un día que no toca ni suma ni corta: la racha de un hábito de lunes,
+      // miércoles y viernes sobrevive al martes.
+      if (day && !appliesOn(habit, day)) continue
+
       if (dates?.has(dateKey)) {
         start ??= dateKey
         length += 1
@@ -101,8 +106,8 @@ function longestRunOf(
  * Se dice el dato y no se juzga —«40 % de los dias», no «el que mas fallas»—,
  * que es como habla el resto de la aplicacion.
  *
- * Solo cuenta desde que el habito existe, como el resto de cifras, y devuelve
- *  con menos de dos habitos: con uno solo, «el que menos» es el mismo que
+ * Cuenta sólo los días que le tocan a cada hábito, como el resto de cifras, y
+ * devuelve `null` con menos de dos hábitos: con uno solo, «el que menos» sería
  * la constancia global dicha dos veces.
  */
 function hardestOf(
@@ -115,8 +120,7 @@ function hardestOf(
   let hardest: { name: string; percent: number } | null = null
 
   for (const habit of habits) {
-    const since = toDateKey(new Date(habit.created_at))
-    const due = days.map(toDateKey).filter((dateKey) => dateKey >= since)
+    const due = days.filter((day) => appliesOn(habit, day)).map(toDateKey)
     if (due.length === 0) continue
 
     const done = due.filter((dateKey) => completed.get(habit.id)?.has(dateKey)).length
@@ -153,9 +157,7 @@ function summarize(
     let done = 0
     let due = 0
     for (const habit of habits) {
-      // Las claves `YYYY-MM-DD` se comparan como texto, que en ese formato
-      // equivale a compararlas como fechas.
-      if (dateKey < toDateKey(new Date(habit.created_at))) continue
+      if (!appliesOn(habit, day)) continue
 
       due += 1
       if (completed.get(habit.id)?.has(dateKey)) done += 1

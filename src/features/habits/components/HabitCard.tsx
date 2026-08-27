@@ -9,6 +9,7 @@ import { cn } from '@/shared/lib/utils'
 
 import { useArchiveHabit, useToggleHabit } from '../hooks/use-habits'
 import type { HabitToday } from '../types/habits.types'
+import { describeWeekdays } from '../utils/format'
 import { HabitConsistencyBar } from './HabitConsistencyBar'
 import { HabitForm } from './HabitForm'
 import { HabitStreak } from './HabitStreak'
@@ -23,6 +24,7 @@ interface HabitCardProps {
 /** Un hábito: marcarlo hoy, corregir días pasados, su racha y su constancia. */
 export function HabitCard({ todayKey, entry }: HabitCardProps) {
   const { habit, isDoneToday, streak, recentDays, consistency } = entry
+  const diasDelHabito = describeWeekdays(habit.target_weekdays)
   const toggle = useToggleHabit(todayKey)
   const archive = useArchiveHabit()
   const [isEditing, setIsEditing] = useState(false)
@@ -71,6 +73,11 @@ export function HabitCard({ todayKey, entry }: HabitCardProps) {
             </p>
             {habit.description ? (
               <p className="truncate text-xs text-muted-foreground">{habit.description}</p>
+            ) : null}
+            {/* Los días sólo se dicen cuando son algunos: en un hábito diario,
+                escribir «todos los días» es ruido en cada tarjeta. */}
+            {diasDelHabito ? (
+              <p className="truncate text-xs text-muted-foreground">{diasDelHabito}</p>
             ) : null}
             <HabitStreak streak={streak} daysSinceDone={entry.daysSinceDone} />
           </div>

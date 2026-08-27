@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 
 import { FormAlert } from '@/shared/components/feedback'
 import { FormField } from '@/shared/components/form'
@@ -10,6 +10,7 @@ import { Input } from '@/shared/components/ui/input'
 import { useCreateHabit, useUpdateHabit } from '../hooks/use-habits'
 import { createHabitSchema, type CreateHabitValues } from '../schemas/habits.schema'
 import type { Habit } from '../types/habits.types'
+import { WeekdayPicker } from './WeekdayPicker'
 
 interface HabitFormProps {
   /** Si se indica, el formulario cambia ese hábito en lugar de crear uno. */
@@ -35,13 +36,18 @@ export function HabitForm({ habit, onCreated, onCancel }: HabitFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateHabitValues>({
     resolver: zodResolver(createHabitSchema),
     defaultValues: habit
-      ? { name: habit.name, ...(habit.description ? { description: habit.description } : {}) }
-      : { name: '' },
+      ? {
+          name: habit.name,
+          weekdays: habit.target_weekdays ?? [],
+          ...(habit.description ? { description: habit.description } : {}),
+        }
+      : { name: '', weekdays: [] },
   })
 
   const onSubmit = handleSubmit((values) => {
@@ -74,6 +80,20 @@ export function HabitForm({ habit, onCreated, onCancel }: HabitFormProps) {
               {...register('description')}
             />
           </FormField>
+
+          {/* Debajo del nombre y la nota, no encima: la mayoría de los hábitos
+              son diarios y no hay que tocarlo, así que no puede ser lo primero
+              que se encuentre quien sólo quiere escribir un nombre y guardar. */}
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium">¿Qué días?</p>
+            <Controller
+              control={control}
+              name="weekdays"
+              render={({ field }) => (
+                <WeekdayPicker value={field.value} onChange={field.onChange} />
+              )}
+            />
+          </div>
 
           {pending.isError ? <FormAlert>{pending.error.message}</FormAlert> : null}
 

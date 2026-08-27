@@ -137,6 +137,10 @@ export const habitsService = {
         user_id: userId,
         name: values.name,
         description: values.description ?? null,
+        // Sin días marcados se guarda `null` y no una lista vacía: en la base,
+        // «todos los días» es la ausencia de lista, y dos formas de decir lo
+        // mismo acaban en dos ramas distintas al leerlo.
+        target_weekdays: values.weekdays.length > 0 ? [...values.weekdays].sort() : null,
       })
     } catch (error) {
       throw toAppError(error)
@@ -146,16 +150,24 @@ export const habitsService = {
   /**
    * Cambia el nombre o la nota de un hábito.
    *
-   * **Sin tocar sus registros ni su fecha de creación**, que es todo lo que
-   * sostiene la racha y la constancia: corregir una errata en el nombre no puede
-   * costar el historial. Sin esto la única salida era archivarlo y crear otro,
-   * empezando de cero.
+   * Cambia el nombre, la nota o los días. **Sin tocar sus registros ni su fecha
+   * de creación**, que es todo lo que sostiene la racha y la constancia:
+   * corregir una errata en el nombre no puede costar el historial.
+   *
+   * Cambiar los días **recalcula el pasado**: quien pase un hábito diario a
+   * lunes-miércoles-viernes verá subir su constancia, porque los martes dejan de
+   * contar como fallados. Es lo correcto —el hábito es el que es hoy— y conviene
+   * saberlo antes de extrañarse.
    */
   async updateHabit(habitId: string, values: CreateHabitValues): Promise<Habit> {
     try {
       return await habitsRepository.updateHabit(habitId, {
         name: values.name,
         description: values.description ?? null,
+        // Sin días marcados se guarda `null` y no una lista vacía: en la base,
+        // «todos los días» es la ausencia de lista, y dos formas de decir lo
+        // mismo acaban en dos ramas distintas al leerlo.
+        target_weekdays: values.weekdays.length > 0 ? [...values.weekdays].sort() : null,
       })
     } catch (error) {
       throw toAppError(error)
