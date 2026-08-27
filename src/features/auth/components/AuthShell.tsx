@@ -27,10 +27,16 @@ interface AuthShellProps extends PropsWithChildren {
  * Todo va alineado a la izquierda y no centrado, como el resto de la
  * aplicación: todas las pantallas empiezan por el borde izquierdo, y una
  * centrada se sentía de otro sitio.
+ *
+ * **Los márgenes de arriba y de abajo suman el área segura.** La página llega
+ * hasta los bordes de la pantalla (`viewport-fit=cover` en el `index.html`), así
+ * que el contenido tiene que apartarse solo de donde el teléfono pinta la hora y
+ * la barra de gestos. Aquí no hay barra inferior que lo haga por su cuenta, como
+ * sí ocurre dentro de la aplicación.
  */
 export function AuthShell({ title, subtitle, footer, children }: AuthShellProps) {
   return (
-    <main className="flex min-h-dvh flex-col justify-center bg-background px-4 py-10 text-foreground">
+    <main className="flex min-h-dvh flex-col justify-center bg-background px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))] text-foreground">
       <div className="mx-auto w-full max-w-sm">
         <div className="mb-8 space-y-3">
           <div className="flex items-center gap-2.5">

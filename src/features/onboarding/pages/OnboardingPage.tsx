@@ -18,6 +18,10 @@ import { useOnboarding } from '../hooks/use-onboarding'
  * motivo que las pantallas de acceso: aquí no hay a dónde navegar todavía, y
  * ofrecer once destinos a quien aún no sabe qué es Nexus es justo el problema
  * que esta pantalla viene a resolver.
+ *
+ * Por eso mismo los márgenes suman el área segura: al estar fuera del cascarón,
+ * no hay nadie que aparte el «Paso 1 de 4» de la hora del teléfono ni el botón
+ * «Atrás» de la barra de gestos.
  */
 export function OnboardingPage() {
   const navigate = useNavigate()
@@ -34,7 +38,7 @@ export function OnboardingPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
       <div className="flex items-center justify-between gap-3">
         {/* Cuántas van y cuántas quedan: sin esto, cada pantalla parece la
             antesala de otras diez y da ganas de cerrar. */}
