@@ -2,7 +2,6 @@ import { LogOut } from 'lucide-react'
 
 import { InstallCard } from '@/app/layout/InstallCard'
 import { useAuth } from '@/core/auth'
-import { ThemeToggle } from '@/core/theme'
 import { PageHeader } from '@/shared/components/layout'
 import { Button } from '@/shared/components/ui/button'
 
@@ -11,7 +10,7 @@ export function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Ajustes" description="Tu cuenta, la apariencia y la instalación." />
+      <PageHeader title="Ajustes" description="Tu cuenta y la instalación." />
 
       <div className="space-y-4">
         <section
@@ -32,22 +31,6 @@ export function SettingsPage() {
               <LogOut aria-hidden />
               Cerrar sesión
             </Button>
-          </div>
-        </section>
-
-        <section
-          aria-labelledby="ajustes-apariencia"
-          className="rounded-xl border border-border bg-card p-4"
-        >
-          <h2 id="ajustes-apariencia" className="text-sm font-medium">
-            Apariencia
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Elige el tema de la interfaz. «Según el sistema» sigue la configuración de tu
-            dispositivo.
-          </p>
-          <div className="mt-3">
-            <ThemeToggle />
           </div>
         </section>
 

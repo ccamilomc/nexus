@@ -7,7 +7,6 @@ import { CACHE_BUSTER, CACHE_MAX_AGE_MS, queryPersister } from '@/app/providers/
 import { AuthProvider } from '@/core/auth'
 import { AppErrorBoundary } from '@/core/error'
 import { isResumableMutation } from '@/core/offline'
-import { ThemeProvider } from '@/core/theme'
 import { TimeProvider } from '@/core/time'
 
 /**
@@ -38,27 +37,25 @@ function resumePendingWrites(): void {
 export function AppProviders({ children }: PropsWithChildren) {
   return (
     <AppErrorBoundary>
-      <ThemeProvider>
-        <PersistQueryClientProvider
-          client={queryClient}
-          persistOptions={{
-            persister: queryPersister,
-            maxAge: CACHE_MAX_AGE_MS,
-            buster: CACHE_BUSTER,
-            // Sin esto se guardaba toda mutación pausada, también las que no
-            // pueden reanudarse: quedaban en el disco para siempre y el aviso
-            // prometía enviar registros que nunca iban a salir (ADR-0011).
-            dehydrateOptions: { shouldDehydrateMutation: isResumableMutation },
-          }}
-          onSuccess={resumePendingWrites}
-        >
-          <AuthProvider>
-            <CacheOwnership>
-              <TimeProvider>{children}</TimeProvider>
-            </CacheOwnership>
-          </AuthProvider>
-        </PersistQueryClientProvider>
-      </ThemeProvider>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: queryPersister,
+          maxAge: CACHE_MAX_AGE_MS,
+          buster: CACHE_BUSTER,
+          // Sin esto se guardaba toda mutación pausada, también las que no
+          // pueden reanudarse: quedaban en el disco para siempre y el aviso
+          // prometía enviar registros que nunca iban a salir (ADR-0011).
+          dehydrateOptions: { shouldDehydrateMutation: isResumableMutation },
+        }}
+        onSuccess={resumePendingWrites}
+      >
+        <AuthProvider>
+          <CacheOwnership>
+            <TimeProvider>{children}</TimeProvider>
+          </CacheOwnership>
+        </AuthProvider>
+      </PersistQueryClientProvider>
     </AppErrorBoundary>
   )
 }
