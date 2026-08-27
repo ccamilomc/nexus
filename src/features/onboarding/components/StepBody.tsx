@@ -15,8 +15,14 @@ interface StepBodyProps {
 }
 
 /** El campo vacío es una respuesta, no un cero: se guarda como «no lo dijo». */
-function toNumberOrNull(value: string): number | null {
-  return value === '' ? null : Number(value)
+function toNumberOrNull(value: unknown): number | null {
+  // Todo lo que no sea un número de verdad es «no lo dijo»: el campo vacío llega
+  // como cadena vacía, pero un `<input type="number">` a medio escribir —«1e», un
+  // signo suelto— llega como `NaN`, y eso hacía saltar «Revisa el peso» en un
+  // campo que el usuario **no había tocado**. Comprobado en el navegador.
+  const asNumber = Number(value)
+
+  return value === '' || value === null || Number.isNaN(asNumber) ? null : asNumber
 }
 
 const EMPTY: BodyValues = {
