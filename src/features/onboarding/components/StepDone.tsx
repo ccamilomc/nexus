@@ -1,9 +1,7 @@
 import { ArrowRight, PartyPopper } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
 import { Button } from '@/shared/components/ui/button'
-import { WIDE_TAP_AREA } from '@/shared/constants'
 
 import { TRACKABLE_MODULES, type TrackableId } from '../constants/onboarding.constants'
 
@@ -11,7 +9,8 @@ interface StepDoneProps {
   readonly name: string
   readonly tracked: readonly TrackableId[]
   readonly isSaving: boolean
-  readonly onFinish: () => void
+  /** Guarda y **luego** navega: salir antes de guardar devolvía a la bienvenida. */
+  readonly onGo: (to: string) => void
 }
 
 /**
@@ -22,10 +21,12 @@ interface StepDoneProps {
  * sin ninguna pista. Aquí cada módulo que marcaste trae **una acción concreta**,
  * no una descripción de lo que hace.
  *
- * Los enlaces terminan la bienvenida al pulsarlos: nadie quiere volver aquí
- * después de haber entrado ya a la aplicación.
+ * **Son botones y no enlaces, a propósito.** Un enlace navega en el acto, y la
+ * bienvenida todavía no había terminado de guardarse: el guardia leía un perfil
+ * sin completar y devolvía aquí, al primer paso, con lo que el botón parecía no
+ * hacer nada. Ahora se espera a que guarde y sólo entonces se sale.
  */
-export function StepDone({ name, tracked, isSaving, onFinish }: StepDoneProps) {
+export function StepDone({ name, tracked, isSaving, onGo }: StepDoneProps) {
   const chosen = TRACKABLE_MODULES.filter(({ id }) => tracked.includes(id))
   const greeting = name.trim() ? `Listo, ${name.trim()}` : 'Listo'
 
@@ -47,10 +48,11 @@ export function StepDone({ name, tracked, isSaving, onFinish }: StepDoneProps) {
         <ul className="space-y-2">
           {chosen.map(({ id, label, Icon, firstStep, to }) => (
             <li key={id}>
-              <Link
-                to={to}
-                onClick={onFinish}
-                className={`flex items-center gap-3 rounded-xl border border-border bg-card p-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${WIDE_TAP_AREA}`}
+              <button
+                type="button"
+                disabled={isSaving}
+                onClick={() => onGo(to)}
+                className="flex w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60"
               >
                 <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden />
                 <span className="min-w-0 flex-1">
@@ -58,16 +60,14 @@ export function StepDone({ name, tracked, isSaving, onFinish }: StepDoneProps) {
                   <span className="block text-xs text-muted-foreground">En {label}</span>
                 </span>
                 <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-              </Link>
+              </button>
             </li>
           ))}
         </ul>
       ) : null}
 
-      <Button asChild className="w-full" disabled={isSaving}>
-        <Link to={ROUTES.today} onClick={onFinish}>
-          Ir a Hoy
-        </Link>
+      <Button className="w-full" disabled={isSaving} onClick={() => onGo(ROUTES.today)}>
+        {isSaving ? 'Guardando…' : 'Ir a Hoy'}
       </Button>
     </div>
   )

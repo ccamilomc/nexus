@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
+import { useProfile } from '@/features/profile'
 import { Button } from '@/shared/components/ui/button'
 
 import { StepBody } from '../components/StepBody'
@@ -21,7 +22,12 @@ import { useOnboarding } from '../hooks/use-onboarding'
 export function OnboardingPage() {
   const navigate = useNavigate()
   const onboarding = useOnboarding()
+  const { data: profile } = useProfile()
   const { step, stepNumber, stepCount, draft, suggestion, isSaving } = onboarding
+
+  // El nombre sale del perfil, no de un campo: se dio al registrarse y volver a
+  // pedirlo aquí hacía sentir que la aplicación no escucha.
+  const nombre = profile?.display_name?.trim() || null
 
   const leave = () => {
     void onboarding.finish(null).then(() => navigate(ROUTES.today))
@@ -43,13 +49,7 @@ export function OnboardingPage() {
       </div>
 
       <div className="flex-1">
-        {step === 'welcome' ? (
-          <StepWelcome
-            name={draft.displayName}
-            onNameChange={onboarding.setName}
-            onNext={onboarding.next}
-          />
-        ) : null}
+        {step === 'welcome' ? <StepWelcome name={nombre} onNext={onboarding.next} /> : null}
 
         {step === 'modules' ? (
           <StepModules
@@ -84,11 +84,11 @@ export function OnboardingPage() {
 
         {step === 'done' ? (
           <StepDone
-            name={draft.displayName}
+            name={nombre ?? ''}
             tracked={draft.tracked}
             isSaving={isSaving}
-            onFinish={() => {
-              void onboarding.finish(null)
+            onGo={(to) => {
+              void onboarding.finish(null).then(() => navigate(to))
             }}
           />
         ) : null}
