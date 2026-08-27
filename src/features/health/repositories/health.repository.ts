@@ -86,25 +86,4 @@ export const healthRepository = {
 
     if (error) throw error
   },
-
-  /** Altura del perfil, en centímetros. Hace falta para el IMC. */
-  async findHeightCm(userId: string): Promise<number | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('height_cm')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (error) throw error
-    return data?.height_cm ?? null
-  },
-
-  async updateHeightCm(userId: string, heightCm: number): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ height_cm: heightCm })
-      .eq('id', userId)
-
-    if (error) throw error
-  },
 }

@@ -1,4 +1,5 @@
 import { createAppError, toAppError } from '@/core/error'
+import { profileService } from '@/features/profile'
 import { type DayRange, minusDays } from '@/shared/utils'
 
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
@@ -67,9 +68,9 @@ export const healthService = {
     try {
       // Las pesadas van aparte: el resumen trae unas pocas de cada medida y para
       // la tendencia hacen falta todas las de cuatro semanas, sólo de peso.
-      const [metrics, heightCm, weights] = await Promise.all([
+      const [metrics, profile, weights] = await Promise.all([
         healthRepository.listRecentMetrics(userId, RECENT_LIMIT),
-        healthRepository.findHeightCm(userId),
+        profileService.get(userId),
         healthRepository.listMetricsBetween(
           userId,
           'weight',
@@ -78,6 +79,8 @@ export const healthService = {
           minusDays(today, -1).toISOString(),
         ),
       ])
+
+      const heightCm = profile?.height_cm ?? null
 
       const summaries = buildMetricSummaries(metrics, METRIC_TYPES_IN_ORDER)
       const weight = summaries.find(({ type }) => type === 'weight')
@@ -188,7 +191,7 @@ export const healthService = {
   /** Guarda la altura, que sólo sirve para calcular el IMC. */
   async saveHeight(userId: string, heightCm: number): Promise<void> {
     try {
-      await healthRepository.updateHeightCm(userId, heightCm)
+      await profileService.save(userId, { heightCm })
     } catch (error) {
       throw toAppError(error)
     }

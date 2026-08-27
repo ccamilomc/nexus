@@ -9,6 +9,7 @@ export const ROUTES = {
   forgotPassword: '/recuperar',
   resetPassword: '/restablecer',
   // Protegidas (requieren sesión)
+  onboarding: '/bienvenida',
   today: '/',
   planning: '/plan',
   workout: '/entrenamiento',

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isAppError } from '@/core/error'
+import { profileService } from '@/features/profile'
 
 import { healthRepository } from '../repositories/health.repository'
 import type { BodyMetric, BodyMetricType } from '../types/health.types'
@@ -11,21 +12,22 @@ import { healthService } from './health.service'
  * negocio**, no consultas. Con la factoría, el módulo real ni siquiera se carga,
  * así que no arrastra el cliente de Supabase (ni sus variables de entorno).
  */
+// El perfil ya no lo lee salud: lo lee su feature (ver profile.service).
+vi.mock('@/features/profile', () => ({ profileService: { get: vi.fn(), save: vi.fn() } }))
+
 vi.mock('../repositories/health.repository', () => ({
   healthRepository: {
     listRecentMetrics: vi.fn(),
     listMetricsBetween: vi.fn(),
     insertMetrics: vi.fn(),
     softDeleteMetric: vi.fn(),
-    findHeightCm: vi.fn(),
-    updateHeightCm: vi.fn(),
   },
 }))
 
 const listRecentMetrics = vi.mocked(healthRepository.listRecentMetrics)
 const listMetricsBetween = vi.mocked(healthRepository.listMetricsBetween)
 const insertMetrics = vi.mocked(healthRepository.insertMetrics)
-const findHeightCm = vi.mocked(healthRepository.findHeightCm)
+const getProfile = vi.mocked(profileService.get)
 
 const USER_ID = 'user-1'
 const HOY = new Date(2026, 7, 14, 9, 30)
@@ -48,7 +50,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   listRecentMetrics.mockResolvedValue([])
   listMetricsBetween.mockResolvedValue([])
-  findHeightCm.mockResolvedValue(175)
+  getProfile.mockResolvedValue({ height_cm: 175 } as never)
   insertMetrics.mockResolvedValue([metric('weight', 74.5, '2026-07-31T08:00:00.000Z')])
 })
 
@@ -71,7 +73,7 @@ describe('healthService.getOverview', () => {
 
   it('sin altura no muestra IMC, pero sí las medidas', async () => {
     // Inventar un IMC sería peor que no mostrarlo.
-    findHeightCm.mockResolvedValue(null)
+    getProfile.mockResolvedValue(null)
     listRecentMetrics.mockResolvedValue([metric('weight', 70, '2026-07-31T08:00:00.000Z')])
 
     const overview = await healthService.getOverview(USER_ID, HOY)
