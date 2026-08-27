@@ -88,3 +88,57 @@ describe('hasCompletedOn', () => {
     expect(hasCompletedOn([], '2026-07-01')).toBe(false)
   })
 })
+
+describe('calculateStreak con días marcados', () => {
+  const LUNES = new Date(2026, 7, 24)
+  const MARTES = new Date(2026, 7, 25)
+  const MIERCOLES = new Date(2026, 7, 26)
+  const JUEVES = new Date(2026, 7, 27)
+
+  /** Toca lunes, miércoles y viernes. */
+  const lmv = (date: Date) => [1, 3, 5].includes(((date.getDay() + 6) % 7) + 1)
+
+  it('un día que no toca no rompe la racha', () => {
+    // Es el fallo que tenía: el martes salía como día fallado y la racha de
+    // cualquier hábito que no fuera diario se rompía sola cada dos días.
+    const hechos = new Set(['2026-08-21', '2026-08-24', '2026-08-26'])
+
+    expect(calculateStreak(hechos, MIERCOLES, lmv)).toBe(3)
+  })
+
+  it('mirando desde un día que no toca, la racha sigue viva', () => {
+    // El martes, un hábito de lunes-miércoles-viernes no ha fallado nada.
+    const hechos = new Set(['2026-08-21', '2026-08-24'])
+
+    expect(calculateStreak(hechos, MARTES, lmv)).toBe(2)
+  })
+
+  it('faltar un día que sí tocaba sí la rompe', () => {
+    // Sin el lunes, la racha se corta ahí aunque el miércoles esté hecho.
+    const hechos = new Set(['2026-08-21', '2026-08-26'])
+
+    expect(calculateStreak(hechos, MIERCOLES, lmv)).toBe(1)
+  })
+
+  it('el jueves tampoco toca: la racha del miércoles se conserva', () => {
+    const hechos = new Set(['2026-08-24', '2026-08-26'])
+
+    expect(calculateStreak(hechos, JUEVES, lmv)).toBe(2)
+  })
+
+  it('sin días marcados se comporta como siempre', () => {
+    // La firma cambió con un valor por defecto: lo que ya funcionaba no puede
+    // cambiar de resultado.
+    const hechos = new Set(['2026-08-23', '2026-08-24'])
+
+    expect(calculateStreak(hechos, LUNES)).toBe(2)
+  })
+
+  it('no da vueltas para siempre cuando la racha se acaba', () => {
+    // Un hábito de un solo día a la semana salta seis por cada uno que cuenta:
+    // sin tope, buscar el anterior no terminaría nunca.
+    const soloLunes = (date: Date) => date.getDay() === 1
+
+    expect(calculateStreak(new Set(), LUNES, soloLunes)).toBe(0)
+  })
+})

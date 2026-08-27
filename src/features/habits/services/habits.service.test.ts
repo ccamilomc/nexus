@@ -243,12 +243,13 @@ describe('habitsService.createHabit', () => {
   it('guarda la descripción vacía como ausencia de dato', async () => {
     insertHabit.mockResolvedValue(habit('h1'))
 
-    await habitsService.createHabit(USER_ID, { name: 'Leer' })
+    await habitsService.createHabit(USER_ID, { name: 'Leer', weekdays: [] })
 
     expect(insertHabit).toHaveBeenCalledExactlyOnceWith({
       user_id: USER_ID,
       name: 'Leer',
       description: null,
+      target_weekdays: null,
     })
   })
 })
@@ -262,20 +263,26 @@ describe('habitsService.updateHabit', () => {
     await habitsService.updateHabit('h1', {
       name: 'Leer 30 minutos',
       description: 'Antes de dormir',
+      weekdays: [],
     })
 
     expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', {
       name: 'Leer 30 minutos',
       description: 'Antes de dormir',
+      target_weekdays: null,
     })
   })
 
   it('una nota vacía se guarda como ausencia, no como texto vacío', async () => {
     updateHabit.mockResolvedValue(habit('h1'))
 
-    await habitsService.updateHabit('h1', { name: 'Leer' })
+    await habitsService.updateHabit('h1', { name: 'Leer', weekdays: [] })
 
-    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', { name: 'Leer', description: null })
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', {
+      name: 'Leer',
+      description: null,
+      target_weekdays: null,
+    })
   })
 })
 

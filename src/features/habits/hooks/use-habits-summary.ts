@@ -16,26 +16,33 @@ export function useHabitsSummary(): HabitsSummary {
   const today = useToday()
   const { data, isPending } = useHabitsToday(today)
 
-  const habits = data ?? []
-  const doneCount = habits.filter((entry) => entry.isDoneToday).length
-  const bestStreak = habits.reduce((best, entry) => Math.max(best, entry.streak), 0)
+  const todos = data ?? []
+  // El recuento del día sólo mira **los de hoy**: con un hábito de lunes,
+  // miércoles y viernes, decir «0 de 3» un martes es contar como pendiente algo
+  // que no tocaba. **La racha, en cambio, sale de todos**: la de ese hábito
+  // sigue viva el martes aunque el martes no toque.
+  const deHoy = todos.filter((entry) => entry.appliesToday)
+  const doneCount = deHoy.filter((entry) => entry.isDoneToday).length
+  const bestStreak = todos.reduce((best, entry) => Math.max(best, entry.streak), 0)
 
   return {
     isPending,
-    isEmpty: !isPending && habits.length === 0,
+    // Vacío es **no tener hábitos**, no que hoy no toque ninguno: a quien tiene
+    // tres para el fin de semana no se le dice un martes que no tiene ninguno.
+    isEmpty: !isPending && todos.length === 0,
     // La racha sólo se menciona cuando existe: sin ella no se recrimina nada.
     lines:
       bestStreak > 0 ? [`Mejor racha: ${bestStreak === 1 ? '1 día' : `${bestStreak} días`}`] : [],
     progress:
-      habits.length > 0
+      deHoy.length > 0
         ? [
             {
               // «Hoy» y no «Hábitos»: la etiqueta va dentro de la tarjeta de
               // hábitos, y repetir el nombre sólo hace tartamudear la pantalla.
               label: 'Hoy',
               value: doneCount,
-              target: habits.length,
-              display: `${doneCount} de ${habits.length} ${habits.length === 1 ? 'hecho' : 'hechos'} hoy`,
+              target: deHoy.length,
+              display: `${doneCount} de ${deHoy.length} ${deHoy.length === 1 ? 'hecho' : 'hechos'} hoy`,
             },
           ]
         : [],

@@ -16,6 +16,8 @@ export type HabitFrequency = Enums<'habit_frequency'>
 export interface HabitToday {
   readonly habit: Habit
   readonly isDoneToday: boolean
+  /** Si hoy es uno de los días de este hábito. Sin días marcados, siempre. */
+  readonly appliesToday: boolean
   readonly streak: number
   /**
    * Días desde la última vez que se cumplió; `0` si fue hoy.

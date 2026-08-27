@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { HabitToday } from '../types/habits.types'
 import { pendingToday } from './pending-today'
 
-function entry(id: string, name: string, isDoneToday: boolean): HabitToday {
+function entry(id: string, name: string, isDoneToday: boolean, appliesToday = true): HabitToday {
   return {
     habit: {
       id,
@@ -22,6 +22,7 @@ function entry(id: string, name: string, isDoneToday: boolean): HabitToday {
       updated_at: '2026-01-01T00:00:00.000Z',
     },
     isDoneToday,
+    appliesToday,
     streak: 0,
     daysSinceDone: null,
     recentDays: [],

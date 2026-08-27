@@ -22,16 +22,21 @@ export interface PendingToday {
  * pasaría a ser la pantalla de hábitos metida dentro de una tarjeta. Los que no
  * caben se cuentan y quedan a un toque en su pantalla.
  *
+ * **Sólo entra lo que toca hoy.** Un hábito de lunes, miércoles y viernes no es
+ * algo que falte un martes: recordarlo sería pedir que se haga algo que no
+ * estaba previsto, y de paso ensuciaría el «vas al día».
+ *
  * **«Todos hechos» y «no tienes hábitos» no son lo mismo**, y por eso
- * `isAllDone` exige que haya alguno: felicitar a quien no ha creado ninguno
- * sería celebrar el vacío.
+ * `isAllDone` exige que haya alguno **de los de hoy**: felicitar a quien no ha
+ * creado ninguno, o a quien hoy no tenía nada, sería celebrar el vacío.
  */
 export function pendingToday(habits: readonly HabitToday[], max: number): PendingToday {
-  const pending = habits.filter((entry) => !entry.isDoneToday)
+  const deHoy = habits.filter((entry) => entry.appliesToday)
+  const pending = deHoy.filter((entry) => !entry.isDoneToday)
 
   return {
     pending: pending.slice(0, max).map(({ habit }) => ({ id: habit.id, name: habit.name })),
     hiddenCount: Math.max(0, pending.length - max),
-    isAllDone: habits.length > 0 && pending.length === 0,
+    isAllDone: deHoy.length > 0 && pending.length === 0,
   }
 }
