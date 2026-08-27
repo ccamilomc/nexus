@@ -3,28 +3,35 @@
 Las versiones siguen [SemVer](https://semver.org/lang/es/). Las decisiones que
 explican el porqué de cada cosa viven en [`docs/adr/`](./docs/adr/README.md).
 
-## 1.0.0 — 2026-08-13
+## 1.0.0 — 2026-08-27
 
 Primera versión completa. Nexus deja de ser un proyecto en construcción y pasa a
-poder usarse a diario.
+poder usarse a diario. Está **en producción y con dos cuentas reales**.
 
 ### Qué hace
 
-- **Panel del día.** Responde «¿qué me falta hoy?» con lo más urgente arriba y el
-  estado de los siete módulos debajo. Cada aviso explica **por qué** aparece, y
-  se puede descartar hasta mañana.
-- **Siete módulos** con su propia pantalla: entrenamiento (rutinas, sesiones,
-  series e historial), nutrición (macros, agua y coste por porción),
-  **finanzas** (movimientos, pagos fijos, deudas, cuentas y topes por
-  categoría), hábitos (rachas y constancia), estudio (materias y cronómetro por
-  bloques), sueño y salud (ocho medidas con IMC).
-- **Plan del día** con las tres reglas del motor de decisiones: recalcular el día
-  cuando algo se cae, proponer un cambio de comida dentro del presupuesto y
-  ofrecer una rutina alternativa.
-- **Analíticas** de los siete módulos a 7, 30 o 90 días, con comparativa contra
-  el tramo anterior.
-- **Se instala** como aplicación (PWA) y **sigue abriéndose sin conexión**, con
-  lo último que se vio.
+- **Bienvenida al entrar por primera vez.** Tres a cinco pantallas, según lo que
+  digas que vas a seguir, y todas se pueden saltar. Termina diciendo **por dónde
+  empezar** en cada módulo que hayas marcado, que es lo que faltaba: antes se
+  entraba a una pantalla en blanco.
+- **«Hoy»** responde «¿qué me falta?» con lo más urgente arriba y el estado de
+  los módulos debajo. Cada aviso explica **por qué** aparece y se puede descartar
+  hasta mañana.
+- **Siete módulos** con su pantalla: entrenamiento (rutinas, sesiones, series e
+  historial, con **303 ejercicios y 302 ilustrados**), nutrición (macros, agua y coste
+  por porción), finanzas (movimientos, pagos fijos, deudas, cuentas y topes),
+  hábitos (rachas y constancia, **por días de la semana** si quieres), estudio
+  (materias y cronómetro), sueño y salud (ocho medidas con IMC).
+- **Plan del día** con las tres reglas del motor: recalcular el día cuando algo
+  se cae, proponer un cambio de comida dentro del presupuesto y ofrecer una
+  rutina alternativa.
+- **Dashboard** de los siete módulos a 7, 30 o 90 días, con comparativa contra el
+  tramo anterior y la posibilidad de retroceder en el tiempo. Cada dato lleva la
+  forma que le corresponde: barras lo que se acumula, líneas lo que se mide, y un
+  calendario los hábitos, para ver si hay un día de la semana que siempre falla.
+- **Se instala** como aplicación y **se puede apuntar sin conexión**: los siete
+  registros —agua, comidas, series, hábitos, gastos, estudio y sueño— esperan en
+  cola y salen solos al volver la red.
 
 ### Cómo está construida
 
@@ -33,12 +40,21 @@ poder usarse a diario.
 - **El motor de decisiones es puro**: no toca la base ni la interfaz, y funciona
   sin ninguna IA detrás ([ADR-0002](./docs/adr/0002-decision-engine-independiente.md),
   [ADR-0003](./docs/adr/0003-ia-como-capa-de-interpretacion.md)).
-- **36 tablas con RLS**, sin una sola política que no filtre por usuario. Dos
-  cuentas conviven sin verse, también en el dispositivo
+- **36 tablas con RLS**, sin una sola política que no filtre por usuario.
+  **Comprobado con las dos cuentas reales**: consultando la base como el segundo
+  usuario, ve cero de todo lo del primero
   ([ADR-0005](./docs/adr/0005-multiusuario-desde-el-diseno.md),
   [ADR-0010](./docs/adr/0010-la-cache-lleva-firmado-su-dueno.md)).
-- **627 pruebas** sobre servicios, utilidades y el motor.
-- **193 KB gzip** en la primera visita; después lo sirve el service worker.
+- **La cola de escrituras sin conexión es la de TanStack Query**, no una propia:
+  ya pausaba las mutaciones y ya las persistía
+  ([ADR-0011](./docs/adr/0011-la-cola-offline-es-la-de-tanstack-query.md)).
+- **Un solo tema, oscuro.** El claro se retiró: no lo usaba nadie y obligaba a
+  comprobar cada pantalla dos veces
+  ([ADR-0012](./docs/adr/0012-un-solo-tema.md)).
+- **938 pruebas** sobre servicios, utilidades y el motor.
+- **300 KB en la primera visita**, en la que se descarga el cascarón entero para
+  que a partir de ahí abra sin red. Las 906 ilustraciones de los ejercicios
+  quedan **fuera** de esa descarga: se guardan al verlas.
 - Sin `TODO`, `FIXME`, `HACK`, `@ts-ignore` ni `any` en todo `src`.
 
 ### Lo que deliberadamente **no** trae
@@ -48,13 +64,12 @@ Está aplazado con motivo, no olvidado:
 - **La capa de IA.** Necesita una función de servidor y la clave de un proveedor.
   La aplicación funciona entera sin ella, y esa es la idea
   ([ADR-0003](./docs/adr/0003-ia-como-capa-de-interpretacion.md)).
-- **La cola de escrituras sin conexión.** Se puede consultar sin señal, pero para
-  **registrar** hace falta. Es la parte más delicada del sistema y sólo se
-  retomará si de verdad se pierde algún dato
-  ([ADR-0004](./docs/adr/0004-estrategia-offline-first.md)).
 - **Las notificaciones.** Lo que se pedía son recordatorios a una hora, y en la
   web eso sólo es Web Push, que es un sprint entero de servidor
   ([ADR-0008](./docs/adr/0008-notificaciones-aplazadas.md)).
-- **Las fotos de progreso** de salud.
+- **Las instrucciones escritas de los ejercicios.** El dibujo enseña la postura;
+  el texto que explica los errores está por hacer.
+- **Las fotos de progreso** de salud y el **peso objetivo**, descartados los dos.
+- **El tema claro** ([ADR-0012](./docs/adr/0012-un-solo-tema.md)).
 
 Nexus no avisa de nada, y no finge que sí.
