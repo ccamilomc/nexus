@@ -91,11 +91,19 @@ export function RegisterPage() {
           />
         </FormField>
 
+        {/* El teclado del telefono pone mayuscula a la primera letra y subraya
+            el correo como si estuviera mal escrito. Un correo con mayuscula
+            inicial no entra, y corregirlo a mano cada vez es justo la friccion
+            que hace odiar esta pantalla. */}
         <FormField id="email" label="Correo" error={errors.email?.message}>
           <Input
             id="email"
             type="email"
             autoComplete="email"
+            inputMode="email"
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
             aria-invalid={Boolean(errors.email)}
             {...register('email')}
           />
