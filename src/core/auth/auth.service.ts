@@ -24,6 +24,17 @@ export const authService = {
     if (error) throw mapAuthError(error.message)
   },
 
+  /**
+   * Pide un enlace para entrar sin contrasena.
+   *
+   * **No dice si el correo existe.** Supabase falla cuando la cuenta no esta,
+   * y contarlo convertiria esta pantalla en una forma de averiguar quien tiene
+   * cuenta. La pantalla responde siempre lo mismo: si existe, el enlace llega.
+   */
+  async requestSignInLink(email: string, redirectTo: string): Promise<void> {
+    await authRepository.signInWithLink(email, redirectTo)
+  },
+
   async requestPasswordReset(email: string, redirectTo: string): Promise<void> {
     const { error } = await authRepository.resetPasswordForEmail(email, redirectTo)
     if (error) throw mapAuthError(error.message)

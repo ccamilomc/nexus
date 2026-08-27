@@ -1,5 +1,3 @@
-import { Sparkles } from 'lucide-react'
-
 import { Button } from '@/shared/components/ui/button'
 
 interface StepWelcomeProps {
@@ -11,6 +9,9 @@ interface StepWelcomeProps {
 /**
  * La primera pantalla: qué es Nexus y por dónde se empieza.
  *
+ * Sin icono, como las pantallas de acceso: era el mismo cuadrado con chispas y
+ * dejarlo sólo aquí habría hecho que la bienvenida se sintiera de otra época.
+ *
  * **No pide el nombre**: ya lo dio al registrarse, y volver a pedirlo en la
  * pantalla siguiente hacía sentir que la aplicación no escucha. Si lo dio, se
  * usa para saludar; si no, se saluda igual.
@@ -19,9 +20,6 @@ export function StepWelcome({ name, onNext }: StepWelcomeProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-3">
-        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-          <Sparkles className="h-6 w-6" aria-hidden />
-        </span>
         <h1 className="text-2xl font-semibold tracking-tight">
           {name ? `Hola, ${name}` : 'Esto es Nexus'}
         </h1>

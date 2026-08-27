@@ -24,6 +24,16 @@ export const authRepository = {
       ...(displayName ? { options: { data: { display_name: displayName } } } : {}),
     }),
 
+  /** Manda un enlace de un solo uso al correo. Sin contrasena de por medio. */
+  signInWithLink: (email: string, redirectTo: string) =>
+    supabase.auth.signInWithOtp({
+      email,
+      // `shouldCreateUser: false` a propósito: este enlace **entra**, no crea
+      // cuentas. Con él en `true`, un correo mal escrito abriría una cuenta
+      // vacía en silencio y la persona creería que ya estaba registrada.
+      options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
+    }),
+
   signOut: () => supabase.auth.signOut(),
 
   resetPasswordForEmail: (email: string, redirectTo: string) =>
