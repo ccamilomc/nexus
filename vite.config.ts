@@ -28,8 +28,11 @@ export default defineConfig({
         // Retrato: la aplicación es mobile-first y ninguna pantalla gana nada
         // en horizontal.
         orientation: 'portrait',
-        background_color: '#09090b',
-        theme_color: '#09090b',
+        // El mismo negro que `--background` en globals.css, hsl(250 18% 5%).
+        // Antes aquí había un negro distinto y la pantalla de arranque
+        // parpadeaba: se pintaba un fondo y al segundo otro.
+        background_color: '#0B0A0F',
+        theme_color: '#0B0A0F',
         icons: [
           { src: '/icons/pwa-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
           // El SVG cubre los tamaños grandes sin arrastrar más binarios: escala
