@@ -21,7 +21,7 @@ importante?, ¿cuál es la siguiente acción? El usuario nunca debería pregunta
 
 ## Design tokens y temas
 
-- **Dark mode es el tema principal**; light mode está soportado.
+- **Un solo tema, y es oscuro.** El claro se quitó el 2026-08-27: no lo usaba nadie y obligaba a comprobar cada pantalla dos veces ([ADR-0012](./adr/0012-un-solo-tema.md)).
 - **Prohibido** usar colores absolutos o hex repetidos en el código. Todo pasa por
   **design tokens** (variables CSS mapeadas en Tailwind):
 
@@ -210,7 +210,7 @@ jerarquía de encabezados, un único `h1` por pantalla y `lang`/`main` en su sit
 El **foco visible** se comprobó con `Tab` de verdad —no con `focus()`, que no
 activa `:focus-visible` y da falsos negativos— en 14 elementos seguidos: contorno
 de 2 px y anillo en todos. Lo único que salió fueron **objetivos táctiles cortos**
-(los enlaces «Abrir» del dashboard, de 20 px, y los «Ver …» de Analytics, de 16),
+(los enlaces «Abrir» de «Hoy», de 20 px, y los «Ver …» del Dashboard, de 16),
 corregidos con `WIDE_TAP_AREA`.
 
 - Navegable **por teclado**; **foco visible** en todo elemento interactivo.
@@ -222,8 +222,8 @@ corregidos con `WIDE_TAP_AREA`.
   - En filas densas, el tamaño **visual** puede ser menor (32 px) siempre que el
     área pulsable llegue a 44 px: para eso está la variante `iconSm` del
     `Button`, que la amplía con un pseudo-elemento invisible.
-  - En **enlaces de texto** (los «Abrir» del dashboard, los «Ver …» de
-    Analytics) se usa la misma idea con otra forma: `WIDE_TAP_AREA`
+  - En **enlaces de texto** (los «Abrir» de «Hoy», los «Ver …» del
+    Dashboard) se usa la misma idea con otra forma: `WIDE_TAP_AREA`
     (`shared/constants`) cubre todo el ancho y sólo corrige el alto, que es lo
     que se queda corto en una línea de texto. Estirarlos de verdad abriría un
     hueco donde el diseño pedía una línea.

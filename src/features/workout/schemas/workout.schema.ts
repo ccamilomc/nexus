@@ -27,6 +27,28 @@ export const logSetSchema = z.object({
 
 export type LogSetValues = z.infer<typeof logSetSchema>
 
+/** Lo más que puede durar un entrenamiento antes de que sea un error de tecleo. */
+const MAX_SESSION_MINUTES = 8 * 60
+
+/**
+ * Un entrenamiento que ya se hizo y se apunta después.
+ *
+ * **Se pide la duración, no la hora de fin.** Quien apunta por la noche lo que
+ * hizo por la mañana recuerda «hora y cuarto», no que salió a las 19:47. Es el
+ * mismo criterio que estudio, que también deja registrar a posteriori.
+ */
+export const pastSessionSchema = z.object({
+  date: z.string().min(1, 'Elige el día.'),
+  startTime: z.string().min(1, 'Escribe a qué hora empezaste.'),
+  durationMinutes: z
+    .number('Escribe cuánto duró.')
+    .int('Sin decimales.')
+    .min(1, 'Mínimo 1 minuto.')
+    .max(MAX_SESSION_MINUTES, `Máximo ${MAX_SESSION_MINUTES / 60} horas.`),
+})
+
+export type PastSessionValues = z.infer<typeof pastSessionSchema>
+
 const MAX_NAME_LENGTH = 80
 const MAX_INSTRUCTIONS_LENGTH = 1000
 

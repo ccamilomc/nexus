@@ -53,35 +53,39 @@ export function SubjectForm({ subject, onSaved, onCancel }: SubjectFormProps) {
     <Card>
       <CardContent className="p-4">
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
-          <FormField id="subject-name" label="Nombre" error={errors.name?.message}>
-            <Input
-              id="subject-name"
-              autoFocus
-              placeholder="Ej. Cálculo"
-              aria-invalid={Boolean(errors.name)}
-              {...register('name')}
-            />
-          </FormField>
+          {/* Ni «Cálculo» ni «8» necesitan el ancho de la pantalla: en escritorio
+              el campo de las horas medía 958 px para teclear un dígito. */}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <FormField id="subject-name" label="Nombre" error={errors.name?.message}>
+              <Input
+                id="subject-name"
+                autoFocus
+                placeholder="Ej. Cálculo"
+                aria-invalid={Boolean(errors.name)}
+                {...register('name')}
+              />
+            </FormField>
 
-          <FormField
-            id="subject-target"
-            label="Objetivo semanal en horas (opcional)"
-            error={errors.weeklyTargetHours?.message}
-          >
-            <Input
+            <FormField
               id="subject-target"
-              type="number"
-              inputMode="decimal"
-              step="0.5"
-              min={0}
-              placeholder="Ej. 8"
-              aria-invalid={Boolean(errors.weeklyTargetHours)}
-              {...register('weeklyTargetHours', {
-                // Vacío es «sin objetivo», no cero horas.
-                setValueAs: (value: string) => (value === '' ? undefined : Number(value)),
-              })}
-            />
-          </FormField>
+              label="Objetivo semanal en horas (opcional)"
+              error={errors.weeklyTargetHours?.message}
+            >
+              <Input
+                id="subject-target"
+                type="number"
+                inputMode="decimal"
+                step="0.5"
+                min={0}
+                placeholder="Ej. 8"
+                aria-invalid={Boolean(errors.weeklyTargetHours)}
+                {...register('weeklyTargetHours', {
+                  // Vacío es «sin objetivo», no cero horas.
+                  setValueAs: (value: string) => (value === '' ? undefined : Number(value)),
+                })}
+              />
+            </FormField>
+          </div>
 
           {save.isError ? <FormAlert>{save.error.message}</FormAlert> : null}
 

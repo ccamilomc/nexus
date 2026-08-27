@@ -2,6 +2,7 @@ export {
   dateRangeKey,
   lastDays,
   minusDays,
+  parseDateKey,
   previousDay,
   toDateKey,
   toDateKeyFromIso,
@@ -11,6 +12,7 @@ export { formatElapsed, formatMinutes } from './format-duration'
 export { formatCop } from './format-money'
 export { formatTime } from './format-time'
 export { calculateProgress, type GoalProgress } from './goal-progress'
+export { toLoggedAt } from './logged-at'
 export { prefersReducedMotion } from './reduced-motion'
 export { matchesQuery } from './search'
 export {
@@ -20,4 +22,4 @@ export {
   type SeriesPoint,
   seriesTotal,
 } from './series'
-export { weekRange } from './week-range'
+export { weekDays, weekRange } from './week-range'

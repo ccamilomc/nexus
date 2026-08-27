@@ -10,6 +10,8 @@ import { FormAlert } from '@/shared/components/feedback'
 import { FormField } from '@/shared/components/form'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 import { AuthShell } from '../components/AuthShell'
 import { forgotPasswordSchema, type ForgotPasswordValues } from '../schemas/auth.schema'
@@ -43,7 +45,10 @@ export function ForgotPasswordPage() {
       title="Recupera tu contraseña"
       subtitle={sent ? undefined : 'Te enviaremos un enlace para restablecerla'}
       footer={
-        <Link to={ROUTES.login} className="font-medium text-foreground hover:underline">
+        <Link
+          to={ROUTES.login}
+          className={cn(WIDE_TAP_AREA, `font-medium text-foreground hover:underline`)}
+        >
           Volver a iniciar sesión
         </Link>
       }

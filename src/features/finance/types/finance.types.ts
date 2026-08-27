@@ -154,6 +154,8 @@ export interface FinancePeriodSeries {
   readonly fixedExpense: number
   /** Días con al menos un movimiento. Lo que hace honesto al gráfico. */
   readonly daysWithMovements: number
+  /** En qué se fue el gasto del periodo, de más a menos. */
+  readonly byCategory: readonly CategorySpend[]
 }
 
 /** El mes en curso: totales, reparto por categoría y los últimos movimientos. */

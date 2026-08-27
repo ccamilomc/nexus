@@ -15,7 +15,9 @@ const Select = React.forwardRef<HTMLSelectElement, React.ComponentProps<'select'
       <select
         ref={ref}
         className={cn(
-          'flex h-10 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-9 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive',
+          // Como el resto de controles: 44 px en el móvil, 40 desde `sm`.
+          // 16 px en el móvil para que iPhone no haga zoom al enfocar: ver `input.tsx`.
+          'flex h-11 w-full appearance-none rounded-md border border-input bg-background px-3 py-2 pr-9 text-base ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive sm:h-10 sm:text-sm',
           className,
         )}
         {...props}

@@ -48,6 +48,32 @@ export default defineConfig({
         // abrirla sin señal. Los datos ya los guarda la caché de TanStack
         // Query en `localStorage` (ADR-0007), así que aquí no se tocan.
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        /**
+         * Las ilustraciones de los ejercicios **no** se precachean.
+         *
+         * Son 5,3 MB y entran en `**\/*.svg` sin querer, así que sin esta línea
+         * el teléfono se las descargaría **todas** al instalar la aplicación
+         * —incluidas las de los ejercicios que ese usuario no hace— antes de
+         * poder usarla. El cascarón entero pesa hoy menos de 1 MB.
+         *
+         * Se guardan al verlas, con la regla de abajo: la primera vez cuestan
+         * una descarga y a partir de ahí están también sin señal, que es lo
+         * mismo que se consigue precacheando pero pagando sólo por lo que se usa.
+         */
+        globIgnores: ['**/ilustraciones/**'],
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) => url.pathname.startsWith('/ilustraciones/'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'ilustraciones-de-ejercicios',
+              // Un dibujo de un ejercicio no cambia: si alguna vez cambia, lo
+              // hace con otro despliegue y otro nombre de archivo.
+              expiration: { maxEntries: 240, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
         // Nada de interceptar las llamadas a Supabase: servir datos de salud
         // caducados desde el service worker, sin que nadie lo controle, es
         // justo lo que se quiso evitar al persistir la caché por usuario.

@@ -1,11 +1,14 @@
-import { Pencil } from 'lucide-react'
+import { ChevronRight, Pencil } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { cn } from '@/shared/lib/utils'
 
+import { EXERCISE_ILLUSTRATIONS } from '../constants/illustrations'
 import { EQUIPMENT_LABELS, MUSCLE_GROUP_LABELS } from '../constants/workout.constants'
 import type { Exercise } from '../types/workout.types'
+import { ExerciseIllustration } from './ExerciseIllustration'
+import { ExerciseProgressPanel } from './ExerciseProgressPanel'
 
 interface ExerciseListProps {
   readonly exercises: readonly Exercise[]
@@ -14,6 +17,13 @@ interface ExerciseListProps {
   /** Editar/borrar; sólo se ofrecen en los ejercicios propios. */
   readonly onEdit?: (exercise: Exercise) => void
   readonly onDelete?: (exercise: Exercise) => void
+  /**
+   * Ejercicios con series registradas.
+   *
+   * Sólo en ésos se ofrece «Tus marcas»: en los demás el desplegable abría para
+   * decir que no había nada, y con setenta ejercicios eran cincuenta y ocho.
+   */
+  readonly trainedIds?: readonly string[]
 }
 
 function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
@@ -35,7 +45,13 @@ function ExerciseSummary({ exercise }: { readonly exercise: Exercise }) {
 }
 
 /** Lista de ejercicios agrupada por grupo muscular. */
-export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: ExerciseListProps) {
+export function ExerciseList({
+  exercises,
+  onSelect,
+  onEdit,
+  onDelete,
+  trainedIds,
+}: ExerciseListProps) {
   const groups = new Map<Exercise['muscle_group'], Exercise[]>()
   for (const exercise of exercises) {
     const current = groups.get(exercise.muscle_group) ?? []
@@ -71,6 +87,42 @@ export function ExerciseList({ exercises, onSelect, onEdit, onDelete }: Exercise
                 ) : (
                   <div className={itemClassName}>
                     <ExerciseSummary exercise={exercise} />
+
+                    {/* Antes de «Tus marcas»: quien abre un ejercicio que no
+                        conoce quiere ver cómo se hace, no cuánto levantó. */}
+                    {EXERCISE_ILLUSTRATIONS[exercise.name] ? (
+                      <details className="group mt-2">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <ChevronRight
+                            aria-hidden
+                            className="h-3.5 w-3.5 transition-transform duration-fast ease-out group-open:rotate-90"
+                          />
+                          Cómo se hace
+                        </summary>
+                        <div className="mt-2">
+                          <ExerciseIllustration name={exercise.name} />
+                        </div>
+                      </details>
+                    ) : null}
+
+                    {/* Sólo fuera del selector y sólo si se ha entrenado: durante
+                        el entrenamiento la referencia útil es «la última vez», y
+                        en un ejercicio sin series no hay marcas que enseñar. */}
+                    {trainedIds?.includes(exercise.id) ? (
+                      <details className="group mt-2">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                          <ChevronRight
+                            aria-hidden
+                            className="h-3.5 w-3.5 transition-transform duration-fast ease-out group-open:rotate-90"
+                          />
+                          Tus marcas
+                        </summary>
+                        <div className="mt-2">
+                          <ExerciseProgressPanel exerciseId={exercise.id} name={exercise.name} />
+                        </div>
+                      </details>
+                    ) : null}
+
                     {hasActions && exercise.is_custom ? (
                       <div className="mt-2 flex flex-wrap items-center gap-1">
                         {onEdit ? (

@@ -18,31 +18,44 @@ export function FoodsPage() {
   const [query, setQuery] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const [editing, setEditing] = useState<Food | null>(null)
+  /** Del que se copia para crear uno propio; no se edita. */
+  const [copying, setCopying] = useState<Food | null>(null)
   const [savedName, setSavedName] = useState<string | null>(null)
 
   if (isPending) return <SkeletonList label="Cargando alimentos" rows={6} rowClassName="h-16" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
 
-  const isFormOpen = isCreating || editing !== null
+  const isFormOpen = isCreating || editing !== null || copying !== null
   const visible = data.filter((food) => matchesQuery(food.name, query))
 
-  const openCreate = () => {
+  /** Todo lo que abre el formulario cierra los otros modos y limpia los avisos. */
+  const closeOthers = () => {
+    setIsCreating(false)
     setEditing(null)
+    setCopying(null)
     setSavedName(null)
     deleteFood.reset()
+  }
+
+  const openCreate = () => {
+    closeOthers()
     setIsCreating(true)
   }
 
   const openEdit = (food: Food) => {
-    setIsCreating(false)
-    setSavedName(null)
-    deleteFood.reset()
+    closeOthers()
     setEditing(food)
+  }
+
+  const openCopy = (food: Food) => {
+    closeOthers()
+    setCopying(food)
   }
 
   const onSaved = (food: Food) => {
     setIsCreating(false)
     setEditing(null)
+    setCopying(null)
     setSavedName(food.name)
   }
 
@@ -68,6 +81,8 @@ export function FoodsPage() {
 
       {editing ? (
         <FoodForm food={editing} onSaved={onSaved} onCancel={() => setEditing(null)} />
+      ) : copying ? (
+        <FoodForm template={copying} onSaved={onSaved} onCancel={() => setCopying(null)} />
       ) : isCreating ? (
         <FoodForm onSaved={onSaved} onCancel={() => setIsCreating(false)} />
       ) : null}
@@ -98,6 +113,7 @@ export function FoodsPage() {
         <FoodList
           foods={visible}
           onEdit={openEdit}
+          onCopy={openCopy}
           onDelete={(food) => {
             setSavedName(null)
             deleteFood.mutate(food.id)

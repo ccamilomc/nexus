@@ -8,8 +8,10 @@ La app debe sentirse nativa e instalable. Esta capa se implementa en los Sprints
 
 ### Preparación desde el diseño
 
-- Los **repositorios** son la costura: escriben en Supabase con red, o en la
-  **cola local** sin red. El resto de capas no sabe si hay conexión.
+- La costura online/offline es la **mutación**, no el repositorio: se pausa la
+  llamada entera. El resto de capas no sabe si hay conexión. _(El diseño inicial
+  la ponía en el repositorio; el porqué del cambio está en
+  [ADR-0011](./adr/0011-la-cola-offline-es-la-de-tanstack-query.md).)_
 - Toda tabla sincronizable tiene `updated_at` (resolución de conflictos) y
   `deleted_at` (tombstones para borrados). Ver [05](./05-base-de-datos.md).
 - Los ids son **UUID generados en cliente**: una entidad creada offline ya tiene
@@ -24,20 +26,58 @@ La app debe sentirse nativa e instalable. Esta capa se implementa en los Sprints
 
 ### Cola de escritura offline
 
+**La cola es el `MutationCache` de TanStack Query**, que ya pausa las mutaciones
+sin red y ya se persiste. No hay cola propia ni IndexedDB
+([ADR-0011](./adr/0011-la-cola-offline-es-la-de-tanstack-query.md)).
+
 ```mermaid
 flowchart LR
-    UI["Acción del usuario"] --> S["Service"]
-    S --> R["Repository"]
-    R -->|online| SB[("Supabase")]
-    R -->|offline| Q["Cola persistente (IndexedDB)"]
-    Q -->|reconexión| SYNC["Sincronizador"]
-    SYNC --> SB
-    SB --> QC["Actualiza cache TanStack Query"]
+    UI["Acción del usuario"] --> M["Mutación con mutationKey"]
+    M --> OPT["onMutate: se ve al instante"]
+    M -->|online| S["Service → Repository"] --> SB[("Supabase")]
+    M -->|offline| P["Pausada y guardada en localStorage"]
+    P -->|"vuelve la red o se reabre la app"| S
 ```
 
-- Las mutaciones offline se **encolan** de forma persistente y se aplican de forma
-  **optimista** en la cache (la UI responde al instante).
-- Al recuperar conexión, el **sincronizador** reproduce la cola en orden.
+Una mutación encolable se escribe distinto de una de configuración:
+
+| Pieza                                | Por qué                                                                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mutationKey` de `OFFLINE_MUTATIONS` | Lo que se guarda son **las variables, no la función**: al restaurar sólo se reanuda si la clave tiene un `mutationFn` registrado.          |
+| Variables completas y serializables  | Al reanudar **no queda closure**: el usuario, el id y el momento viajan dentro.                                                            |
+| `onMutate` optimista                 | El registro se ve en el acto, con red o sin ella.                                                                                          |
+| El `userId` dentro de las variables  | Lo pendiente de una sesión no puede enviarse en nombre de quien entre después ([ADR-0010](./adr/0010-la-cache-lleva-firmado-su-dueno.md)). |
+
+**Qué se encola:** sólo registrar (agua, comidas, series, hábitos, sueño,
+estudio, gastos). La configuración no, porque se hace con red y porque devuelve
+filas que la pantalla necesita en el momento.
+
+**Estado: los siete registros están encolados** — agua, comidas, series de
+entreno, hábitos, gastos, estudio y sueño. Registrar ya no depende de la
+conexión en ninguna parte de la aplicación.
+
+**Lo que se pinta por adelantado hay que buscarlo donde esté, no donde
+"debería".** Cada pantalla carga lo suyo, y dos veces se dio por hecho que
+había datos en una caché vacía: las series de entreno buscaban el ejercicio en
+el catálogo cuando venía del plan del día, y las comidas buscaban los alimentos
+en un catálogo que sólo se trae al abrir el buscador. En los dos casos no se
+pintaba nada y sólo se vio **probándolo en el navegador**.
+
+**Ojo con los `onSuccess` de la interfaz.** Una mutación en cola nunca
+«termina», así que lo que limpie un formulario o cierre un diálogo desde ahí no
+llega a correr: parece que no se guardó. Va en un callback aparte que se dispara
+**al encolar** (`onApuntado`), cuando el registro ya está a salvo.
+
+**Lo que hay que mirar en cada uno, más allá de los cuatro pasos:** si lo que se
+pinta por adelantado **se puede calcular sin servidor**. Una mutación pausada no
+llega a ejecutar su `mutationFn` —corre entera al volver la red—, así que una
+consulta previa dentro del servicio no estorba; lo que no se puede es _esperar a
+esa consulta para enseñar algo_. Le pasaba a las series: el número salía de la
+base y hasta que no había red no se podía pintar «Serie 3».
+
+Y cuando una cifra derivada **no se pueda calcular bien** con lo que hay en
+pantalla, es mejor dejarla quieta hasta que vuelva la conexión que enseñarla
+mal: es lo que se hace con la racha de un hábito al tocar un día pasado.
 
 ### Resolución de conflictos
 

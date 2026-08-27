@@ -11,6 +11,8 @@ import { FormField } from '@/shared/components/form'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { PasswordInput } from '@/shared/components/ui/password-input'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 import { AuthShell } from '../components/AuthShell'
 import { registerSchema, type RegisterValues } from '../schemas/auth.schema'
@@ -45,7 +47,10 @@ export function RegisterPage() {
         title="Revisa tu correo"
         subtitle="Te enviamos un enlace para confirmar tu cuenta."
         footer={
-          <Link to={ROUTES.login} className="font-medium text-foreground hover:underline">
+          <Link
+            to={ROUTES.login}
+            className={cn(WIDE_TAP_AREA, `font-medium text-foreground hover:underline`)}
+          >
             Volver a iniciar sesión
           </Link>
         }
@@ -64,7 +69,10 @@ export function RegisterPage() {
       footer={
         <>
           ¿Ya tienes cuenta?{' '}
-          <Link to={ROUTES.login} className="font-medium text-foreground hover:underline">
+          <Link
+            to={ROUTES.login}
+            className={cn(WIDE_TAP_AREA, `font-medium text-foreground hover:underline`)}
+          >
             Inicia sesión
           </Link>
         </>

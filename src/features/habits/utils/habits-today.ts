@@ -1,7 +1,9 @@
 import { lastDays, toDateKey } from '@/shared/utils'
 
 import type { Habit, HabitLog, HabitToday } from '../types/habits.types'
+import { appliesOn } from './applies-on'
 import { calculateConsistency } from './consistency'
+import { daysSinceDone } from './days-since'
 import { calculateStreak } from './streak'
 
 /**
@@ -35,21 +37,23 @@ export function buildHabitsToday(
     // equivale a compararlas como fechas.
     const startKey = toDateKey(new Date(habit.created_at))
 
+    // Una sola respuesta a «¿este día cuenta?», atada a este hábito, para las
+    // cuatro cifras que se calculan aquí. Ver `appliesOn`.
+    const applies = (date: Date) => appliesOn(habit, date)
+
     return {
       habit,
       isDoneToday: completed.has(todayKey),
-      streak: calculateStreak(completed, today),
+      appliesToday: applies(today),
+      streak: calculateStreak(completed, today, applies),
+      daysSinceDone: daysSinceDone(completed, today, new Date(habit.created_at)),
       recentDays: window.map((dateKey) => ({
         dateKey,
         isDone: completed.has(dateKey),
+        isToday: dateKey === todayKey,
         isEditable: dateKey >= startKey,
       })),
-      consistency: calculateConsistency(
-        completed,
-        today,
-        consistencyDayCount,
-        new Date(habit.created_at),
-      ),
+      consistency: calculateConsistency(completed, today, consistencyDayCount, applies),
     }
   })
 }

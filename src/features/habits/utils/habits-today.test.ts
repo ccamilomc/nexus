@@ -70,6 +70,24 @@ describe('buildHabitsToday', () => {
     expect(entry?.recentDays.every((day) => !day.isDone)).toBe(true)
   })
 
+  it('marca cuál de los días recientes es hoy, y sólo uno', () => {
+    // Sin esto, el mini-calendario son siete letras que no dicen dónde estás.
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [], TODAY, 7, 30)
+    const marcados = entry?.recentDays.filter((day) => day.isToday) ?? []
+
+    expect(marcados).toHaveLength(1)
+    // Los días van del más antiguo al más reciente: hoy cierra la fila.
+    expect(entry?.recentDays[entry.recentDays.length - 1]?.isToday).toBe(true)
+  })
+
+  it('cuenta los días desde la última vez que se cumplió', () => {
+    // Cumplido hace dos días: es lo que la tarjeta enseña cuando no hay racha.
+    const [entry] = buildHabitsToday([habit('h1', 'Leer')], [log('h1', 2)], TODAY, 7, 30)
+
+    expect(entry?.daysSinceDone).toBe(2)
+    expect(entry?.streak).toBe(0)
+  })
+
   it('no mezcla los registros de dos hábitos', () => {
     const entries = buildHabitsToday(
       [habit('h1', 'Leer'), habit('h2', 'Meditar')],

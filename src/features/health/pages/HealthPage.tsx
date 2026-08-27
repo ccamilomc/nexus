@@ -6,6 +6,7 @@ import { PageHeader } from '@/shared/components/layout'
 import { BmiCard } from '../components/BmiCard'
 import { MetricCard } from '../components/MetricCard'
 import { MetricForm } from '../components/MetricForm'
+import { WeightTrendNote } from '../components/WeightTrendNote'
 import { useHealthOverview } from '../hooks/use-health'
 
 /** Peso y medidas: la última lectura de cada una y cuánto ha cambiado. */
@@ -24,7 +25,8 @@ export function HealthPage() {
       <PageHeader title="Salud" description="Peso, medidas y cómo van cambiando." />
 
       <div className="space-y-4">
-        <MetricForm />
+        {/* Sin mediciones no hay nada que consultar: el formulario se abre solo. */}
+        <MetricForm defaultOpen={metrics.length === 0} />
 
         {metrics.length === 0 ? (
           <EmptyState
@@ -42,7 +44,15 @@ export function HealthPage() {
             <ul className="grid gap-3 sm:grid-cols-2">
               {metrics.map((summary) => (
                 <li key={summary.type}>
-                  <MetricCard summary={summary} />
+                  {/* Sólo el peso lleva tendencia: es el único que se mide con la
+                      frecuencia que hace falta, y el único con ruido diario que
+                      justifique promediar. */}
+                  <MetricCard
+                    summary={summary}
+                    {...(summary.type === 'weight'
+                      ? { note: <WeightTrendNote trend={data?.weightTrend ?? null} /> }
+                      : {})}
+                  />
                 </li>
               ))}
             </ul>

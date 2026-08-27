@@ -5,7 +5,7 @@ import { ROUTES } from '@/app/router/routes'
 import { useNow, useToday } from '@/core/time'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
-import { formatMinutes } from '@/shared/utils'
+import { formatMinutes, toDateKey } from '@/shared/utils'
 
 import { useLastNight, useLogSleep, useSleepHistory } from '../hooks/use-sleep'
 import { sleepPattern } from '../utils/sleep-pattern'
@@ -74,7 +74,13 @@ export function SleepQuickLog() {
             type="button"
             disabled={logSleep.isPending}
             onClick={() =>
-              logSleep.mutate({ bedtime: pattern.bedtime, wakeTime: pattern.wakeTime })
+              // Desde el panel siempre es la noche de hoy: es el trago de la
+              // mañana, no una corrección.
+              logSleep.mutate({
+                date: toDateKey(today),
+                bedtime: pattern.bedtime,
+                wakeTime: pattern.wakeTime,
+              })
             }
           >
             {logSleep.isPending ? 'Apuntando…' : 'Sí, apúntalo'}
@@ -88,7 +94,7 @@ export function SleepQuickLog() {
           </Button>
         </div>
 
-        {logSleep.isError ? (
+        {logSleep.error ? (
           <p role="alert" className="text-xs text-destructive">
             {logSleep.error.message}
           </p>

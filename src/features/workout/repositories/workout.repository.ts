@@ -2,8 +2,10 @@ import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Exercise,
+  ExerciseSetSample,
   Routine,
   RoutineDay,
+  RoutineDayUsage,
   RoutineExercise,
   RoutineExerciseWithExercise,
   SessionSample,
@@ -100,10 +102,20 @@ export const workoutRepository = {
     return data
   },
 
-  async insertSession(userId: string, routineDayId?: string): Promise<WorkoutSession> {
+  async insertSession(
+    userId: string,
+    input: { routineDayId?: string; startedAt?: string; endedAt?: string } = {},
+  ): Promise<WorkoutSession> {
     const { data, error } = await supabase
       .from('workout_sessions')
-      .insert({ user_id: userId, ...(routineDayId ? { routine_day_id: routineDayId } : {}) })
+      .insert({
+        user_id: userId,
+        ...(input.routineDayId ? { routine_day_id: input.routineDayId } : {}),
+        // Sin fecha, la base pone el ahora: es el caso de entrenar con la
+        // aplicación delante.
+        ...(input.startedAt ? { started_at: input.startedAt } : {}),
+        ...(input.endedAt ? { ended_at: input.endedAt } : {}),
+      })
       .select('*')
       .single()
 
@@ -182,6 +194,51 @@ export const workoutRepository = {
 
     if (error) throw error
     return data ?? []
+  },
+
+  /**
+   * Todas las series de **un** ejercicio, con la fecha de su entrenamiento.
+   *
+   * Trae el historial entero de ese ejercicio y no un tramo: un récord personal
+   * que se olvida de lo de hace seis meses no es un récord. Son las series de un
+   * solo ejercicio, así que la cifra se mantiene pequeña —unas pocas por sesión—
+   * y sólo se pide al abrirlo.
+   *
+   * El `!inner` sobre la sesión es lo que deja filtrar por su estado: sin él
+   * entrarían los entrenamientos descartados y a medias.
+   */
+  async listSetsForExercise(userId: string, exerciseId: string): Promise<ExerciseSetSample[]> {
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .select('reps, weight, is_warmup, session:workout_sessions!inner(id, started_at, ended_at)')
+      .eq('exercise_id', exerciseId)
+      .is('deleted_at', null)
+      .eq('session.user_id', userId)
+      .eq('session.status', 'completed')
+      .is('session.deleted_at', null)
+      .order('created_at', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Qué ejercicios se han entrenado alguna vez.
+   *
+   * Sólo la columna del ejercicio: con esto la lista sabe en cuáles ofrecer las
+   * marcas y en cuáles no, sin traerse una serie entera para averiguarlo.
+   */
+  async listTrainedExerciseIds(userId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from('workout_sets')
+      .select('exercise_id, session:workout_sessions!inner(user_id, status, deleted_at)')
+      .is('deleted_at', null)
+      .eq('session.user_id', userId)
+      .eq('session.status', 'completed')
+      .is('session.deleted_at', null)
+
+    if (error) throw error
+    return [...new Set((data ?? []).map(({ exercise_id }) => exercise_id))]
   },
 
   async listSetsBySessions(sessionIds: readonly string[]): Promise<WorkoutSetWithExercise[]> {
@@ -308,6 +365,26 @@ export const workoutRepository = {
       .select('*')
       .in('routine_id', routineIds)
       .order('order_index', { ascending: true })
+
+    if (error) throw error
+    return data ?? []
+  },
+
+  /**
+   * Cuándo se entrenó cada día de rutina, de lo más reciente a lo más antiguo.
+   *
+   * Sólo tres columnas: la pregunta es «¿cuándo usé esta rutina por última
+   * vez?», y para eso no hacen falta ni las series ni el resto de la sesión.
+   */
+  async listRoutineDayUsage(userId: string): Promise<RoutineDayUsage[]> {
+    const { data, error } = await supabase
+      .from('workout_sessions')
+      .select('routine_day_id, started_at, ended_at')
+      .eq('user_id', userId)
+      .eq('status', 'completed')
+      .is('deleted_at', null)
+      .not('routine_day_id', 'is', null)
+      .order('started_at', { ascending: false })
 
     if (error) throw error
     return data ?? []

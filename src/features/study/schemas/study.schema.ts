@@ -36,6 +36,13 @@ export type CreateSubjectValues = z.infer<typeof createSubjectSchema>
  * después de estudiar recuerda «hora y media», no las horas exactas.
  */
 export const logStudySchema = z.object({
+  /**
+   * El día que se estudió, en `YYYY-MM-DD`.
+   *
+   * Por defecto hoy, que es cuando se apunta casi siempre. Va en el formulario
+   * para poder recuperar la tarde de estudio que se quedó sin registrar.
+   */
+  date: z.string().min(1, 'Elige el día.'),
   subjectId: z.string().min(1, 'Elige una materia.'),
   minutes: z
     .number({ message: 'Escribe cuántos minutos.' })

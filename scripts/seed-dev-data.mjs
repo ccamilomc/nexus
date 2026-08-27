@@ -32,8 +32,15 @@ import { dirname, join } from 'node:path'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-/** Días de historia que se siembran. */
-const DAYS_BACK = 70
+/**
+ * Días de historia que se siembran.
+ *
+ * **Poco más de tres meses**, y no diez semanas, para que las pantallas se vean
+ * con el volumen que van a tener de verdad: el tramo de 90 días de Analytics
+ * lleno y con un tramo anterior con el que comparar, listas largas, rachas de
+ * más de un mes. Con dos semanas de datos casi nada se rompe.
+ */
+const DAYS_BACK = 100
 
 /** Días de la semana con gimnasio: lunes, martes, jueves y viernes. */
 const TRAINING_WEEKDAYS = new Set([1, 2, 4, 5])
@@ -379,20 +386,23 @@ async function ensureSubjects() {
 
   // Objetivos alcanzables: puestos altos, el avance semanal sale siempre en
   // rojo y deja de informar. Se busca que se cumplan a ratos, no nunca.
+  // Con color propio cada una: es lo que distingue las materias en la lista, en
+  // el avance semanal y en el cronómetro, y sembrarlas del mismo color dejaba el
+  // punto sin decir nada. Salen de `SUBJECT_COLORS` (features/study/constants).
   const wanted = [
-    ['Física', 180],
-    ['Programación', 240],
+    ['Física', 180, '#8b5cf6'],
+    ['Programación', 240, '#2563eb'],
   ]
   const known = new Set(existing.map(({ name }) => name))
   const missing = wanted.filter(([name]) => !known.has(name))
 
   if (missing.length > 0) {
     const { error } = await supabase.from('subjects').insert(
-      missing.map(([name, target]) => ({
+      missing.map(([name, target, color]) => ({
         user_id: userId,
         name,
         weekly_target_minutes: target,
-        color: '#2563eb',
+        color,
       })),
     )
     if (error) throw error

@@ -1,4 +1,4 @@
-import { toAppError } from '@/core/error'
+import { createAppError, toAppError } from '@/core/error'
 import { minusDays, previousDay, toDateKey } from '@/shared/utils'
 
 import { habitsRepository } from '../repositories/habits.repository'
@@ -40,6 +40,23 @@ const RECENT_DAYS = 7
  * y salen de los registros que ya se traen: no cuesta ninguna consulta extra.
  */
 const CONSISTENCY_DAYS = 30
+
+/**
+ * Marcar (o desmarcar) un día, **ya resuelto y serializable**.
+ *
+ * Sin nada del closure: esto puede quedarse esperando red y salir mucho después
+ * (ADR-0011).
+ */
+export interface ToggleHabitInput {
+  /** Generado en el cliente; sólo se usa al marcar. */
+  readonly id: string
+  readonly userId: string
+  readonly habitId: string
+  /** Día en `YYYY-MM-DD`: puede ser hoy o uno ya pasado. */
+  readonly dateKey: string
+  /** Estado **actual**: el servicio lo invierte. */
+  readonly isDone: boolean
+}
 
 /**
  * Registros necesarios para pintar la pantalla y calcular las rachas.
@@ -120,6 +137,37 @@ export const habitsService = {
         user_id: userId,
         name: values.name,
         description: values.description ?? null,
+        // Sin días marcados se guarda `null` y no una lista vacía: en la base,
+        // «todos los días» es la ausencia de lista, y dos formas de decir lo
+        // mismo acaban en dos ramas distintas al leerlo.
+        target_weekdays: values.weekdays.length > 0 ? [...values.weekdays].sort() : null,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cambia el nombre o la nota de un hábito.
+   *
+   * Cambia el nombre, la nota o los días. **Sin tocar sus registros ni su fecha
+   * de creación**, que es todo lo que sostiene la racha y la constancia:
+   * corregir una errata en el nombre no puede costar el historial.
+   *
+   * Cambiar los días **recalcula el pasado**: quien pase un hábito diario a
+   * lunes-miércoles-viernes verá subir su constancia, porque los martes dejan de
+   * contar como fallados. Es lo correcto —el hábito es el que es hoy— y conviene
+   * saberlo antes de extrañarse.
+   */
+  async updateHabit(habitId: string, values: CreateHabitValues): Promise<Habit> {
+    try {
+      return await habitsRepository.updateHabit(habitId, {
+        name: values.name,
+        description: values.description ?? null,
+        // Sin días marcados se guarda `null` y no una lista vacía: en la base,
+        // «todos los días» es la ausencia de lista, y dos formas de decir lo
+        // mismo acaban en dos ramas distintas al leerlo.
+        target_weekdays: values.weekdays.length > 0 ? [...values.weekdays].sort() : null,
       })
     } catch (error) {
       throw toAppError(error)
@@ -136,20 +184,52 @@ export const habitsService = {
    * Desmarcar **borra** el registro en lugar de dejarlo en `completed: false`:
    * «no lo hice» y «no lo registré» son lo mismo para una racha, y así el
    * índice único por (hábito, fecha) permite volver a marcarlo.
+   *
+   * Se encola si no hay red (ADR-0011), y las dos mitades aguantan repetirse:
+   * borrar dos veces no hace nada, e insertar dos veces choca con ese mismo
+   * índice único en vez de duplicar el día.
    */
-  async toggleHabit(
-    userId: string,
-    habitId: string,
-    dateKey: string,
-    isDone: boolean,
-  ): Promise<void> {
+  async toggleHabit(input: ToggleHabitInput): Promise<void> {
     try {
-      if (isDone) {
-        await habitsRepository.deleteLog(habitId, dateKey)
+      if (input.isDone) {
+        await habitsRepository.deleteLog(input.habitId, input.dateKey)
         return
       }
 
-      await habitsRepository.insertLog({ user_id: userId, habit_id: habitId, date: dateKey })
+      await habitsRepository.insertLog({
+        id: input.id,
+        user_id: input.userId,
+        habit_id: input.habitId,
+        date: input.dateKey,
+      })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra del todo un hábito que nunca se llegó a usar.
+   *
+   * Existe para el error de tecleo: se crea «adasd», se archiva, y hasta ahora
+   * se quedaba ahí para siempre porque lo único que se ofrecía era recuperarlo.
+   *
+   * **Sólo si no tiene ningún día marcado.** Con historial, la salida es
+   * archivar: archivar guarda y borrar destruye, y una racha de meses no se tira
+   * por un botón. La comprobación va aquí y no en la base a propósito: la clave
+   * ajena es `on delete cascade`, así que Postgres borraría los registros en
+   * silencio en lugar de negarse.
+   */
+  async deleteHabit(habitId: string): Promise<void> {
+    try {
+      const logs = await habitsRepository.countLogs(habitId)
+      if (logs > 0) {
+        throw createAppError(
+          'conflict',
+          'Este hábito tiene días marcados, así que no se borra: archívalo y su historial se queda.',
+        )
+      }
+
+      await habitsRepository.deleteHabit(habitId)
     } catch (error) {
       throw toAppError(error)
     }

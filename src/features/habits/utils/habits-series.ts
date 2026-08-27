@@ -1,7 +1,7 @@
 import { toDateKey } from '@/shared/utils'
 
-import type { Habit, HabitLog, HabitsPeriodSeries } from '../types/habits.types'
-import { calculateStreak } from './streak'
+import type { Habit, HabitLog, HabitsPeriodSeries, StreakRun } from '../types/habits.types'
+import { appliesOn } from './applies-on'
 
 /** Un día con su recuento de hábitos cumplidos frente a los que tocaban. */
 interface DayTally {
@@ -17,9 +17,8 @@ interface DayTally {
  * hundiría una gráfica de cuenta absoluta justo cuando el usuario se propone
  * más cosas, que es lo contrario de lo que ocurrió.
  *
- * Un hábito sólo cuenta desde el día en que se creó. Es la misma regla que ya
- * aplica `calculateConsistency`: penalizar días en los que el hábito no existía
- * sería falso y castigaría precisamente al empezar.
+ * Qué días cuentan para cada hábito lo decide `appliesOn`, igual que en la
+ * pantalla de hábitos: ni antes de crearlo ni los días que no le tocan.
  *
  * Los días **sin ningún hábito vigente** quedan como hueco, no como cero: no se
  * incumplió nada, es que no había nada que cumplir.
@@ -35,21 +34,103 @@ export function buildHabitsSeries(
   const current = summarize(habits, completed, days)
   const previous = summarize(habits, completed, previousDays)
 
-  const streaks = habits.map((habit) =>
-    calculateStreak(completed.get(habit.id) ?? new Set(), lastDayOf(days)),
-  )
-
   return {
     points: current.points,
     completionPercent: current.percent,
     previousCompletionPercent: previous.percent,
     perfectDays: current.perfectDays,
     previousPerfectDays: previous.perfectDays,
-    trackedHabits: habits.length,
-    bestStreak: streaks.length === 0 ? 0 : Math.max(...streaks),
+    hardest: hardestOf(habits, completed, days),
+    bestStreak: longestRunOf(habits, completed, days),
   }
 }
 
+/**
+ * La racha mas larga del periodo, con los dias en que fue.
+ *
+ * **La mas larga del tramo, no la que siguiera viva al acabar.** Esta pantalla
+ * cuenta como fue el periodo: quien encadeno ocho dias a principios de mes y
+ * luego lo dejo, encadeno ocho, y decir «3» porque son los que quedaban en pie
+ * el ultimo dia borra lo unico que habia que contar. En «Hoy» la racha si es la
+ * viva, porque alli la pregunta es como va la cosa ahora mismo.
+ *
+ * Se devuelven las fechas porque **saber cuando se fue bien es lo accionable**:
+ * el numero solo felicita, el tramo invita a mirar que tenia de distinto esa
+ * semana. Ademas distingue de un vistazo esta cifra de la de «Hoy».
+ *
+ * Cada habito lleva su propia cuenta: una racha es de un habito, no del
+ * conjunto —eso ya lo cuentan los dias perfectos—.
+ */
+function longestRunOf(
+  habits: readonly Habit[],
+  completed: ReadonlyMap<string, ReadonlySet<string>>,
+  days: readonly Date[],
+): StreakRun | null {
+  const dateKeys = days.map(toDateKey)
+  let longest: StreakRun | null = null
+
+  for (const habit of habits) {
+    const dates = completed.get(habit.id)
+    let start: string | null = null
+    let length = 0
+
+    for (const [index, dateKey] of dateKeys.entries()) {
+      const day = days[index]
+      // Un día que no toca ni suma ni corta: la racha de un hábito de lunes,
+      // miércoles y viernes sobrevive al martes.
+      if (day && !appliesOn(habit, day)) continue
+
+      if (dates?.has(dateKey)) {
+        start ??= dateKey
+        length += 1
+        if (!longest || length > longest.days) {
+          longest = { days: length, from: start, to: dateKey }
+        }
+      } else {
+        start = null
+        length = 0
+      }
+    }
+  }
+
+  return longest
+}
+
+/**
+ * El habito con menos cumplimiento del periodo, y cuanto.
+ *
+ * Es la pregunta que la constancia global no contesta: un 63 % puede ser tres
+ * habitos a medias o dos perfectos y uno abandonado, y **lo que se hace con esa
+ * informacion es distinto**. Simetrico con la materia mas estudiada.
+ *
+ * Se dice el dato y no se juzga —«40 % de los dias», no «el que mas fallas»—,
+ * que es como habla el resto de la aplicacion.
+ *
+ * Cuenta sólo los días que le tocan a cada hábito, como el resto de cifras, y
+ * devuelve `null` con menos de dos hábitos: con uno solo, «el que menos» sería
+ * la constancia global dicha dos veces.
+ */
+function hardestOf(
+  habits: readonly Habit[],
+  completed: ReadonlyMap<string, ReadonlySet<string>>,
+  days: readonly Date[],
+): { readonly name: string; readonly percent: number } | null {
+  if (habits.length < 2) return null
+
+  let hardest: { name: string; percent: number } | null = null
+
+  for (const habit of habits) {
+    const due = days.filter((day) => appliesOn(habit, day)).map(toDateKey)
+    if (due.length === 0) continue
+
+    const done = due.filter((dateKey) => completed.get(habit.id)?.has(dateKey)).length
+    const percent = Math.round((done / due.length) * 100)
+
+    if (!hardest || percent < hardest.percent) hardest = { name: habit.name, percent }
+  }
+
+  return hardest
+}
 /** Fechas cumplidas de cada hábito, que es lo que consultan los cálculos. */
 function completedByHabit(logs: readonly HabitLog[]): Map<string, Set<string>> {
   const byHabit = new Map<string, Set<string>>()
@@ -76,9 +157,7 @@ function summarize(
     let done = 0
     let due = 0
     for (const habit of habits) {
-      // Las claves `YYYY-MM-DD` se comparan como texto, que en ese formato
-      // equivale a compararlas como fechas.
-      if (dateKey < toDateKey(new Date(habit.created_at))) continue
+      if (!appliesOn(habit, day)) continue
 
       due += 1
       if (completed.get(habit.id)?.has(dateKey)) done += 1
@@ -106,9 +185,4 @@ function summarize(
     percent: totalDue === 0 ? null : Math.round((totalDone / totalDue) * 100),
     perfectDays: withHabits.filter(({ done, due }) => done === due).length,
   }
-}
-
-/** El último día del tramo; las rachas se miran desde ahí, no desde hoy. */
-function lastDayOf(days: readonly Date[]): Date {
-  return days[days.length - 1] ?? new Date(0)
 }

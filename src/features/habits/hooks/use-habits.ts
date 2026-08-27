@@ -3,11 +3,14 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { OFFLINE_MUTATIONS } from '@/core/offline'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateHabitValues } from '../schemas/habits.schema'
+import type { ToggleHabitInput } from '../services/habits.service'
 import { habitsService } from '../services/habits.service'
 import type { Habit, HabitToday } from '../types/habits.types'
+import { toggleHabitDay } from '../utils/toggle-today'
 
 export const habitsKeys = {
   all: ['habits'] as const,
@@ -56,6 +59,21 @@ export function useCreateHabit() {
   })
 }
 
+interface UpdateHabitVariables {
+  readonly habitId: string
+  readonly values: CreateHabitValues
+}
+
+/** Cambia el nombre o la nota de un hábito, sin tocar su historial. */
+export function useUpdateHabit() {
+  const refresh = useRefreshHabits()
+
+  return useMutation<Habit, AppError, UpdateHabitVariables>({
+    mutationFn: ({ habitId, values }) => habitsService.updateHabit(habitId, values),
+    onSuccess: refresh,
+  })
+}
+
 interface ToggleHabitVariables {
   readonly habitId: string
   /** Día a marcar, en `YYYY-MM-DD`: puede ser hoy o uno ya pasado. */
@@ -64,16 +82,70 @@ interface ToggleHabitVariables {
   readonly isDone: boolean
 }
 
-/** Marca o desmarca un hábito en un día. */
-export function useToggleHabit() {
-  const { user } = useAuth()
-  const refresh = useRefreshHabits()
+/** Lo que el componente necesita de la mutación, sin sus variables internas. */
+interface ToggleHabitMutation {
+  readonly isPending: boolean
+  readonly error: AppError | null
+  readonly mutate: (variables: ToggleHabitVariables) => void
+}
 
-  return useMutation<void, AppError, ToggleHabitVariables>({
-    mutationFn: ({ habitId, dateKey, isDone }) =>
-      habitsService.toggleHabit(requireUserId(user?.id), habitId, dateKey, isDone),
-    onSuccess: refresh,
+/**
+ * Marca o desmarca un hábito en un día.
+ *
+ * **Es el gesto más repetido de la aplicación y el más rápido**, así que
+ * sobrevive a quedarse sin red (ADR-0011): el cuadrito cambia en el acto,
+ * espera guardado y sale solo al recuperar la conexión.
+ */
+export function useToggleHabit(todayKey: string): ToggleHabitMutation {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+  const refresh = useRefreshHabits()
+  const cacheKey = habitsKeys.today(user?.id, todayKey)
+
+  const mutation = useMutation<void, AppError, ToggleHabitInput>({
+    mutationKey: OFFLINE_MUTATIONS.toggleHabit,
+    mutationFn: (input) => habitsService.toggleHabit(input),
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: cacheKey })
+      const previous = queryClient.getQueryData<readonly HabitToday[]>(cacheKey)
+
+      queryClient.setQueryData<readonly HabitToday[]>(cacheKey, (current) =>
+        current?.map((entry) =>
+          entry.habit.id === input.habitId
+            ? toggleHabitDay(entry, input.dateKey, input.isDone)
+            : entry,
+        ),
+      )
+
+      return { previous }
+    },
+
+    // Si falla de verdad (sin red se pausa, no falla) se deshace: un hábito que
+    // parece hecho y no lo está estropea la racha, que es lo que se mira.
+    onError: (_error, _input, context) => {
+      const previous = (context as { previous?: readonly HabitToday[] } | undefined)?.previous
+      if (previous !== undefined) queryClient.setQueryData(cacheKey, previous)
+    },
+
+    onSettled: refresh,
   })
+
+  const { mutate } = mutation
+
+  return {
+    // Pausada no es «en marcha»: sin red el día ya está guardado, y bloquear
+    // impediría marcar el resto de hábitos de la mañana.
+    isPending: mutation.isPending && !mutation.isPaused,
+    error: mutation.error,
+
+    mutate: useCallback(
+      (variables) => {
+        mutate({ ...variables, id: crypto.randomUUID(), userId: requireUserId(user?.id) })
+      },
+      [mutate, user?.id],
+    ),
+  }
 }
 
 /** Archiva un hábito. */
@@ -109,6 +181,16 @@ export function useRestoreHabit() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (habitId) => habitsService.restoreHabit(habitId),
+    onSuccess: refresh,
+  })
+}
+
+/** Borra del todo un hábito que nunca se llegó a marcar. */
+export function useDeleteHabit() {
+  const refresh = useRefreshHabits()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (habitId) => habitsService.deleteHabit(habitId),
     onSuccess: refresh,
   })
 }

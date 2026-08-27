@@ -18,6 +18,25 @@ export const healthRepository = {
     return data ?? []
   },
 
+  /** El histórico de una medida, de la más reciente a la más antigua. */
+  async listMetricHistory(
+    userId: string,
+    metricType: BodyMetricType,
+    limit: number,
+  ): Promise<BodyMetric[]> {
+    const { data, error } = await supabase
+      .from('body_metrics')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('metric_type', metricType)
+      .is('deleted_at', null)
+      .order('measured_at', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data ?? []
+  },
+
   /** Las mediciones de una medida dentro de un rango, de la más antigua a la más nueva. */
   async listMetricsBetween(
     userId: string,
@@ -39,11 +58,23 @@ export const healthRepository = {
     return data ?? []
   },
 
-  async insertMetric(input: TablesInsert<'body_metrics'>): Promise<BodyMetric> {
-    const { data, error } = await supabase.from('body_metrics').insert(input).select('*').single()
+  /**
+   * Varias mediciones de una vez.
+   *
+   * Una sola escritura para toda la vuelta de cinta métrica: insertarlas de una
+   * en una serían cinco viajes, y además podrían quedarse a medias —tres
+   * guardadas y dos no— sin manera de saberlo.
+   */
+  async insertMetrics(rows: readonly TablesInsert<'body_metrics'>[]): Promise<BodyMetric[]> {
+    if (rows.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('body_metrics')
+      .insert([...rows])
+      .select('*')
 
     if (error) throw error
-    return data
+    return data ?? []
   },
 
   /** Borrado lógico: la medición es sincronizable offline (ver docs/04). */
@@ -52,27 +83,6 @@ export const healthRepository = {
       .from('body_metrics')
       .update({ deleted_at: deletedAtIso })
       .eq('id', metricId)
-
-    if (error) throw error
-  },
-
-  /** Altura del perfil, en centímetros. Hace falta para el IMC. */
-  async findHeightCm(userId: string): Promise<number | null> {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('height_cm')
-      .eq('id', userId)
-      .maybeSingle()
-
-    if (error) throw error
-    return data?.height_cm ?? null
-  },
-
-  async updateHeightCm(userId: string, heightCm: number): Promise<void> {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ height_cm: heightCm })
-      .eq('id', userId)
 
     if (error) throw error
   },

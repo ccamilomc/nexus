@@ -58,6 +58,19 @@ describe('groupSetsByExercise', () => {
     expect(group?.sets[0]).not.toHaveProperty('exercise')
   })
 
+  it('ordena las series por su número, no por cuándo llegaron', () => {
+    // Las que esperaron sin red salen casi a la vez al recuperarla, así que su
+    // `created_at` puede quedar en cualquier orden: tres series apuntadas 10, 9
+    // y 8 aparecían al revés.
+    const groups = groupSetsByExercise([
+      makeSet(PRESS, { set_number: 3, reps: 8, created_at: '2026-07-24T10:00:00.000Z' }),
+      makeSet(PRESS, { set_number: 1, reps: 10, created_at: '2026-07-24T10:00:00.100Z' }),
+      makeSet(PRESS, { set_number: 2, reps: 9, created_at: '2026-07-24T10:00:00.200Z' }),
+    ])
+
+    expect(groups[0]?.sets.map((set) => set.reps)).toEqual([10, 9, 8])
+  })
+
   it('devuelve una lista vacía cuando no hay series', () => {
     expect(groupSetsByExercise([])).toEqual([])
   })

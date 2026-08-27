@@ -36,13 +36,14 @@ export function useQuickWater(): QuickWater {
   // Misma consulta que el resumen de nutrición: TanStack Query la comparte, así
   // que la acción no cuesta ningún viaje extra.
   const { data, isPending } = useDayWater(today)
-  const addWater = useAddWater()
+  // Fuera de nutrición siempre se apunta en hoy: es el trago que acabas de dar.
+  const addWater = useAddWater(today)
 
   return {
     amountLabel: formatVolumeMl(QUICK_AMOUNT.ml),
     totalLabel: isPending ? null : formatVolumeMl(data?.totalMl ?? 0),
     isPending: addWater.isPending,
-    errorMessage: addWater.isError ? addWater.error.message : null,
+    errorMessage: addWater.error?.message ?? null,
     add: () => addWater.mutate(QUICK_AMOUNT.ml),
   }
 }

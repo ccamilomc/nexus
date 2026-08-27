@@ -6,9 +6,12 @@ const MAX_DESCRIPTION_LENGTH = 200
 /**
  * Un hábito nuevo.
  *
- * Se pide lo mínimo: nombre y, si hace falta, una nota. La frecuencia arranca
- * en diaria porque es lo que cubre casi todos los casos; las semanales y
- * personalizadas llegarán cuando haya un caso real que las pida (YAGNI).
+ * Se pide lo mínimo: nombre y, si hace falta, una nota.
+ *
+ * Los días son opcionales y **en blanco significa todos los días**, que es lo
+ * que quiere casi todo el mundo. Marcar algunos convierte el hábito en uno de
+ * días concretos: «gimnasio lunes, miércoles y viernes» deja de aparecer como
+ * fallado los otros cuatro.
  */
 export const createHabitSchema = z.object({
   name: z
@@ -21,6 +24,10 @@ export const createHabitSchema = z.object({
     .trim()
     .max(MAX_DESCRIPTION_LENGTH, `Máximo ${MAX_DESCRIPTION_LENGTH} caracteres.`)
     .optional(),
+  // Sin `.default()`: con un valor por defecto, lo que entra al formulario y lo
+  // que sale de validar dejan de ser el mismo tipo y TypeScript ya no puede
+  // comprobar que hablan de lo mismo. El vacío lo pone `defaultValues`.
+  weekdays: z.array(z.number().int().min(1).max(7)),
 })
 
 export type CreateHabitValues = z.infer<typeof createHabitSchema>

@@ -27,6 +27,61 @@ export interface MetricSummary {
 }
 
 /**
+ * Una lectura del histórico, con lo que cambió respecto a la anterior.
+ *
+ * El cambio se calcula aquí y no en la pantalla: es la misma resta que ya hace
+ * el resumen, y repetirla en un componente sería tener dos sitios donde puede
+ * salir distinta. Como allí, **no lleva juicio**.
+ */
+export interface MetricReading {
+  readonly id: string
+  readonly value: number
+  readonly unit: string
+  readonly measuredAt: string
+  /** Diferencia con la lectura anterior; `null` en la más antigua que se trajo. */
+  readonly change: number | null
+}
+
+/**
+ * Cómo ha ido una medida.
+ *
+ * **La tendencia se compara entre los extremos del tramo traído**, no entre las
+ * dos últimas: eso ya lo dice el resumen. Aquí la pregunta es otra —«¿voy a
+ * algún sitio?»— y se responde mirando de dónde se venía.
+ */
+export interface MetricHistory {
+  readonly type: BodyMetricType
+  /** De la más reciente a la más antigua, que es como se lee. */
+  readonly readings: readonly MetricReading[]
+  /** Diferencia entre la primera lectura del tramo y la última. `null` con una sola. */
+  readonly totalChange: number | null
+  readonly unit: string
+}
+
+/**
+ * Hacia dónde va el peso, ya sin el ruido del día a día.
+ *
+ * Como el resto de Salud **no opina**: `direction` dice si sube o baja, no si
+ * está bien o mal. Va en gris, sin flechas ni colores, igual que las
+ * comparativas (ver docs/11-ux-ui-y-diseno.md).
+ *
+ * Se acompaña de las medias y de cuántas pesadas las forman: una tendencia
+ * calculada con dos pesadas contra dos no merece la misma confianza que una
+ * con seis, y quien la lee tiene derecho a saberlo.
+ */
+export interface WeightTrend {
+  readonly direction: 'up' | 'down' | 'stable'
+  /** Cambio semanal con signo; negativo es a la baja. */
+  readonly kgPerWeek: number
+  readonly recentAverage: number
+  readonly previousAverage: number
+  readonly recentCount: number
+  readonly previousCount: number
+  /** Días que abarca cada ventana, para poder contarlo en pantalla. */
+  readonly windowDays: number
+}
+
+/**
  * Índice de masa corporal.
  *
  * Se **calcula** a partir del peso y la altura del perfil; nunca se almacena

@@ -3,24 +3,37 @@
 @tailwind utilities;
 
 @layer base {
+  /**
+   * Nexus tiene **un solo tema, y es oscuro** (ver ADR-0012).
+   *
+   * Hubo dos hasta el 2026-08-27. Se quitó el claro porque no lo usaba nadie
+   * —ni el propietario ni su hermano— y **cada cambio obligaba a comprobar dos
+   * pantallas**: los fallos de contraste de este proyecto salieron siempre en
+   * el tema claro, nunca en el oscuro. El ahorro de peso fue lo de menos, poco
+   * más de 2 KB; lo que se ganó fue no volver a mirar dos veces.
+   *
+   * Por eso los valores viven en `:root` sin ninguna clase que los active: no
+   * hay nada que alternar, y `color-scheme: dark` le dice al navegador que
+   * pinte en oscuro lo suyo —barras de desplazamiento, campos de fecha— sin
+   * que haya que redibujarlo.
+   */
   :root {
+    color-scheme: dark;
+
     /**
-     * Superficies: el lienzo va **tintado** y las tarjetas van blancas.
-     *
-     * De fábrica shadcn deja `--background` y `--card` con el mismo valor, así
-     * que una tarjeta sólo se distinguía del fondo por un borde de 1 px y la
-     * aplicación entera parecía un documento, no una interfaz. Aquí el papel
-     * está un punto por debajo del blanco y con una gota de la marca, de modo
-     * que lo elevado sea de verdad lo más claro de la pantalla.
+     * Superficies: la profundidad **no la dan las sombras, la da la luz**. Una
+     * sombra negra sobre un fondo casi negro no se ve, así que cada capa que
+     * sube se aclara un punto. Todas llevan una gota de índigo para que el gris
+     * no sea un gris de sistema operativo.
      */
-    --background: 250 25% 98%;
-    --foreground: 240 10% 3.9%;
+    --background: 250 18% 5%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card: 250 14% 9%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
+    --popover: 250 14% 11%;
+    --popover-foreground: 0 0% 98%;
 
     /**
      * El color de Nexus: índigo.
@@ -31,65 +44,48 @@
      * opinaría sin querer, que es justo lo que el resto del diseño evita. El
      * índigo no colisiona con ningún estado.
      *
-     * Contraste verificado: 7,2:1 sobre el fondo claro y 5:1 sobre el oscuro,
-     * así que sirve también como color de texto (`text-primary`), no sólo de
-     * relleno.
+     * Sobre negro la marca **ilumina en vez de rellenar**, así que va clara y el
+     * texto que se pone encima va oscuro.
      */
-    --primary: 255 70% 52%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 255 85% 68%;
+    --primary-foreground: 255 45% 8%;
 
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 250 12% 16%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 250 12% 16%;
+    --muted-foreground: 250 8% 66%;
 
     /* Los estados de hover llevan un punto de la marca en vez del gris neutro:
        es lo que hace que la aplicación se sienta de un color y no de ninguno. */
-    --accent: 255 40% 95%;
-    --accent-foreground: 255 45% 22%;
+    --accent: 255 25% 19%;
+    --accent-foreground: 0 0% 98%;
 
     /**
-     * El rojo se usa **como texto** mucho más que como relleno.
+     * El rojo se usa **como texto** mucho más que como relleno: el error de un
+     * formulario, el saldo de una deuda, un balance negativo, una recomendación
+     * crítica.
      *
-     * De fábrica shadcn lo da pensando sólo en el botón destructivo, donde el
-     * color es fondo y encima va blanco. Pero en Nexus `text-destructive` es lo
-     * habitual: el error de un formulario, el saldo de una deuda, un balance
-     * negativo, una recomendación crítica. Con el valor original (`0 84.2%
-     * 60.2%`) eso daba **3,8:1** sobre la tarjeta, por debajo del 4,5:1 que
-     * WCAG AA pide para texto normal.
-     *
-     * Bajado a 42 % de luz da 6,5:1 sobre la tarjeta y sigue sirviendo de fondo:
-     * el blanco encima queda a 6,2:1. Mismo criterio que `--success` y
-     * `--warning`, que ya iban oscuros en este tema.
+     * El valor de fábrica de shadcn (`0 62.8% 30.6%`) es un rojo **oscuro sobre
+     * fondo oscuro**: daba 1,83:1 contra la tarjeta, o sea que todo lo dicho en
+     * rojo era prácticamente invisible. Comparte luz y saturación con
+     * `--primary` a propósito: los colores del sistema se sostienen a la misma
+     * altura. Da 6,1:1 sobre la tarjeta y 6,1:1 con el texto oscuro encima.
      */
-    --destructive: 0 72% 42%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 85% 68%;
+    --destructive-foreground: 0 60% 10%;
 
-    --success: 142 72% 29%;
-    --success-foreground: 0 0% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 144 61% 10%;
 
-    /**
-     * El ámbar tiene el mismo problema, y por el mismo motivo.
-     *
-     * A 45 % de luz daba **2,9:1** sobre la tarjeta, y en este tema el ámbar es
-     * casi siempre texto: «te pasaste del tope», la racha de hábitos, el aviso
-     * del presupuesto de comida. Bajado a 34 % da 4,9:1.
-     *
-     * Se vuelve un naranja quemado y **se acepta a propósito**: es el mismo
-     * compromiso que `--success`, que en claro tampoco es un verde brillante
-     * sino uno oscuro, para poder escribir con él. Como relleno sigue
-     * cumpliendo: la barra de un tope pasado queda a 4,4:1 sobre su carril,
-     * por encima del 3:1 que WCAG pide a un elemento gráfico.
-     */
-    --warning: 32 100% 34%;
-    --warning-foreground: 0 0% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 92% 10%;
 
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
+    --border: 250 12% 18%;
+    --input: 250 12% 18%;
     /* El anillo de foco es de la marca: se ve en toda la aplicación al navegar
        con teclado y es de las cosas que más la hacen sentir de una pieza. */
-    --ring: 255 70% 52%;
+    --ring: 255 85% 68%;
 
     /**
      * Colores de las gráficas.
@@ -98,27 +94,21 @@
      * serie no es un juicio. El verde de «vas bien» no debe ser el mismo que el
      * de «esta línea es el sueño», o cualquier gráfica acabaría opinando.
      *
-     * Cada tema tiene su versión: los tonos que contrastan sobre blanco se
-     * apagan sobre negro. Verificado a >= 3:1 contra el fondo en ambos, que es
-     * lo que WCAG AA pide para un elemento gráfico.
+     * Verificados a >= 3:1 contra el fondo, que es lo que WCAG AA pide para un
+     * elemento gráfico. El cuarto está en magenta y no en violeta porque a 265
+     * la línea del sueño se confundía con el índigo de la marca.
      */
-    --chart-1: 221 74% 42%;
-    --chart-2: 162 74% 27%;
-    --chart-3: 30 88% 38%;
-    /* Estaba en 265 y la marca es 255: la línea del sueño se confundía con el
-       color de la aplicación, y el título índigo de la sección caía justo
-       encima. Movida a magenta, sigue por encima de 3:1 (5,1:1). */
-    --chart-4: 292 60% 48%;
-    --chart-5: 344 70% 44%;
+    --chart-1: 217 84% 66%;
+    --chart-2: 162 62% 48%;
+    --chart-3: 38 90% 58%;
+    --chart-4: 292 75% 72%;
+    --chart-5: 348 82% 68%;
 
-    /**
-     * Elevación. En claro sí hay sombra de verdad, porque hay luz que tapar.
-     * Se tiñe de índigo en vez de negro: una sombra gris sobre un lienzo
-     * tintado se ve sucia.
-     */
-    --shadow-card: 0 1px 2px -1px hsl(250 40% 20% / 0.08), 0 2px 6px -2px hsl(250 40% 20% / 0.08);
-    --shadow-raised:
-      0 4px 12px -2px hsl(250 40% 20% / 0.12), 0 2px 4px -2px hsl(250 40% 20% / 0.08);
+    /* Casi imperceptibles a propósito: sobre un fondo oscuro la sombra no
+       separa capas —eso lo hace la luz, arriba— y una sombra fuerte sólo
+       ensucia. Aquí sirven de contorno suave. */
+    --shadow-card: 0 1px 2px -1px hsl(0 0% 0% / 0.5);
+    --shadow-raised: 0 6px 20px -6px hsl(0 0% 0% / 0.7);
 
     /**
      * Movimiento. Tres duraciones y una curva, y nada más: el proyecto ya
@@ -134,74 +124,6 @@
     --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
     --radius: 0.5rem;
-  }
-
-  .dark {
-    /**
-     * En oscuro la profundidad **no la dan las sombras, la da la luz**: una
-     * sombra negra sobre un fondo casi negro no se ve. Cada capa que sube se
-     * aclara un punto, y todas llevan una gota de índigo para que el gris no
-     * sea un gris de sistema operativo.
-     */
-    --background: 250 18% 5%;
-    --foreground: 0 0% 98%;
-
-    --card: 250 14% 9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 250 14% 11%;
-    --popover-foreground: 0 0% 98%;
-
-    /* Sobre negro el índigo tiene que aclararse para seguir legible: en oscuro
-       la marca ilumina, no rellena. Sobre este tono el texto va oscuro. */
-    --primary: 255 85% 68%;
-    --primary-foreground: 255 45% 8%;
-
-    --secondary: 250 12% 16%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 250 12% 16%;
-    --muted-foreground: 250 8% 66%;
-
-    --accent: 255 25% 19%;
-    --accent-foreground: 0 0% 98%;
-
-    /**
-     * Sobre negro el rojo tiene que aclararse, igual que la marca.
-     *
-     * El valor de fábrica (`0 62.8% 30.6%`) es un rojo **oscuro sobre un fondo
-     * oscuro**: daba **1,83:1** contra la tarjeta, así que todo lo que se dice
-     * en rojo era prácticamente invisible en este tema. Es el mismo error que
-     * `--success` y `--warning` ya tenían resuelto —color claro arriba, texto
-     * oscuro encima— y que a este token se le quedó sin aplicar.
-     *
-     * Comparte luz y saturación con `--primary` (`255 85% 68%`) a propósito: en
-     * oscuro los colores del sistema se sostienen a la misma altura. Da 6,1:1
-     * sobre la tarjeta y 6,1:1 con el texto oscuro encima.
-     */
-    --destructive: 0 85% 68%;
-    --destructive-foreground: 0 60% 10%;
-
-    --success: 142 71% 45%;
-    --success-foreground: 144 61% 10%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 10%;
-
-    --border: 250 12% 18%;
-    --input: 250 12% 18%;
-    --ring: 255 85% 68%;
-
-    /* Casi imperceptibles a propósito: en oscuro la sombra no separa capas, y
-       una sombra fuerte sólo ensucia. Aquí sirven de contorno suave. */
-    --shadow-card: 0 1px 2px -1px hsl(0 0% 0% / 0.5);
-    --shadow-raised: 0 6px 20px -6px hsl(0 0% 0% / 0.7);
-
-    --chart-1: 217 84% 66%;
-    --chart-2: 162 62% 48%;
-    --chart-3: 38 90% 58%;
-    --chart-4: 292 75% 72%;
-    --chart-5: 348 82% 68%;
   }
 }
 
@@ -219,6 +141,60 @@
     font-feature-settings:
       'rlig' 1,
       'calt' 1;
+
+    /**
+     * Instalada se comporta como aplicación, no como página.
+     *
+     * Al instalarla en el teléfono desaparece la barra del navegador pero **los
+     * gestos del navegador siguen ahí**, y se notan: al llegar al final de una
+     * lista la pantalla rebota y arrastra lo de detrás, y tirar hacia abajo
+     * recarga. En una página es lo esperado; dentro de algo que parece una
+     * aplicación se siente como que la interfaz «se mueve sola».
+     *
+     * `contain` corta esa cadena sin quitarle el desplazamiento a nada.
+     */
+    overscroll-behavior-y: contain;
+  }
+
+  /**
+   * Nada de zoom por doble toque ni destello gris al tocar.
+   *
+   * El doble toque para ampliar obliga al navegador a **esperar** por si el
+   * segundo toque llega, y ese retraso es justo lo que hace sentir lenta una
+   * aplicación instalada. `manipulation` conserva el desplazamiento y el pellizco
+   * —ampliar con dos dedos sigue funcionando, que es un requisito de
+   * accesibilidad— y sólo renuncia al doble toque, que aquí no sirve para nada.
+   *
+   * El destello gris de Android se quita porque **ya hay respuesta propia**:
+   * cada control tiene su estado `:active` y su anillo de foco, con el color de
+   * la marca en vez de un recuadro del sistema.
+   */
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /**
+   * El texto de la interfaz no se selecciona; el contenido sí.
+   *
+   * Mantener pulsado un botón en el móvil selecciona su etiqueta y saca las
+   * manijas azules de selección, que es un gesto sin ningún sentido aquí y
+   * ensucia la pantalla. Se apaga **sólo en los controles**: las cifras, las
+   * frases y las tablas se siguen pudiendo copiar, que para eso están.
+   */
+  button,
+  [role='button'],
+  nav,
+  label {
+    -webkit-user-select: none;
+    user-select: none;
   }
 
   /**

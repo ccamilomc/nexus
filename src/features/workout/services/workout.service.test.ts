@@ -49,6 +49,7 @@ vi.mock('../repositories/workout.repository', () => ({
 
 const findActiveSession = vi.mocked(workoutRepository.findActiveSession)
 const insertSession = vi.mocked(workoutRepository.insertSession)
+const updateSession = vi.mocked(workoutRepository.updateSession)
 const listSetsBySessions = vi.mocked(workoutRepository.listSetsBySessions)
 const listCompletedSessions = vi.mocked(workoutRepository.listCompletedSessions)
 const findRoutineDay = vi.mocked(workoutRepository.findRoutineDay)
@@ -158,9 +159,11 @@ beforeEach(() => {
   listSetsBySessions.mockResolvedValue([])
   listExercisesByDays.mockResolvedValue([])
   findRoutineDay.mockResolvedValue(ROUTINE_DAY)
-  insertSession.mockImplementation(async (_userId, routineDayId) =>
-    session('nueva', routineDayId ?? null),
-  )
+  insertSession.mockImplementation(async (_userId, input) => ({
+    ...session('nueva', input?.routineDayId ?? null),
+    ...(input?.startedAt ? { started_at: input.startedAt } : {}),
+    ...(input?.endedAt ? { ended_at: input.endedAt } : {}),
+  }))
 })
 
 describe('workoutService.startSessionFromRoutineDay', () => {
@@ -169,7 +172,7 @@ describe('workoutService.startSessionFromRoutineDay', () => {
 
     const detail = await workoutService.startSessionFromRoutineDay(USER_ID, DAY_ID)
 
-    expect(insertSession).toHaveBeenCalledExactlyOnceWith(USER_ID, DAY_ID)
+    expect(insertSession).toHaveBeenCalledExactlyOnceWith(USER_ID, { routineDayId: DAY_ID })
     expect(detail.session.routine_day_id).toBe(DAY_ID)
     expect(detail.plan?.day).toEqual(ROUTINE_DAY)
     expect(detail.plan?.exercises).toEqual([PRESCRIBED])
@@ -196,6 +199,79 @@ describe('workoutService.startSessionFromRoutineDay', () => {
     expect(insertSession).not.toHaveBeenCalled()
     expect(detail.session.id).toBe('libre')
     expect(detail.plan).toBeNull()
+  })
+})
+
+describe('workoutService.reopenSession', () => {
+  it('lo devuelve a en curso sin tocar su fin', async () => {
+    // El fin es lo que guarda la fecha y la duración: ponerlo a cero haría que
+    // un entrenamiento de hace tres días apareciera durando tres días.
+    await workoutService.reopenSession(USER_ID, 'una-vieja')
+
+    expect(updateSession).toHaveBeenCalledExactlyOnceWith('una-vieja', {
+      status: 'in_progress',
+    })
+  })
+
+  it('no reabre nada si hay otro en curso', async () => {
+    findActiveSession.mockResolvedValue(session('en-curso'))
+
+    const error: unknown = await workoutService
+      .reopenSession(USER_ID, 'una-vieja')
+      .catch((e: unknown) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect(updateSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('workoutService.removeSession', () => {
+  it('sale de la aplicación pero sigue siendo un entrenamiento hecho', async () => {
+    // A diferencia de descartar uno en curso, que nunca llegó a contar: esto
+    // ocurrió y se borra, así que el estado no se toca.
+    await workoutService.removeSession('una-vieja')
+
+    const [, patch] = updateSession.mock.calls[0] ?? []
+
+    expect(patch?.deleted_at).toEqual(expect.any(String))
+    expect(patch?.status).toBeUndefined()
+  })
+})
+
+describe('workoutService.startPastSession', () => {
+  const AYER = { date: '2026-08-12', startTime: '07:15', durationMinutes: 75 }
+
+  it('nace con su fin ya puesto, para que la duración sobreviva a una recarga', async () => {
+    const detail = await workoutService.startPastSession(USER_ID, AYER)
+
+    const { startedAt, endedAt } = (insertSession.mock.calls[0]?.[1] ?? {}) as {
+      startedAt?: string
+      endedAt?: string
+    }
+    const duracion =
+      (new Date(endedAt ?? '').getTime() - new Date(startedAt ?? '').getTime()) / 60_000
+
+    expect(duracion).toBe(75)
+    expect(detail.session.ended_at).toBe(endedAt)
+  })
+
+  it('no pisa un entrenamiento en curso', async () => {
+    // Quien está entrenando y se pone a apuntar otro no debería perder el suyo.
+    findActiveSession.mockResolvedValue(session('en-curso'))
+
+    const detail = await workoutService.startPastSession(USER_ID, AYER)
+
+    expect(insertSession).not.toHaveBeenCalled()
+    expect(detail.session.id).toBe('en-curso')
+  })
+
+  it('avisa en vez de inventarse una fecha que no se entiende', async () => {
+    const error: unknown = await workoutService
+      .startPastSession(USER_ID, { ...AYER, date: '' })
+      .catch((e: unknown) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect(insertSession).not.toHaveBeenCalled()
   })
 
   it('la sesión sigue siendo válida si el día de rutina ya no existe', async () => {
@@ -256,18 +332,25 @@ describe('workoutService.getActiveSession', () => {
 })
 
 describe('workoutService.logSet', () => {
-  it('numera la serie a continuación de la última de ese ejercicio', async () => {
-    findLastSetNumber.mockResolvedValue(2)
+  // La numeración se decide en el cliente y se prueba en `utils/add-set.test.ts`:
+  // aquí llega resuelta porque la pantalla necesita el número para enseñar la
+  // serie antes de que salga, con red o sin ella (ADR-0011).
+  it('guarda la serie tal y como se apuntó, con su id y su número', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
     await workoutService.logSet({
+      id: 'set-nuevo',
+      userId: 'u1',
       sessionId: 's1',
       exerciseId: BENCH.id,
       reps: 8,
       weightKg: 62.5,
+      setNumber: 3,
+      loggedAt: '2026-08-15T10:00:00.000Z',
     })
 
     expect(insertSet).toHaveBeenCalledExactlyOnceWith({
+      id: 'set-nuevo',
       session_id: 's1',
       exercise_id: BENCH.id,
       set_number: 3,
@@ -276,13 +359,21 @@ describe('workoutService.logSet', () => {
     })
   })
 
-  it('la primera serie de un ejercicio es la número uno', async () => {
-    findLastSetNumber.mockResolvedValue(0)
+  it('ya no pregunta a la base por el último número: lo trae resuelto', async () => {
     insertSet.mockResolvedValue(SAVED_SET)
 
-    await workoutService.logSet({ sessionId: 's1', exerciseId: BENCH.id, reps: 10, weightKg: 40 })
+    await workoutService.logSet({
+      id: 'set-nuevo',
+      userId: 'u1',
+      sessionId: 's1',
+      exerciseId: BENCH.id,
+      reps: 10,
+      weightKg: 40,
+      setNumber: 1,
+      loggedAt: '2026-08-15T10:00:00.000Z',
+    })
 
-    expect(insertSet).toHaveBeenCalledWith(expect.objectContaining({ set_number: 1 }))
+    expect(findLastSetNumber).not.toHaveBeenCalled()
   })
 })
 

@@ -1,13 +1,17 @@
-import { Check } from 'lucide-react'
+import { Check, Pencil } from 'lucide-react'
+import { useState } from 'react'
 
 import { FormAlert } from '@/shared/components/feedback'
+import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { ConfirmButton } from '@/shared/components/ui/confirm-button'
 import { cn } from '@/shared/lib/utils'
 
 import { useArchiveHabit, useToggleHabit } from '../hooks/use-habits'
 import type { HabitToday } from '../types/habits.types'
+import { describeWeekdays } from '../utils/format'
 import { HabitConsistencyBar } from './HabitConsistencyBar'
+import { HabitForm } from './HabitForm'
 import { HabitStreak } from './HabitStreak'
 import { HabitWeek } from './HabitWeek'
 
@@ -20,8 +24,22 @@ interface HabitCardProps {
 /** Un hábito: marcarlo hoy, corregir días pasados, su racha y su constancia. */
 export function HabitCard({ todayKey, entry }: HabitCardProps) {
   const { habit, isDoneToday, streak, recentDays, consistency } = entry
-  const toggle = useToggleHabit()
+  const diasDelHabito = describeWeekdays(habit.target_weekdays)
+  const toggle = useToggleHabit(todayKey)
   const archive = useArchiveHabit()
+  const [isEditing, setIsEditing] = useState(false)
+
+  // Al cambiarlo, el formulario ocupa la tarjeta: es una corrección puntual y
+  // así no hay dos sitios donde escribir el mismo nombre.
+  if (isEditing) {
+    return (
+      <HabitForm
+        habit={habit}
+        onCreated={() => setIsEditing(false)}
+        onCancel={() => setIsEditing(false)}
+      />
+    )
+  }
 
   return (
     <Card>
@@ -56,7 +74,12 @@ export function HabitCard({ todayKey, entry }: HabitCardProps) {
             {habit.description ? (
               <p className="truncate text-xs text-muted-foreground">{habit.description}</p>
             ) : null}
-            <HabitStreak streak={streak} />
+            {/* Los días sólo se dicen cuando son algunos: en un hábito diario,
+                escribir «todos los días» es ruido en cada tarjeta. */}
+            {diasDelHabito ? (
+              <p className="truncate text-xs text-muted-foreground">{diasDelHabito}</p>
+            ) : null}
+            <HabitStreak streak={streak} daysSinceDone={entry.daysSinceDone} />
           </div>
         </div>
 
@@ -71,17 +94,31 @@ export function HabitCard({ todayKey, entry }: HabitCardProps) {
               toggle.mutate({ habitId: habit.id, dateKey, isDone })
             }
           />
-          <ConfirmButton
-            label="Archivar"
-            confirmLabel="Sí, archivar"
-            size="sm"
-            disabled={archive.isPending}
-            onConfirm={() => archive.mutate(habit.id)}
-            className="text-muted-foreground"
-          />
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground"
+              aria-label={`Cambiar ${habit.name}`}
+              onClick={() => setIsEditing(true)}
+            >
+              <Pencil aria-hidden />
+              Cambiar
+            </Button>
+            <ConfirmButton
+              label="Archivar"
+              confirmLabel="Sí, archivar"
+              size="sm"
+              disabled={archive.isPending}
+              aria-label={`Archivar ${habit.name}`}
+              onConfirm={() => archive.mutate(habit.id)}
+              className="text-muted-foreground"
+            />
+          </div>
         </div>
 
-        {toggle.isError ? <FormAlert>{toggle.error.message}</FormAlert> : null}
+        {toggle.error ? <FormAlert>{toggle.error.message}</FormAlert> : null}
         {archive.isError ? <FormAlert>{archive.error.message}</FormAlert> : null}
       </CardContent>
     </Card>

@@ -14,6 +14,13 @@ const MS_PER_MINUTE = 60_000
  *
  * Ese orden es el del entrenamiento real: el ejercicio se coloca donde el
  * usuario registró su primera serie.
+ *
+ * **Dentro de cada ejercicio manda `set_number`, no la hora de llegada.** Las
+ * series se piden ordenadas por `created_at`, que lo pone la base al insertar, y
+ * eso sólo coincide con el orden real mientras se registran de una en una con
+ * red. Las que esperaron sin conexión salen casi a la vez al recuperarla y
+ * pueden llegar en cualquier orden: tres series apuntadas 10, 9 y 8 aparecían
+ * como 8, 9 y 10.
  */
 export function groupSetsByExercise(
   sets: readonly WorkoutSetWithExercise[],
@@ -32,7 +39,10 @@ export function groupSetsByExercise(
     }
   }
 
-  return [...byExercise.values()]
+  return [...byExercise.values()].map((group) => ({
+    ...group,
+    sets: [...group.sets].sort((a, b) => a.set_number - b.set_number),
+  }))
 }
 
 /** Lo que hace falta de una serie para saber cuánto trabajo representa. */

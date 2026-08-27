@@ -30,6 +30,7 @@ vi.mock('../repositories/nutrition.repository', () => ({
     listItemsByMealLogs: vi.fn(),
     insertMealLog: vi.fn(),
     insertMealLogItem: vi.fn(),
+    insertMealLogItems: vi.fn(),
     deleteMealLogItem: vi.fn(),
     findActiveGoal: vi.fn(),
     deactivateGoals: vi.fn(),
@@ -46,6 +47,8 @@ const listRecentMealLogs = vi.mocked(nutritionRepository.listRecentMealLogs)
 const listItemsByMealLogs = vi.mocked(nutritionRepository.listItemsByMealLogs)
 const insertMealLog = vi.mocked(nutritionRepository.insertMealLog)
 const insertMealLogItem = vi.mocked(nutritionRepository.insertMealLogItem)
+const insertMealLogItems = vi.mocked(nutritionRepository.insertMealLogItems)
+const insertWaterLog = vi.mocked(nutritionRepository.insertWaterLog)
 const insertFood = vi.mocked(nutritionRepository.insertFood)
 const deleteFood = vi.mocked(nutritionRepository.deleteFood)
 const listFoods = vi.mocked(nutritionRepository.listFoods)
@@ -69,6 +72,9 @@ const CHICKEN: FoodRef = {
   fat_g: 3.6,
   cost_per_serving: 4000,
 }
+
+/** Un segundo alimento, para comprobar que dos comidas distintas no se juntan. */
+const OTHER_FOOD: FoodRef = { ...CHICKEN, id: 'food-arroz', name: 'Arroz' }
 
 /** Fila devuelta por la base tras guardar; los tests sólo miran lo que envían. */
 const SAVED_FOOD: Food = {
@@ -138,10 +144,10 @@ const SAVED_ITEM: MealLogItem = {
 
 const ADD_LUNCH = {
   userId: USER_ID,
-  date: DATE,
+  dateKey: '2026-07-29',
   mealType: 'lunch',
-  foodId: CHICKEN.id,
-  servings: 1.5,
+  items: [{ id: 'item-1', foodId: CHICKEN.id, servings: 1.5 }],
+  loggedAt: DATE.toISOString(),
 } as const
 
 const GOAL_VALUES = {
@@ -159,49 +165,89 @@ beforeEach(() => {
   listItemsByMealLogs.mockResolvedValue([])
   insertMealLog.mockImplementation(async (_userId, mealType) => mealLog('nuevo', mealType))
   insertMealLogItem.mockResolvedValue(SAVED_ITEM)
+  insertMealLogItems.mockResolvedValue([SAVED_ITEM])
 })
 
-describe('nutritionService.addFoodToMeal', () => {
+describe('nutritionService.addFoodsToMeal', () => {
   it('crea la comida la primera vez y registra el alimento en ella', async () => {
     listMealLogsBetween.mockResolvedValue([])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).toHaveBeenCalledTimes(1)
     expect(insertMealLog.mock.calls[0]?.slice(0, 2)).toEqual([USER_ID, 'lunch'])
-    expect(insertMealLogItem).toHaveBeenCalledExactlyOnceWith({
-      meal_log_id: 'nuevo',
-      food_id: CHICKEN.id,
-      servings: 1.5,
+    expect(insertMealLogItems).toHaveBeenCalledExactlyOnceWith([
+      { id: 'item-1', meal_log_id: 'nuevo', food_id: CHICKEN.id, servings: 1.5 },
+    ])
+  })
+
+  it('guarda toda la comida en una escritura, no una por plato', async () => {
+    // De una en una podían quedarse a medias: dos platos guardados y dos no.
+    listMealLogsBetween.mockResolvedValue([])
+
+    await nutritionService.addFoodsToMeal({
+      ...ADD_LUNCH,
+      items: [
+        { id: 'i-arroz', foodId: 'arroz', servings: 1 },
+        { id: 'i-pollo', foodId: 'pollo', servings: 1.5 },
+        { id: 'i-ensalada', foodId: 'ensalada', servings: 2 },
+      ],
     })
+
+    expect(insertMealLogItems).toHaveBeenCalledOnce()
+    expect(insertMealLogItems.mock.calls[0]?.[0]).toHaveLength(3)
+    expect(insertMealLog).toHaveBeenCalledTimes(1)
+  })
+
+  it('todos los platos van a la misma comida', async () => {
+    listMealLogsBetween.mockResolvedValue([mealLog('almuerzo-de-hoy', 'lunch')])
+
+    await nutritionService.addFoodsToMeal({
+      ...ADD_LUNCH,
+      items: [
+        { id: 'i-arroz', foodId: 'arroz', servings: 1 },
+        { id: 'i-pollo', foodId: 'pollo', servings: 1 },
+      ],
+    })
+
+    const rows = insertMealLogItems.mock.calls[0]?.[0] ?? []
+    expect(rows.every((row) => row.meal_log_id === 'almuerzo-de-hoy')).toBe(true)
+  })
+
+  it('sin nada elegido no crea una comida vacía', async () => {
+    // Un almuerzo sin platos ni siquiera cuenta como día registrado.
+    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, items: [] })
+
+    expect(insertMealLog).not.toHaveBeenCalled()
+    expect(insertMealLogItems).not.toHaveBeenCalled()
   })
 
   it('reutiliza la comida del día en lugar de partirla en varias', async () => {
     listMealLogsBetween.mockResolvedValue([mealLog('almuerzo-de-hoy', 'lunch')])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).not.toHaveBeenCalled()
-    expect(insertMealLogItem).toHaveBeenCalledWith(
+    expect(insertMealLogItems).toHaveBeenCalledWith([
       expect.objectContaining({ meal_log_id: 'almuerzo-de-hoy' }),
-    )
+    ])
   })
 
   it('no mete el almuerzo dentro del desayuno ya registrado', async () => {
     listMealLogsBetween.mockResolvedValue([mealLog('desayuno-de-hoy', 'breakfast')])
 
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     expect(insertMealLog).toHaveBeenCalledTimes(1)
-    expect(insertMealLogItem).toHaveBeenCalledWith(
+    expect(insertMealLogItems).toHaveBeenCalledWith([
       expect.objectContaining({ meal_log_id: 'nuevo' }),
-    )
+    ])
   })
 
   it('busca la comida dentro del día local, no del día UTC', async () => {
     // A las 16:30 en Bogotá ya es de noche en UTC: si el rango se calculara en
     // UTC, la cena caería en el día siguiente.
-    await nutritionService.addFoodToMeal(ADD_LUNCH)
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
 
     const [userId, fromIso, toIso] = listMealLogsBetween.mock.calls[0] ?? []
     expect(userId).toBe(USER_ID)
@@ -209,10 +255,30 @@ describe('nutritionService.addFoodToMeal', () => {
     expect(toIso).toBe(new Date(2026, 6, 30).toISOString())
   })
 
-  it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
-    insertMealLogItem.mockRejectedValue(new Error('null value in column "servings"'))
+  it('fecha la comida nueva con el momento que trae, no con la hora actual', async () => {
+    // Apuntar la cena de anteayer la creaba con la hora de ahora, asi que el
+    // alimento acababa en el dia equivocado. El calculo vive ahora en el hook,
+    // con el resto de lo que se resuelve antes de encolar.
+    listMealLogsBetween.mockResolvedValue([])
+    const MEDIODIA = new Date(2026, 6, 27, 12, 0).toISOString()
 
-    const error: unknown = await nutritionService.addFoodToMeal(ADD_LUNCH).catch((e) => e)
+    await nutritionService.addFoodsToMeal({ ...ADD_LUNCH, loggedAt: MEDIODIA })
+
+    expect(insertMealLog.mock.calls[0]?.[2]).toBe(MEDIODIA)
+  })
+
+  it('guarda cada alimento con el id que trae, para que reenviar no duplique', async () => {
+    await nutritionService.addFoodsToMeal(ADD_LUNCH)
+
+    expect(insertMealLogItems).toHaveBeenCalledWith([
+      expect.objectContaining({ id: 'item-1', food_id: CHICKEN.id, servings: 1.5 }),
+    ])
+  })
+
+  it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
+    insertMealLogItems.mockRejectedValue(new Error('null value in column "servings"'))
+
+    const error: unknown = await nutritionService.addFoodsToMeal(ADD_LUNCH).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('column')
@@ -243,19 +309,22 @@ describe('nutritionService.getRepeatableMeals', () => {
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
     expect(listRecentMealLogs).toHaveBeenCalledTimes(1)
-    expect(byType.lunch?.items).toHaveLength(1)
-    expect(byType.dinner?.items).toHaveLength(1)
+    expect(byType.lunch?.[0]?.items).toHaveLength(1)
+    expect(byType.dinner?.[0]?.items).toHaveLength(1)
     expect(byType.breakfast).toBeUndefined()
   })
 
-  it('de cada tipo se queda con la más reciente', async () => {
-    // Llegan del más reciente al más antiguo.
+  it('ofrece varias combinaciones de la misma comida, no sólo la última', async () => {
+    // Uno no come siempre lo mismo: está el almuerzo de diario y el otro.
     listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch'), mealLog('anteayer', 'lunch')])
-    listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 2), item('i2', 'anteayer', 1)])
+    listItemsByMealLogs.mockResolvedValue([
+      item('i1', 'ayer', 2),
+      item('i2', 'anteayer', 1, OTHER_FOOD),
+    ])
 
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
-    expect(byType.lunch?.items[0]?.meal_log_id).toBe('ayer')
+    expect(byType.lunch).toHaveLength(2)
   })
 
   it('salta las comidas que quedaron vacías', async () => {
@@ -268,7 +337,8 @@ describe('nutritionService.getRepeatableMeals', () => {
 
     const byType = await nutritionService.getRepeatableMeals(USER_ID, DATE)
 
-    expect(byType.lunch?.items[0]?.meal_log_id).toBe('con-comida')
+    expect(byType.lunch).toHaveLength(1)
+    expect(byType.lunch?.[0]?.items[0]?.meal_log_id).toBe('con-comida')
   })
 
   it('si todas están vacías, no ofrece nada', async () => {
@@ -296,43 +366,19 @@ describe('nutritionService.getRepeatableMeals', () => {
   })
 })
 
-describe('nutritionService.repeatMeal', () => {
-  it('copia todos los alimentos con sus porciones', async () => {
-    listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch')])
-    listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 2), item('i2', 'ayer', 0.5)])
-
-    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch')
-
-    expect(insertMealLogItem).toHaveBeenCalledTimes(2)
-    expect(insertMealLogItem).toHaveBeenNthCalledWith(1, {
-      meal_log_id: 'nuevo',
-      food_id: CHICKEN.id,
-      servings: 2,
+describe('nutritionService.addWater', () => {
+  // El día correcto se decide al armar el registro, y se prueba en
+  // `utils/water-input.test.ts`: aquí ya llega resuelto porque esto puede
+  // enviarse horas después, sin red de por medio (ADR-0011).
+  it('guarda el registro con el id que trae, para que reenviarlo no duplique', async () => {
+    await nutritionService.addWater({
+      id: 'w1',
+      userId: USER_ID,
+      amountMl: 250,
+      loggedAt: DATE.toISOString(),
     })
-    expect(insertMealLogItem).toHaveBeenNthCalledWith(2, expect.objectContaining({ servings: 0.5 }))
-  })
 
-  it('reutiliza la comida de hoy si ya existe', async () => {
-    listMealLogsBetween.mockResolvedValue([mealLog('almuerzo-de-hoy', 'lunch')])
-    listRecentMealLogs.mockResolvedValue([mealLog('ayer', 'lunch')])
-    listItemsByMealLogs.mockResolvedValue([item('i1', 'ayer', 1)])
-
-    await nutritionService.repeatMeal(USER_ID, DATE, 'lunch')
-
-    expect(insertMealLog).not.toHaveBeenCalled()
-    expect(insertMealLogItem).toHaveBeenCalledWith(
-      expect.objectContaining({ meal_log_id: 'almuerzo-de-hoy' }),
-    )
-  })
-
-  it('sin nada que repetir avisa en cristiano', async () => {
-    const error: unknown = await nutritionService.repeatMeal(USER_ID, DATE, 'lunch').catch((e) => e)
-
-    expect(error).toEqual({
-      code: 'not_found',
-      message: 'No hay ninguna comida anterior que repetir.',
-    })
-    expect(insertMealLogItem).not.toHaveBeenCalled()
+    expect(insertWaterLog).toHaveBeenCalledWith('w1', USER_ID, 250, DATE.toISOString())
   })
 })
 

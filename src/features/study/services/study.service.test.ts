@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { isAppError } from '@/core/error'
 
+import { SUBJECT_COLORS } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
 import type {
   StudySession,
@@ -19,8 +20,11 @@ import { studyService } from './study.service'
 vi.mock('../repositories/study.repository', () => ({
   studyRepository: {
     listSubjects: vi.fn(),
+    listRetiredSubjects: vi.fn(),
     insertSubject: vi.fn(),
     updateSubject: vi.fn(),
+    countSessions: vi.fn(),
+    deleteSubjectForever: vi.fn(),
     listSessionsBetween: vi.fn(),
     findActiveSession: vi.fn(),
     insertSession: vi.fn(),
@@ -32,6 +36,8 @@ vi.mock('../repositories/study.repository', () => ({
 const listSubjects = vi.mocked(studyRepository.listSubjects)
 const insertSubject = vi.mocked(studyRepository.insertSubject)
 const updateSubject = vi.mocked(studyRepository.updateSubject)
+const countSessions = vi.mocked(studyRepository.countSessions)
+const deleteSubjectForever = vi.mocked(studyRepository.deleteSubjectForever)
 const listSessionsBetween = vi.mocked(studyRepository.listSessionsBetween)
 const findActiveSession = vi.mocked(studyRepository.findActiveSession)
 const insertSession = vi.mocked(studyRepository.insertSession)
@@ -98,11 +104,23 @@ beforeEach(() => {
 })
 
 describe('studyService.createSubject', () => {
-  it('traduce el objetivo de horas a los minutos que guarda la base', () => {
-    void studyService.createSubject(USER_ID, { name: 'Cálculo', weeklyTargetHours: 7.5 })
+  it('traduce el objetivo de horas a los minutos que guarda la base', async () => {
+    await studyService.createSubject(USER_ID, { name: 'Cálculo', weeklyTargetHours: 7.5 })
 
     expect(insertSubject).toHaveBeenCalledWith(
       expect.objectContaining({ user_id: USER_ID, name: 'Cálculo', weekly_target_minutes: 450 }),
+    )
+  })
+
+  it('le pone un color que no tenga ninguna otra materia', async () => {
+    // El punto de color es lo que distingue las materias en cuatro pantallas;
+    // si se repite, deja de distinguir.
+    listSubjects.mockResolvedValue([{ ...SAVED_SUBJECT, color: SUBJECT_COLORS[0] }])
+
+    await studyService.createSubject(USER_ID, { name: 'Historia' })
+
+    expect(insertSubject).toHaveBeenCalledWith(
+      expect.objectContaining({ color: SUBJECT_COLORS[1] }),
     )
   })
 
@@ -137,28 +155,65 @@ describe('studyService.deleteSubject', () => {
   })
 })
 
+describe('studyService.restoreSubject', () => {
+  it('recuperar sólo quita la fecha de retirada: las horas nunca se tocaron', async () => {
+    await studyService.restoreSubject('subject-1')
+
+    expect(updateSubject).toHaveBeenCalledExactlyOnceWith('subject-1', { deleted_at: null })
+  })
+})
+
+describe('studyService.deleteSubjectForever', () => {
+  it('borra la materia que nunca se llegó a usar', async () => {
+    // La que se creó con una errata: sin sesiones no hay horas que perder.
+    countSessions.mockResolvedValue(0)
+
+    await studyService.deleteSubjectForever('subject-1')
+
+    expect(deleteSubjectForever).toHaveBeenCalledExactlyOnceWith('subject-1')
+  })
+
+  it('se niega si tiene horas, en vez de dejar sesiones sin materia', async () => {
+    // La clave ajena es `on delete set null`: sin esta comprobación, las
+    // sesiones se quedarían huérfanas y la pantalla espera que la tengan.
+    countSessions.mockResolvedValue(3)
+
+    const error: unknown = await studyService.deleteSubjectForever('subject-1').catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).toMatch(/retírala/i)
+    expect(deleteSubjectForever).not.toHaveBeenCalled()
+  })
+})
+
 describe('studyService.logStudy', () => {
-  it('coloca la sesión hacia atrás desde ahora, con su duración', async () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(DATE)
+  // Las horas se calculan al armar el registro, y se prueban en
+  // `utils/study-input.test.ts`: aquí llegan resueltas porque la sesión puede
+  // haber esperado sin red y salir después (ADR-0011).
+  const INPUT = {
+    id: 's-nueva',
+    userId: USER_ID,
+    subjectId: CALCULO.id,
+    minutes: 90,
+    startedAt: '2026-07-30T21:30:00.000Z',
+    endedAt: '2026-07-30T23:00:00.000Z',
+  }
 
-    await studyService.logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 90 })
+  it('guarda la sesión con el id que trae, para que reenviarla no duplique', async () => {
+    await studyService.logStudy(INPUT)
 
-    const input = insertSession.mock.calls[0]?.[0]
-    expect(input).toMatchObject({
+    expect(insertSession).toHaveBeenCalledExactlyOnceWith({
+      id: 's-nueva',
       user_id: USER_ID,
       subject_id: CALCULO.id,
       duration_minutes: 90,
-      ended_at: DATE.toISOString(),
+      started_at: INPUT.startedAt,
+      ended_at: INPUT.endedAt,
     })
-    // 90 minutos antes de las 18:00 son las 16:30.
-    expect(input?.started_at).toBe(new Date(2026, 6, 30, 16, 30).toISOString())
-
-    vi.useRealTimers()
   })
 
   it('sin valoración de foco no envía el campo', async () => {
-    await studyService.logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 25 })
+    await studyService.logStudy(INPUT)
 
     expect(insertSession.mock.calls[0]?.[0]).not.toHaveProperty('focus_rating')
   })
@@ -166,9 +221,7 @@ describe('studyService.logStudy', () => {
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     insertSession.mockRejectedValue(new Error('violates row-level security policy'))
 
-    const error: unknown = await studyService
-      .logStudy(USER_ID, { subjectId: CALCULO.id, minutes: 25 })
-      .catch((e) => e)
+    const error: unknown = await studyService.logStudy(INPUT).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')

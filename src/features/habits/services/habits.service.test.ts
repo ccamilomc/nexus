@@ -21,6 +21,8 @@ vi.mock('../repositories/habits.repository', () => ({
     updateHabit: vi.fn(),
     insertLog: vi.fn(),
     deleteLog: vi.fn(),
+    countLogs: vi.fn(),
+    deleteHabit: vi.fn(),
   },
 }))
 
@@ -31,6 +33,8 @@ const insertHabit = vi.mocked(habitsRepository.insertHabit)
 const updateHabit = vi.mocked(habitsRepository.updateHabit)
 const insertLog = vi.mocked(habitsRepository.insertLog)
 const deleteLog = vi.mocked(habitsRepository.deleteLog)
+const countLogs = vi.mocked(habitsRepository.countLogs)
+const deleteHabit = vi.mocked(habitsRepository.deleteHabit)
 
 const USER_ID = 'user-1'
 const TODAY = new Date(2026, 6, 29)
@@ -187,10 +191,20 @@ describe('habitsService.getHabitsToday', () => {
 describe('habitsService.toggleHabit', () => {
   const TODAY_KEY = toDateKey(TODAY)
 
+  /** Lo que llega al servicio: ya resuelto, porque puede haber esperado sin red. */
+  const toggleInput = (overrides: { dateKey?: string; isDone: boolean }) => ({
+    id: 'log-1',
+    userId: USER_ID,
+    habitId: 'h1',
+    dateKey: TODAY_KEY,
+    ...overrides,
+  })
+
   it('marcar inserta el registro del día', async () => {
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
+    await habitsService.toggleHabit(toggleInput({ isDone: false }))
 
     expect(insertLog).toHaveBeenCalledExactlyOnceWith({
+      id: 'log-1',
       user_id: USER_ID,
       habit_id: 'h1',
       date: '2026-07-29',
@@ -201,14 +215,14 @@ describe('habitsService.toggleHabit', () => {
   it('desmarcar borra el registro en lugar de dejarlo a medias', async () => {
     // Borrado real: el índice único por (hábito, fecha) sólo mira filas vivas,
     // así que una tumba impediría volver a marcar ese mismo día.
-    await habitsService.toggleHabit(USER_ID, 'h1', TODAY_KEY, true)
+    await habitsService.toggleHabit(toggleInput({ isDone: true }))
 
     expect(deleteLog).toHaveBeenCalledExactlyOnceWith('h1', '2026-07-29')
     expect(insertLog).not.toHaveBeenCalled()
   })
 
   it('marca un día ya pasado, para arreglar el olvido de ayer', async () => {
-    await habitsService.toggleHabit(USER_ID, 'h1', '2026-07-27', false)
+    await habitsService.toggleHabit(toggleInput({ dateKey: '2026-07-27', isDone: false }))
 
     expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-27' }))
   })
@@ -217,7 +231,7 @@ describe('habitsService.toggleHabit', () => {
     insertLog.mockRejectedValue(new Error('duplicate key value'))
 
     const error: unknown = await habitsService
-      .toggleHabit(USER_ID, 'h1', TODAY_KEY, false)
+      .toggleHabit(toggleInput({ isDone: false }))
       .catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
@@ -229,13 +243,69 @@ describe('habitsService.createHabit', () => {
   it('guarda la descripción vacía como ausencia de dato', async () => {
     insertHabit.mockResolvedValue(habit('h1'))
 
-    await habitsService.createHabit(USER_ID, { name: 'Leer' })
+    await habitsService.createHabit(USER_ID, { name: 'Leer', weekdays: [] })
 
     expect(insertHabit).toHaveBeenCalledExactlyOnceWith({
       user_id: USER_ID,
       name: 'Leer',
       description: null,
+      target_weekdays: null,
     })
+  })
+})
+
+describe('habitsService.updateHabit', () => {
+  it('cambia el nombre y la nota sin tocar nada más', async () => {
+    // Ni los registros ni la fecha de creación: son lo que sostiene la racha y
+    // la constancia, y corregir una errata no puede costar el historial.
+    updateHabit.mockResolvedValue(habit('h1'))
+
+    await habitsService.updateHabit('h1', {
+      name: 'Leer 30 minutos',
+      description: 'Antes de dormir',
+      weekdays: [],
+    })
+
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', {
+      name: 'Leer 30 minutos',
+      description: 'Antes de dormir',
+      target_weekdays: null,
+    })
+  })
+
+  it('una nota vacía se guarda como ausencia, no como texto vacío', async () => {
+    updateHabit.mockResolvedValue(habit('h1'))
+
+    await habitsService.updateHabit('h1', { name: 'Leer', weekdays: [] })
+
+    expect(updateHabit).toHaveBeenCalledExactlyOnceWith('h1', {
+      name: 'Leer',
+      description: null,
+      target_weekdays: null,
+    })
+  })
+})
+
+describe('habitsService.deleteHabit', () => {
+  it('borra el hábito que nunca se llegó a marcar', async () => {
+    // El error de tecleo: se creó «adasd», nunca se usó, y sólo se podía archivar.
+    countLogs.mockResolvedValue(0)
+
+    await habitsService.deleteHabit('h1')
+
+    expect(deleteHabit).toHaveBeenCalledExactlyOnceWith('h1')
+  })
+
+  it('se niega si tiene días marcados, en vez de llevárselos por delante', async () => {
+    // La clave ajena es `on delete cascade`: sin esta comprobación, Postgres
+    // borraría el historial en silencio.
+    countLogs.mockResolvedValue(1)
+
+    const error: unknown = await habitsService.deleteHabit('h1').catch((e) => e)
+
+    expect(isAppError(error)).toBe(true)
+    expect((error as { message: string }).message).toMatch(/archívalo/i)
+    expect(deleteHabit).not.toHaveBeenCalled()
   })
 })
 

@@ -13,10 +13,12 @@ interface DaySummaryCardProps {
   readonly totals: Macros
   /** Sin objetivos sólo se muestran las cifras: no hay contra qué comparar. */
   readonly goal: NutritionGoal | null
+  /** Si el día que se mira es hoy, para no titularlo «de hoy» cuando no lo es. */
+  readonly isToday: boolean
 }
 
 /** El total del día: cifras a secas, o avance hacia los objetivos si los hay. */
-export function DaySummaryCard({ totals, goal }: DaySummaryCardProps) {
+export function DaySummaryCard({ totals, goal, isToday }: DaySummaryCardProps) {
   const targets = goal
     ? [
         {
@@ -51,7 +53,10 @@ export function DaySummaryCard({ totals, goal }: DaySummaryCardProps) {
   return (
     <Card>
       <CardContent className="space-y-4 p-5">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">Total de hoy</h2>
+        {/* «de hoy» sólo cuando lo es: mirando el lunes pasado sería mentira. */}
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-primary">
+          {isToday ? 'Total de hoy' : 'Total del día'}
+        </h2>
 
         {rows.length > 0 ? (
           <div className="space-y-4">

@@ -16,7 +16,17 @@ export type HabitFrequency = Enums<'habit_frequency'>
 export interface HabitToday {
   readonly habit: Habit
   readonly isDoneToday: boolean
+  /** Si hoy es uno de los días de este hábito. Sin días marcados, siempre. */
+  readonly appliesToday: boolean
   readonly streak: number
+  /**
+   * Días desde la última vez que se cumplió; `0` si fue hoy.
+   *
+   * `null` cuando no consta ninguna vez en la ventana que se trae, o cuando el
+   * hábito es más nuevo que ella: uno recién creado todavía no se ha dejado de
+   * hacer, y dar una cifra ahí sería inventarse un pasado.
+   */
+  readonly daysSinceDone: number | null
   /** Últimos días, del más antiguo al más reciente, para el mini-calendario. */
   readonly recentDays: readonly HabitDay[]
   /** Cumplimiento en las últimas semanas, para ver la tendencia. */
@@ -27,6 +37,13 @@ export interface HabitDay {
   /** Fecha local en `YYYY-MM-DD`. */
   readonly dateKey: string
   readonly isDone: boolean
+  /**
+   * Si es el día de hoy.
+   *
+   * El mini-calendario está para corregir días pasados, y sin saber cuál es hoy
+   * hay que contar cuadritos: siete letras seguidas no dicen dónde estás.
+   */
+  readonly isToday: boolean
   /**
    * Si se puede marcar o desmarcar.
    *
@@ -63,7 +80,22 @@ export interface HabitsPeriodSeries {
   /** Días en los que se cumplió todo lo que tocaba. */
   readonly perfectDays: number
   readonly previousPerfectDays: number
-  readonly trackedHabits: number
-  /** La mejor racha viva al final del periodo. */
-  readonly bestStreak: number
+  /**
+   * El habito con menos cumplimiento del periodo; `null` con menos de dos.
+   *
+   * La constancia global no dice si el 63 % son tres a medias o dos perfectos y
+   * uno abandonado, y lo que se hace con esa informacion es distinto.
+   */
+  readonly hardest: { readonly name: string; readonly percent: number } | null
+  /** La racha mas larga del periodo, o `null` si no hubo ninguna. */
+  readonly bestStreak: StreakRun | null
+}
+
+/** Una racha: cuantos dias seguidos y entre que fechas. */
+export interface StreakRun {
+  readonly days: number
+  /** Clave `YYYY-MM-DD` del primer dia. */
+  readonly from: string
+  /** Clave `YYYY-MM-DD` del ultimo. */
+  readonly to: string
 }

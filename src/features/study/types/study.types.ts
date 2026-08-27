@@ -17,6 +17,26 @@ export type SubjectRef = Pick<Subject, 'id' | 'name' | 'color'>
 /** Sesión registrada junto a la materia a la que pertenece. */
 export type StudySessionWithSubject = StudySession & { readonly subject: SubjectRef | null }
 
+/**
+ * Una sesión de estudio lista para registrarse **o para esperar a que vuelva la
+ * red**.
+ *
+ * Todo resuelto y serializable: sin `Date` ni nada del closure, porque esto
+ * puede quedarse encolado y salir mucho después (ADR-0011). En particular las
+ * horas ya vienen calculadas, para que la sesión conste **cuando se apuntó** y
+ * no cuando se llegó a enviar.
+ */
+export interface LogStudyInput {
+  /** Generado en el cliente: la pantalla ya enseñó la sesión con este id. */
+  readonly id: string
+  readonly userId: string
+  readonly subjectId: string
+  readonly minutes: number
+  readonly startedAt: string
+  readonly endedAt: string
+  readonly focusRating?: number | undefined
+}
+
 /** Lo estudiado en una materia dentro de un periodo. */
 export interface SubjectTime {
   readonly subject: SubjectRef

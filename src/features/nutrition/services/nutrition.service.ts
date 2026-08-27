@@ -1,5 +1,5 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
-import { type DayRange, dayRange } from '@/shared/utils'
+import { type DayRange, dayRange, parseDateKey, weekDays, weekRange } from '@/shared/utils'
 
 import { MEAL_TYPES_IN_ORDER } from '../constants/nutrition.constants'
 import { nutritionRepository } from '../repositories/nutrition.repository'
@@ -14,11 +14,14 @@ import type {
   NutritionPeriodSeries,
   RepeatableMeals,
   RepricedFood,
+  WeekNutrition,
 } from '../types/nutrition.types'
 import { buildDayNutrition } from '../utils/day-nutrition'
 import { buildNutritionSeries } from '../utils/nutrition-series'
 import { pricePerServing } from '../utils/pricing'
+import { buildRepeatableMeals } from '../utils/repeatable-meals'
 import { sumWaterMl } from '../utils/water'
+import { buildWeekNutrition } from '../utils/week-nutrition'
 
 /** Moneda de los precios de Nexus (ver docs/11 y la memoria del proyecto). */
 const CURRENCY_COP = 'COP'
@@ -34,28 +37,40 @@ const MS_PER_DAY = 86_400_000
 const REPEAT_WINDOW_DAYS = 14
 
 /**
- * Comidas recientes que se traen para buscar plantillas.
+ * Comidas recientes que se traen para buscar lo repetible.
  *
- * Con cuatro comidas al día, veinte cubren los últimos cinco días, de sobra
- * para encontrar la última de cada tipo.
+ * Con cuatro al día, sesenta cubren las dos semanas de la ventana. Antes eran
+ * veinte, que bastaban cuando sólo se buscaba **la última** de cada tipo; para
+ * ver qué se repite hacen falta las dos semanas enteras, porque con cinco días
+ * casi todo parece comido una sola vez.
  */
-const REPEAT_CANDIDATES = 20
+const REPEAT_CANDIDATES = 60
+
+/**
+ * Objetivos anteriores que se traen.
+ *
+ * Diez cubren de sobra los cambios de un año: los objetivos se tocan cuando
+ * cambia el plan, no cada semana.
+ */
+const GOAL_HISTORY_LIMIT = 10
 
 /**
  * La comida del día, creándola si es la primera vez.
  *
  * El usuario piensa «añado pollo al almuerzo», no «creo un almuerzo y luego le
  * añado pollo». Se reutiliza la del día para no partirla en varios registros.
+ *
+ * **La comida nueva se fecha en el día que se está apuntando, no en el momento
+ * de apuntarla.** Buscaba en el día correcto pero creaba con la hora actual: no
+ * se notaba mientras la pantalla estaba clavada en hoy, y en cuanto se pudo
+ * retroceder, apuntar la cena de ayer la habría guardado en hoy.
  */
-async function ensureMealLog(userId: string, date: Date, mealType: MealType) {
+async function ensureMealLog(userId: string, date: Date, mealType: MealType, loggedAt: string) {
   const { fromIso, toIso } = dayRange(date)
   const logs = await nutritionRepository.listMealLogsBetween(userId, fromIso, toIso)
   const existing = logs.find((log) => log.meal_type === mealType)
 
-  return (
-    existing ??
-    (await nutritionRepository.insertMealLog(userId, mealType, new Date().toISOString()))
-  )
+  return existing ?? (await nutritionRepository.insertMealLog(userId, mealType, loggedAt))
 }
 
 /**
@@ -79,13 +94,46 @@ function toFoodRow(values: CreateFoodValues) {
   }
 }
 
-/** Datos necesarios para registrar un alimento en una comida. */
-export interface AddFoodInput {
+/**
+ * Datos para registrar alimentos en una comida, **ya resueltos y serializables**.
+ *
+ * Sin `Date` ni nada del closure: esto puede quedarse esperando red y salir
+ * mucho después (ADR-0011).
+ */
+export interface AddFoodsInput {
   readonly userId: string
-  readonly date: Date
+  /** El día al que se apunta, en `YYYY-MM-DD`; no tiene por qué ser hoy. */
+  readonly dateKey: string
   readonly mealType: MealType
-  readonly foodId: string
-  readonly servings: number
+  /**
+   * Los alimentos con su cantidad; una comida son varias cosas.
+   *
+   * **Cada uno lleva su id, generado en el cliente.** Reenviar la lista —un
+   * reintento, dos pestañas— choca así con la clave primaria en vez de apuntar
+   * el desayuno dos veces.
+   */
+  readonly items: readonly {
+    readonly id: string
+    readonly foodId: string
+    readonly servings: number
+  }[]
+  /** Cuándo se apuntó, para fechar la comida si hay que crearla. */
+  readonly loggedAt: string
+}
+
+/**
+ * Datos para registrar agua, **ya resueltos y serializables**.
+ *
+ * Sin `Date` ni nada del closure: este registro se encola cuando no hay red y
+ * se reanuda cuando ya no queda rastro de la pantalla que lo pidió (ADR-0011).
+ */
+export interface AddWaterInput {
+  /** Generado en el cliente: la pantalla ya enseñó el registro con este id. */
+  readonly id: string
+  readonly userId: string
+  readonly amountMl: number
+  /** El momento en que se tocó el botón, no en el que se llegó a enviar. */
+  readonly loggedAt: string
 }
 
 /** Reglas de negocio de nutrición. Traduce errores técnicos a `AppError`. */
@@ -199,21 +247,41 @@ export const nutritionService = {
   },
 
   /**
-   * Registra un alimento en una comida del día.
+   * Registra uno o varios alimentos en una comida del día.
+   *
+   * **Se comen juntos, así que se apuntan juntos.** Antes iba de uno en uno: un
+   * almuerzo de cuatro platos eran cuatro vueltas por el mismo camino —buscar,
+   * elegir, cantidad, guardar— y cuatro escrituras sueltas que podían quedarse
+   * a medias. Ahora es una sola.
    *
    * La comida se crea sola la primera vez: el usuario piensa «añado pollo al
    * almuerzo», no «creo un almuerzo y luego le añado pollo». Se reutiliza la
    * del día para no partir el almuerzo en varios registros.
    */
-  async addFoodToMeal({ userId, date, mealType, foodId, servings }: AddFoodInput): Promise<void> {
+  async addFoodsToMeal({
+    userId,
+    dateKey,
+    mealType,
+    items,
+    loggedAt,
+  }: AddFoodsInput): Promise<void> {
     try {
-      const mealLog = await ensureMealLog(userId, date, mealType)
+      // Sin nada elegido no se crea la comida: quedaría un almuerzo vacío que
+      // ni siquiera cuenta como día registrado.
+      if (items.length === 0) return
 
-      await nutritionRepository.insertMealLogItem({
-        meal_log_id: mealLog.id,
-        food_id: foodId,
-        servings,
-      })
+      // La consulta previa se queda: una mutación en cola no llega a ejecutarse
+      // hasta que vuelve la red, así que cuando esto corre siempre hay conexión.
+      const mealLog = await ensureMealLog(userId, parseDateKey(dateKey), mealType, loggedAt)
+
+      await nutritionRepository.insertMealLogItems(
+        items.map(({ id, foodId, servings }) => ({
+          id,
+          meal_log_id: mealLog.id,
+          food_id: foodId,
+          servings,
+        })),
+      )
     } catch (error) {
       throw toAppError(error)
     }
@@ -224,8 +292,12 @@ export const nutritionService = {
    *
    * Una sola consulta para las cuatro: la pantalla las muestra juntas, así que
    * preguntarlo comida por comida serían cuatro viajes para lo mismo. Sólo mira
-   * las dos últimas semanas: lo que se comió hace tres meses no es «lo de
-   * siempre», y ofrecerlo sería ruido.
+   * las últimas semanas: lo que se comió hace tres meses no es «lo de siempre»,
+   * y ofrecerlo sería ruido.
+   *
+   * Devuelve varias combinaciones por comida —no sólo la última— porque uno no
+   * come siempre lo mismo: hay el desayuno de diario y el de los días con
+   * prisa. Cuál va primero lo decide `buildRepeatableMeals`.
    */
   async getRepeatableMeals(userId: string, date: Date): Promise<RepeatableMeals> {
     try {
@@ -242,46 +314,7 @@ export const nutritionService = {
 
       const items = await nutritionRepository.listItemsByMealLogs(logs.map(({ id }) => id))
 
-      const byType: RepeatableMeals = {}
-      // Los registros llegan del más reciente al más antiguo, así que la primera
-      // vez que aparece un tipo es la última que se comió. Una comida que quedó
-      // vacía —se borró lo que tenía— se salta: repetir la nada no sirve.
-      for (const log of logs) {
-        if (byType[log.meal_type]) continue
-
-        const logItems = items.filter((item) => item.meal_log_id === log.id)
-        if (logItems.length > 0)
-          byType[log.meal_type] = { loggedAt: log.logged_at, items: logItems }
-      }
-
-      return byType
-    } catch (error) {
-      throw toAppError(error)
-    }
-  },
-
-  /**
-   * Repite en el día una comida ya registrada antes.
-   *
-   * Copia los alimentos y sus porciones **por valor**: si luego se cambia uno,
-   * el de hoy no se toca. Registrar lo que se come a diario era el paso más
-   * caro de la aplicación; esto lo deja en un toque.
-   */
-  async repeatMeal(userId: string, date: Date, mealType: MealType): Promise<void> {
-    try {
-      const template = (await this.getRepeatableMeals(userId, date))[mealType]
-      if (!template)
-        throw createAppError('not_found', 'No hay ninguna comida anterior que repetir.')
-
-      const mealLog = await ensureMealLog(userId, date, mealType)
-
-      for (const item of template.items) {
-        await nutritionRepository.insertMealLogItem({
-          meal_log_id: mealLog.id,
-          food_id: item.food_id,
-          servings: item.servings,
-        })
-      }
+      return buildRepeatableMeals(logs, items, MEAL_TYPES_IN_ORDER)
     } catch (error) {
       throw toAppError(error)
     }
@@ -291,6 +324,20 @@ export const nutritionService = {
   async getActiveGoal(userId: string): Promise<NutritionGoal | null> {
     try {
       return await nutritionRepository.findActiveGoal(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Los objetivos anteriores, para poder mirar qué se perseguía antes.
+   *
+   * La pantalla decía que al cambiarlos «queda constancia» y no había manera de
+   * verla: la constancia estaba en la base y era invisible.
+   */
+  async getRetiredGoals(userId: string): Promise<NutritionGoal[]> {
+    try {
+      return await nutritionRepository.listRetiredGoals(userId, GOAL_HISTORY_LIMIT)
     } catch (error) {
       throw toAppError(error)
     }
@@ -334,14 +381,45 @@ export const nutritionService = {
     previousDays: readonly Date[],
   ): Promise<NutritionPeriodSeries> {
     try {
-      const [mealLogs, waterLogs] = await Promise.all([
+      // El objetivo va con la serie porque es **contra lo que se lee**: sin el,
+      // la grafica solo dice que unos dias se comio mas que otros.
+      const [mealLogs, waterLogs, goal] = await Promise.all([
         nutritionRepository.listMealLogsForSeries(userId, previousRange.fromIso, range.toIso),
         nutritionRepository.listWaterForSeries(userId, previousRange.fromIso, range.toIso),
+        nutritionRepository.findActiveGoal(userId),
       ])
 
       const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
 
-      return buildNutritionSeries(mealLogs, items, waterLogs, days, previousDays)
+      return buildNutritionSeries(
+        mealLogs,
+        items,
+        waterLogs,
+        days,
+        previousDays,
+        goal?.calories_target ?? null,
+      )
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cómo va la semana de comida, en medias por día.
+   *
+   * Reutiliza las dos consultas ligeras de Analytics —comidas del rango y sus
+   * alimentos, sólo con las columnas que se suman—: es la misma pregunta sobre
+   * un tramo, y montar unas propias sería mantener dos caminos para lo mismo.
+   *
+   * De lunes a domingo, como la de estudio.
+   */
+  async getWeekNutrition(userId: string, date: Date): Promise<WeekNutrition | null> {
+    try {
+      const { fromIso, toIso } = weekRange(date)
+      const mealLogs = await nutritionRepository.listMealLogsForSeries(userId, fromIso, toIso)
+      const items = await nutritionRepository.listItemsForSeries(mealLogs.map(({ id }) => id))
+
+      return buildWeekNutrition(mealLogs, items, weekDays(date), date)
     } catch (error) {
       throw toAppError(error)
     }
@@ -359,10 +437,30 @@ export const nutritionService = {
     }
   },
 
-  /** Registra agua. La hora es la de ahora: se bebe en el momento. */
-  async addWater(userId: string, amountMl: number): Promise<void> {
+  /**
+   * Registra agua en el día que se está mirando.
+   *
+   * Si ese día es hoy va con la hora real, que es lo normal: se bebe y se
+   * apunta. **Fechaba siempre en el momento de apuntarlo**, y desde que se puede
+   * retroceder de día eso ponía el agua de ayer en hoy: la tarjeta enseñaba el
+   * día elegido y el vaso caía en otro, así que el número ni se movía.
+   */
+  /**
+   * Registra agua.
+   *
+   * Recibe el `id` y el momento ya resueltos, no un día y un reloj: este
+   * registro puede quedarse esperando red y enviarse horas después, y entonces
+   * el momento que vale es **cuando se tocó el botón**, no cuando salió
+   * (ADR-0011).
+   */
+  async addWater(input: AddWaterInput): Promise<void> {
     try {
-      await nutritionRepository.insertWaterLog(userId, amountMl, new Date().toISOString())
+      await nutritionRepository.insertWaterLog(
+        input.id,
+        input.userId,
+        input.amountMl,
+        input.loggedAt,
+      )
     } catch (error) {
       throw toAppError(error)
     }

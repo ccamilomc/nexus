@@ -65,7 +65,7 @@ function BudgetRow({ budget, monthProgress }: BudgetRowProps) {
       <Progress
         value={budget.percent}
         label={`${budget.name}: ${formatCop(budget.spent)} de ${formatCop(budget.cap)}`}
-        isExceeded={budget.isExceeded}
+        tone={budget.isExceeded ? 'warning' : 'default'}
       />
 
       {/* El aviso va en palabras además de en color: quien no distingue el

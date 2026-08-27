@@ -19,11 +19,22 @@ const FOOD_FIELDS =
 
 /** Acceso a datos de nutrición. Sólo habla con Supabase; sin reglas de negocio. */
 export const nutritionRepository = {
+  /**
+   * El catálogo entero: los del sistema y los propios.
+   *
+   * Alfabético, y **a igualdad de nombre el propio va primero**. Tener el mismo
+   * alimento dos veces es lo normal aquí —el catálogo global no lleva precio y
+   * no se puede editar, así que quien quiere el suyo con su porción y su precio
+   * acaba creándolo—, y de los dos el que sirve es el propio. El orden
+   * alfabético se mantiene, así que el par sigue saliendo junto.
+   */
   async listFoods(): Promise<Food[]> {
     const { data, error } = await supabase
       .from('foods')
       .select('*')
       .order('name', { ascending: true })
+      // Los del sistema tienen `user_id` nulo: al final de cada empate.
+      .order('user_id', { ascending: true, nullsFirst: false })
 
     if (error) throw error
     return data ?? []
@@ -186,6 +197,27 @@ export const nutritionRepository = {
     return data
   },
 
+  /**
+   * Varios alimentos en una comida, de una sola vez.
+   *
+   * Una comida son varias cosas y se apuntan juntas: insertarlas de una en una
+   * serían cuatro viajes que además pueden quedarse a medias —dos guardados y
+   * dos no— sin manera de saberlo.
+   */
+  async insertMealLogItems(
+    rows: readonly TablesInsert<'meal_log_items'>[],
+  ): Promise<MealLogItem[]> {
+    if (rows.length === 0) return []
+
+    const { data, error } = await supabase
+      .from('meal_log_items')
+      .insert([...rows])
+      .select('*')
+
+    if (error) throw error
+    return data ?? []
+  },
+
   async deleteMealLogItem(itemId: string): Promise<void> {
     const { error } = await supabase.from('meal_log_items').delete().eq('id', itemId)
 
@@ -205,6 +237,26 @@ export const nutritionRepository = {
 
     if (error) throw error
     return data
+  },
+
+  /**
+   * Los objetivos ya jubilados, del más reciente al más antiguo.
+   *
+   * Se guardan al cambiarlos para que quede constancia de qué se perseguía en
+   * cada momento, y hasta ahora no había forma de mirarlos.
+   */
+  async listRetiredGoals(userId: string, limit: number): Promise<NutritionGoal[]> {
+    const { data, error } = await supabase
+      .from('nutrition_goals')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('is_active', false)
+      .is('deleted_at', null)
+      .order('effective_from', { ascending: false })
+      .limit(limit)
+
+    if (error) throw error
+    return data ?? []
   },
 
   /** Jubila los objetivos vigentes: el historial se conserva (ver docs/04). */
@@ -244,10 +296,23 @@ export const nutritionRepository = {
     return data ?? []
   },
 
-  async insertWaterLog(userId: string, amountMl: number, loggedAtIso: string): Promise<WaterLog> {
+  /**
+   * Registra agua con **el id que trae**, generado en el cliente.
+   *
+   * No lo pone la base porque este registro puede salir sin conexión y llegar
+   * mucho después: la pantalla ya lo enseñó con ese id, y reenviarlo dos veces
+   * —dos pestañas, un reintento— tiene que chocar con la clave primaria en vez
+   * de crear un vaso de agua de más (ADR-0004).
+   */
+  async insertWaterLog(
+    id: string,
+    userId: string,
+    amountMl: number,
+    loggedAtIso: string,
+  ): Promise<WaterLog> {
     const { data, error } = await supabase
       .from('water_logs')
-      .insert({ user_id: userId, amount_ml: amountMl, logged_at: loggedAtIso })
+      .insert({ id, user_id: userId, amount_ml: amountMl, logged_at: loggedAtIso })
       .select('*')
       .single()
 

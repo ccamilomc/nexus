@@ -21,7 +21,12 @@ export function HabitsPage() {
   const { data, isPending, isError, error, refetch } = useHabitsToday(today)
   const [isCreating, setIsCreating] = useState(false)
 
-  const doneCount = data?.filter((entry) => entry.isDoneToday).length ?? 0
+  // El recuento del día cuenta **los de hoy**: un hábito de lunes, miércoles y
+  // viernes no está pendiente un martes, y meterlo en el denominador lo haría
+  // parecer un descuido. La lista de abajo sí los enseña todos: siguen siendo
+  // tus hábitos aunque hoy no toquen.
+  const deHoy = data?.filter((entry) => entry.appliesToday) ?? []
+  const doneCount = deHoy.filter((entry) => entry.isDoneToday).length
 
   return (
     <>
@@ -37,7 +42,9 @@ export function HabitsPage() {
             <p className="text-sm text-muted-foreground">
               {data.length === 0
                 ? 'Sin hábitos'
-                : `${doneCount} de ${data.length} ${data.length === 1 ? 'hecho' : 'hechos'} hoy`}
+                : deHoy.length === 0
+                  ? 'Hoy no toca ninguno'
+                  : `${doneCount} de ${deHoy.length} ${deHoy.length === 1 ? 'hecho' : 'hechos'} hoy`}
             </p>
             {isCreating ? null : (
               <Button type="button" size="sm" onClick={() => setIsCreating(true)}>

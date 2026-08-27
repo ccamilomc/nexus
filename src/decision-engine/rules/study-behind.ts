@@ -16,6 +16,22 @@ const TOLERANCE = 0.8
 const LAST_DAY = 7
 
 /**
+ * Días que quedan de semana, **contando hoy**.
+ *
+ * Decía uno menos, y el sábado por la mañana avisaba de que «queda 1 día»
+ * cuando aún quedaban dos: hoy también se puede estudiar. Además chocaba con lo
+ * que enseñaba la propia pantalla de Estudio, que sí lo cuenta
+ * (`features/study/utils/weekly-pace.ts`).
+ *
+ * El motor es puro y no puede tirar de la feature (ADR-0002), así que el
+ * cálculo está escrito dos veces a propósito. **Si cambia uno, cambia el otro**:
+ * son la misma cifra vista desde dos pantallas, y el usuario las ve seguidas.
+ */
+function daysLeftInWeek(day: number): number {
+  return DAYS_PER_WEEK - day + 1
+}
+
+/**
  * Avisa cuando el estudio de la semana va por debajo del ritmo necesario.
  *
  * No compara con el objetivo entero —el lunes nadie lo ha cumplido— sino con la
@@ -42,7 +58,7 @@ export const studyBehindRule: Rule = {
     const target = context.goals.studyWeeklyMinutes ?? 0
     const day = weekdayPosition(context.date)
     const remaining = Math.max(0, target - context.study.weekMinutes)
-    const daysLeft = DAYS_PER_WEEK - day
+    const daysLeft = daysLeftInWeek(day)
 
     return [
       {
@@ -51,12 +67,15 @@ export const studyBehindRule: Rule = {
         domain: 'study',
         priority: day >= LAST_DAY ? 'high' : 'medium',
         title: 'Vas por debajo de tu ritmo de estudio',
+        // Repartido entre los días que quedan, que es lo que se puede hacer hoy.
+        // Mismas palabras que la pantalla de Estudio: es la misma cifra, y verla
+        // dicha de dos maneras hace dudar de las dos.
         message:
-          daysLeft === 0
+          daysLeft === 1
             ? `Hoy acaba la semana y te faltan ${formatMinutes(remaining)}.`
-            : `Te faltan ${formatMinutes(remaining)} y quedan ${daysLeft} ${
-                daysLeft === 1 ? 'día' : 'días'
-              }.`,
+            : `Te faltan ${formatMinutes(remaining)}: ${formatMinutes(
+                Math.ceil(remaining / daysLeft),
+              )} al día para llegar el domingo.`,
         reason: `Llevas ${formatMinutes(context.study.weekMinutes)} de ${formatMinutes(target)}; a estas alturas de la semana tocarían unos ${formatMinutes(Math.round(expectedByNow(target, day)))}.`,
         data: { remainingMinutes: remaining, daysLeft, weekMinutes: context.study.weekMinutes },
       },

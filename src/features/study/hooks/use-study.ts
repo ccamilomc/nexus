@@ -3,11 +3,21 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { OFFLINE_MUTATIONS } from '@/core/offline'
+import { useNow } from '@/core/time'
 import { toDateKey } from '@/shared/utils'
 
 import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
 import { studyService } from '../services/study.service'
-import type { DayStudy, StudySessionWithSubject, Subject, WeekStudy } from '../types/study.types'
+import type {
+  DayStudy,
+  LogStudyInput,
+  StudySessionWithSubject,
+  Subject,
+  WeekStudy,
+} from '../types/study.types'
+import { addMinutesToWeek, addSessionToDay } from '../utils/add-study-session'
+import { buildLogStudyInput } from '../utils/study-input'
 import { studyKeys } from './study.keys'
 
 /** Las escrituras necesitan usuario; sin él, la sesión caducó. */
@@ -102,15 +112,128 @@ export function useDeleteSubject() {
   })
 }
 
-/** Registra una sesión de estudio ya terminada. */
-export function useLogStudy() {
+/**
+ * Las materias retiradas. **Sólo se piden al abrirlas.**
+ *
+ * Es algo que se mira de vez en cuando, así que traerlas al cargar la pantalla
+ * sería pagar una consulta por una lista que casi nunca se despliega.
+ */
+export function useRetiredSubjects(enabled: boolean) {
   const { user } = useAuth()
-  const refresh = useRefreshDays()
+  const userId = user?.id
 
-  return useMutation<void, AppError, LogStudyValues>({
-    mutationFn: (values) => studyService.logStudy(requireUserId(user?.id), values),
+  return useQuery<readonly Subject[], AppError>({
+    queryKey: studyKeys.retiredSubjects(userId),
+    queryFn: () => (userId ? studyService.getRetiredSubjects(userId) : []),
+    enabled,
+  })
+}
+
+/** Devuelve una materia retirada a la lista. */
+export function useRestoreSubject() {
+  const refresh = useRefreshStudy()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (subjectId) => studyService.restoreSubject(subjectId),
     onSuccess: refresh,
   })
+}
+
+/** Borra del todo una materia que nunca se llegó a usar. */
+export function useDeleteSubjectForever() {
+  const refresh = useRefreshStudy()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (subjectId) => studyService.deleteSubjectForever(subjectId),
+    onSuccess: refresh,
+  })
+}
+
+/** Registra una sesión de estudio ya terminada; el día va en los valores. */
+export function useLogStudy(date: Date): LogStudyMutation {
+  const { user } = useAuth()
+  const now = useNow()
+  const queryClient = useQueryClient()
+  const refresh = useRefreshDays()
+  const dayKey = studyKeys.day(user?.id, toDateKey(date))
+  const weekKey = studyKeys.week(user?.id, toDateKey(date))
+
+  const mutation = useMutation<void, AppError, LogStudyInput>({
+    mutationKey: OFFLINE_MUTATIONS.logStudy,
+    mutationFn: (input) => studyService.logStudy(input),
+
+    onMutate: async (input) => {
+      await queryClient.cancelQueries({ queryKey: dayKey })
+      const previousDay = queryClient.getQueryData<DayStudy | null>(dayKey)
+      const previousWeek = queryClient.getQueryData<WeekStudy | null>(weekKey)
+
+      const subjects = queryClient.getQueryData<Subject[]>(studyKeys.subjects(user?.id)) ?? []
+      const subject = subjects.find(({ id }) => id === input.subjectId)
+
+      if (subject) {
+        const { id, name, color } = subject
+        queryClient.setQueryData<DayStudy | null>(dayKey, (current) =>
+          addSessionToDay(current ?? null, input, { id, name, color }),
+        )
+        queryClient.setQueryData<WeekStudy | null>(weekKey, (current) =>
+          addMinutesToWeek(current ?? null, input.subjectId, input.minutes),
+        )
+      }
+
+      return { previousDay, previousWeek }
+    },
+
+    // Si falla de verdad (sin red se pausa, no falla) se deshace: unas horas de
+    // estudio que no existen inflan el avance de la semana.
+    onError: (_error, _input, context) => {
+      const previous = context as
+        { previousDay?: DayStudy | null; previousWeek?: WeekStudy | null } | undefined
+      if (previous?.previousDay !== undefined)
+        queryClient.setQueryData(dayKey, previous.previousDay)
+      if (previous?.previousWeek !== undefined) {
+        queryClient.setQueryData(weekKey, previous.previousWeek)
+      }
+    },
+
+    onSettled: refresh,
+  })
+
+  const { mutate } = mutation
+
+  return {
+    // Pausada no es «en marcha»: sin red la sesión ya está guardada, y bloquear
+    // impediría apuntar la siguiente materia de la misma tarde.
+    isPending: mutation.isPending && !mutation.isPaused,
+    error: mutation.error,
+
+    mutate: useCallback(
+      (values, options) => {
+        mutate(
+          buildLogStudyInput({
+            id: crypto.randomUUID(),
+            userId: requireUserId(user?.id),
+            values,
+            now,
+          }),
+        )
+        options?.onApuntado?.()
+      },
+      [mutate, user?.id, now],
+    ),
+  }
+}
+
+/** Lo que el formulario necesita, sin las variables internas de la mutación. */
+interface LogStudyMutation {
+  readonly isPending: boolean
+  readonly error: AppError | null
+  /**
+   * `onApuntado` corre **en cuanto la sesión queda a salvo**, esté enviada o
+   * esperando red. No es `onSuccess`: una mutación pausada nunca lo llamaría, y
+   * el formulario se quedaría con los minutos puestos como si no hubiera
+   * guardado.
+   */
+  readonly mutate: (values: LogStudyValues, options?: { readonly onApuntado?: () => void }) => void
 }
 
 /** Quita una sesión registrada por error. */

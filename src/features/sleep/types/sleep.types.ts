@@ -15,6 +15,24 @@ export type SleepGoal = Tables<'sleep_goals'>
 export type SleepDaySample = Pick<SleepLog, 'date' | 'duration_minutes' | 'quality_rating'>
 
 /**
+ * Una noche lista para guardarse **o para esperar a que vuelva la red**.
+ *
+ * Todo resuelto y serializable: las horas ya convertidas a instantes y a
+ * minutos, porque esto puede quedarse encolado y salir después (ADR-0011).
+ */
+export interface LogSleepInput {
+  /** Generado en el cliente. Sólo se usa si esa noche todavía no existía. */
+  readonly id: string
+  readonly userId: string
+  /** La mañana en que se despertó, en `YYYY-MM-DD`. */
+  readonly dateKey: string
+  readonly bedtimeIso: string
+  readonly wakeTimeIso: string
+  readonly minutes: number
+  readonly qualityRating: number | null
+}
+
+/**
  * Las últimas noches, con su media.
  *
  * La media se **calcula** a partir de los registros; nunca se almacena (ver
@@ -45,4 +63,6 @@ export interface SleepPeriodSeries {
   readonly averageQuality: number | null
   /** La misma media en el tramo anterior, para comparar. */
   readonly previousAverageMinutes: number | null
+  /** Objetivo vigente, para dibujarlo en la gráfica; `null` si no hay. */
+  readonly targetMinutes: number | null
 }

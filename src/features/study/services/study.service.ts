@@ -1,10 +1,12 @@
 import { createAppError, toAppError } from '@/core/error'
 import { type DayRange, dayRange, weekRange } from '@/shared/utils'
 
+import { nextSubjectColor } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
-import type { CreateSubjectValues, LogStudyValues } from '../schemas/study.schema'
+import type { CreateSubjectValues } from '../schemas/study.schema'
 import type {
   DayStudy,
+  LogStudyInput,
   StudyPeriodSeries,
   StudySessionWithSubject,
   Subject,
@@ -14,8 +16,6 @@ import { buildDayStudy } from '../utils/day-study'
 import { elapsedMinutes } from '../utils/elapsed-minutes'
 import { buildStudySeries } from '../utils/study-series'
 import { buildWeekStudy } from '../utils/week-study'
-
-const MS_PER_MINUTE = 60_000
 
 /** El formulario habla en horas; la base guarda minutos, que es su unidad. */
 function toWeeklyTargetMinutes(values: CreateSubjectValues): number | null {
@@ -32,12 +32,22 @@ export const studyService = {
     }
   },
 
+  /**
+   * Crea una materia y **le pone un color que no esté cogido**.
+   *
+   * Cuesta una consulta más, y sale a cuenta: crear una materia se hace muy de
+   * vez en cuando, y sin esto todas salían del color por defecto de la columna,
+   * con lo que el punto que las distingue en cuatro pantallas no distinguía nada.
+   */
   async createSubject(userId: string, values: CreateSubjectValues): Promise<Subject> {
     try {
+      const existing = await studyRepository.listSubjects(userId)
+
       return await studyRepository.insertSubject({
         user_id: userId,
         name: values.name,
         weekly_target_minutes: toWeeklyTargetMinutes(values),
+        color: nextSubjectColor(existing.map(({ color }) => color)),
       })
     } catch (error) {
       throw toAppError(error)
@@ -64,6 +74,58 @@ export const studyService = {
   async deleteSubject(subjectId: string): Promise<void> {
     try {
       await studyRepository.updateSubject(subjectId, { deleted_at: new Date().toISOString() })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Las materias retiradas, para poder consultarlas y recuperarlas.
+   *
+   * Retirar una era irreversible desde la pantalla: desaparecía de la lista y no
+   * había dónde volver a encontrarla, aunque sus horas siguieran contando. El
+   * botón dice «Retirar», que suena a que se puede deshacer, y ahora se puede.
+   */
+  async getRetiredSubjects(userId: string): Promise<readonly Subject[]> {
+    try {
+      return await studyRepository.listRetiredSubjects(userId)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /** Devuelve una materia retirada a la lista, con su historial intacto. */
+  async restoreSubject(subjectId: string): Promise<void> {
+    try {
+      await studyRepository.updateSubject(subjectId, { deleted_at: null })
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Borra del todo una materia que nunca se llegó a usar.
+   *
+   * Para la que se creó por error: se escribe mal, se retira, y hasta ahora se
+   * quedaba ahí sin manera de quitarla.
+   *
+   * **Sólo si no tiene ninguna sesión.** Con horas estudiadas la salida es
+   * retirarla: ese tiempo se estudió de verdad y sigue contando en los totales.
+   * La comprobación va aquí porque la base no la hace: su clave ajena es
+   * `on delete set null`, así que dejaría las sesiones sin materia en lugar de
+   * negarse, y la pantalla espera que la tengan.
+   */
+  async deleteSubjectForever(subjectId: string): Promise<void> {
+    try {
+      const sessions = await studyRepository.countSessions(subjectId)
+      if (sessions > 0) {
+        throw createAppError(
+          'conflict',
+          'Esta materia tiene horas estudiadas, así que no se borra: retírala y seguirán contando.',
+        )
+      }
+
+      await studyRepository.deleteSubjectForever(subjectId)
     } catch (error) {
       throw toAppError(error)
     }
@@ -131,23 +193,21 @@ export const studyService = {
   /**
    * Registra una sesión ya terminada.
    *
-   * Se pide la duración, no las horas: quien registra después de estudiar
-   * recuerda «hora y media», no el minuto exacto en que empezó. La sesión se
-   * coloca hacia atrás desde ahora, así queda a una hora verosímil y el día la
-   * recoge donde toca.
+   * Recibe las horas ya resueltas, no un día y un reloj: la sesión puede
+   * quedarse esperando red y salir después, y entonces el momento que vale es
+   * cuando se apuntó (ADR-0011). El cálculo —hacia atrás desde el final del día
+   * elegido— vive en `utils/study-input.ts`.
    */
-  async logStudy(userId: string, values: LogStudyValues): Promise<void> {
+  async logStudy(input: LogStudyInput): Promise<void> {
     try {
-      const endedAt = new Date()
-      const startedAt = new Date(endedAt.getTime() - values.minutes * MS_PER_MINUTE)
-
       await studyRepository.insertSession({
-        user_id: userId,
-        subject_id: values.subjectId,
-        duration_minutes: values.minutes,
-        started_at: startedAt.toISOString(),
-        ended_at: endedAt.toISOString(),
-        ...(values.focusRating === undefined ? {} : { focus_rating: values.focusRating }),
+        id: input.id,
+        user_id: input.userId,
+        subject_id: input.subjectId,
+        duration_minutes: input.minutes,
+        started_at: input.startedAt,
+        ended_at: input.endedAt,
+        ...(input.focusRating === undefined ? {} : { focus_rating: input.focusRating }),
       })
     } catch (error) {
       throw toAppError(error)

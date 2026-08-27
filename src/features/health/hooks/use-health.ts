@@ -3,14 +3,20 @@ import { useCallback } from 'react'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
+import { useNow, useToday } from '@/core/time'
+import { toDateKey } from '@/shared/utils'
 
-import type { LogMetricValues } from '../schemas/health.schema'
+import type { LogMeasurementsValues } from '../schemas/health.schema'
 import type { HealthOverview } from '../services/health.service'
 import { healthService } from '../services/health.service'
+import type { BodyMetric, BodyMetricType, MetricHistory } from '../types/health.types'
 
 export const healthKeys = {
   all: ['health'] as const,
-  overview: (userId: string | undefined) => [...healthKeys.all, 'overview', userId] as const,
+  overview: (userId: string | undefined, dayKey: string) =>
+    [...healthKeys.all, 'overview', userId, dayKey] as const,
+  history: (userId: string | undefined, metricType: string) =>
+    [...healthKeys.all, 'history', userId, metricType] as const,
   weightSeries: (userId: string | undefined, rangeKey: string) =>
     [...healthKeys.all, 'weight-series', userId, rangeKey] as const,
 }
@@ -21,14 +27,37 @@ function requireUserId(userId: string | undefined): string {
   return userId
 }
 
-/** Última lectura de cada medida, con el IMC. */
+/**
+ * Última lectura de cada medida, con el IMC y la tendencia del peso.
+ *
+ * Lleva el día en la clave: la tendencia se calcula respecto a hoy, así que al
+ * cruzar la medianoche con la pantalla abierta hay que rehacerla.
+ */
 export function useHealthOverview() {
   const { user } = useAuth()
+  const today = useToday()
   const userId = user?.id
 
   return useQuery<HealthOverview | null, AppError>({
-    queryKey: healthKeys.overview(userId),
-    queryFn: () => (userId ? healthService.getOverview(userId) : null),
+    queryKey: healthKeys.overview(userId, toDateKey(today)),
+    queryFn: () => (userId ? healthService.getOverview(userId, today) : null),
+  })
+}
+
+/**
+ * Cómo ha ido una medida. **Sólo se pide cuando se abre.**
+ *
+ * Con `null` la consulta ni se lanza: son ocho medidas y traerlas todas al
+ * cargar la pantalla serían ocho viajes para enseñar uno.
+ */
+export function useMetricHistory(metricType: BodyMetricType | null) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<MetricHistory | null, AppError>({
+    queryKey: healthKeys.history(userId, metricType ?? 'ninguna'),
+    queryFn: () => (userId && metricType ? healthService.getHistory(userId, metricType) : null),
+    enabled: metricType !== null,
   })
 }
 
@@ -42,13 +71,19 @@ function useRefreshHealth() {
   )
 }
 
-/** Registra una medición. */
-export function useLogMetric() {
+/**
+ * Registra una vuelta de medidas: las que se hayan tomado, con su día.
+ *
+ * Sustituye al registro de una en una: incluso apuntar sólo el peso es rellenar
+ * una casilla de éstas, así que tener dos caminos era tener uno de sobra.
+ */
+export function useLogMeasurements() {
   const { user } = useAuth()
+  const now = useNow()
   const refresh = useRefreshHealth()
 
-  return useMutation<void, AppError, LogMetricValues>({
-    mutationFn: (values) => healthService.logMetric(requireUserId(user?.id), values),
+  return useMutation<BodyMetric[], AppError, LogMeasurementsValues>({
+    mutationFn: (values) => healthService.logMeasurements(requireUserId(user?.id), values, now),
     onSuccess: refresh,
   })
 }

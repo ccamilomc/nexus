@@ -2,8 +2,8 @@ import '@testing-library/jest-dom'
 
 /**
  * `window.matchMedia` no existe en jsdom, y la aplicación lo consulta para dos
- * cosas de verdad: el tema del sistema (`ThemeProvider`) y si se está usando
- * instalada (`useInstallPrompt`).
+ * cosas de verdad: si se está usando instalada (`useInstallPrompt`) y si se ha
+ * pedido menos movimiento (`prefersReducedMotion`).
  *
  * Se rellena aquí, en el banco de pruebas, y no con una guarda en el código de
  * la aplicación: es un hueco de jsdom, no del navegador. Por defecto **nada

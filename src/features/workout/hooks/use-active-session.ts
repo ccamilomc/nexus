@@ -4,8 +4,9 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import type { AppError } from '@/core/error'
 
+import type { PastSessionValues } from '../schemas/workout.schema'
 import { workoutService } from '../services/workout.service'
-import type { SessionDetail } from '../types/workout.types'
+import type { LastPerformance, SessionDetail } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
@@ -35,6 +36,22 @@ export function useActiveSession() {
   })
 }
 
+/**
+ * Qué se hizo la última vez en cada ejercicio.
+ *
+ * Se pide una sola vez para toda la sesión, no por ejercicio: con cinco
+ * ejercicios en pantalla serían cinco viajes para responder la misma pregunta.
+ */
+export function useLastPerformances() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<readonly LastPerformance[], AppError>({
+    queryKey: workoutKeys.lastPerformances(userId),
+    queryFn: () => (userId ? workoutService.getLastPerformances(userId) : []),
+  })
+}
+
 /** Inicia un entrenamiento (o recupera el que ya estuviera en curso). */
 export function useStartSession() {
   const { user } = useAuth()
@@ -42,6 +59,17 @@ export function useStartSession() {
 
   return useMutation<SessionDetail, AppError, void>({
     mutationFn: () => workoutService.startSession(requireUserId(user?.id)),
+    onSuccess: refreshSessions,
+  })
+}
+
+/** Abre un entrenamiento que ya se hizo, para apuntarlo después. */
+export function useStartPastSession() {
+  const { user } = useAuth()
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<SessionDetail, AppError, PastSessionValues>({
+    mutationFn: (values) => workoutService.startPastSession(requireUserId(user?.id), values),
     onSuccess: refreshSessions,
   })
 }
@@ -58,12 +86,40 @@ export function useStartSessionFromRoutineDay() {
   })
 }
 
+/** Lo que hace falta para cerrar: el fin ya puesto se respeta. */
+interface FinishSessionInput {
+  readonly sessionId: string
+  /** Fin que la sesión ya traía; `null` en un entrenamiento en directo. */
+  readonly endedAt: string | null
+}
+
 /** Cierra el entrenamiento: pasa al historial. */
 export function useFinishSession() {
   const refreshSessions = useRefreshSessions()
 
+  return useMutation<void, AppError, FinishSessionInput>({
+    mutationFn: ({ sessionId, endedAt }) => workoutService.finishSession(sessionId, endedAt),
+    onSuccess: refreshSessions,
+  })
+}
+
+/** Vuelve a abrir un entrenamiento del historial para corregirlo. */
+export function useReopenSession() {
+  const { user } = useAuth()
+  const refreshSessions = useRefreshSessions()
+
   return useMutation<void, AppError, string>({
-    mutationFn: (sessionId) => workoutService.finishSession(sessionId),
+    mutationFn: (sessionId) => workoutService.reopenSession(requireUserId(user?.id), sessionId),
+    onSuccess: refreshSessions,
+  })
+}
+
+/** Quita un entrenamiento del historial. */
+export function useRemoveSession() {
+  const refreshSessions = useRefreshSessions()
+
+  return useMutation<void, AppError, string>({
+    mutationFn: (sessionId) => workoutService.removeSession(sessionId),
     onSuccess: refreshSessions,
   })
 }

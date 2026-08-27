@@ -263,10 +263,10 @@ create policy "workout_sets_own" on public.workout_sets
 - Políticas de Storage que restringen a `auth.uid() = (storage.foldername(name))[1]`.
 - El acceso a las imágenes se hace con **URLs firmadas** de vida corta.
 
-## Analytics: vistas y rollups
+## Dashboard: vistas y rollups
 
-Analytics **no** define tablas de datos primarios (ver
-[04](./04-modelo-de-datos.md#analytics)):
+Dashboard **no** define tablas de datos primarios (ver
+[04](./04-modelo-de-datos.md#dashboard)):
 
 - **No usa vistas.** Se evaluaron en el Sprint 12 y se descartaron: obligarían a
   reimplementar en SQL reglas que ya están probadas en TypeScript. La agregación
@@ -277,9 +277,9 @@ Analytics **no** define tablas de datos primarios (ver
   se definiría **sólo si** el rendimiento lo exige (evidencia primero, evitar
   optimización prematura). Si se crea, se recalcula de forma **idempotente** y
   lleva `user_id` + RLS como cualquier otra tabla de usuario. Entraría por detrás
-  de `useXSeries`, sin que Analytics se entere.
+  de `useXSeries`, sin que Dashboard se entere.
 
-### Coste medido de Analytics
+### Coste medido de Dashboard
 
 Medido en el navegador sobre la cuenta de desarrollo con ~10 semanas de historia
 (`scripts/seed-dev-data.mjs`), en el **peor caso: periodo de 90 días y caché
@@ -299,6 +299,40 @@ lo dejó en 316 KB **sin cambiar ninguna cifra en pantalla**.
 
 Es la lección que conviene recordar antes de sospechar de la arquitectura: el
 problema no era agregar en el cliente, era traer columnas que nadie suma.
+
+## Vaciar una cuenta sin borrarla
+
+`scripts/reset-user-data.mjs` deja una cuenta como recién estrenada. Existe para
+un momento concreto: cuando los datos de prueba dejen de hacer falta y empiece el
+uso de verdad.
+
+```bash
+node scripts/reset-user-data.mjs            # dice qué se iría, sin tocar nada
+node scripts/reset-user-data.mjs --borrar   # lo borra
+```
+
+**El orden no es alfabético, y por eso el script existe.** Seis claves foráneas
+son `restrict` y bloquean el borrado si se hace al revés: las comidas y los planes
+sujetan a los alimentos, las rutinas y los entrenamientos sujetan a los
+ejercicios, y los movimientos y los fijos sujetan a las cuentas. La actividad se
+vacía primero y los catálogos después. Lo que cuelga de esas tablas —series,
+alimentos de una comida, días de una rutina— se va **en cascada** y no se
+enumera.
+
+Tres decisiones que lo hacen seguro:
+
+- **Por defecto no borra.** Sin `--borrar` sólo cuenta. Es una operación que no se
+  deshace: tiene que costar dos intentos.
+- **Entra con la sesión del usuario, no con la `service_role`.** Con la RLS activa,
+  un fallo en el script no puede tocar otra cuenta aunque se equivoque de filtro.
+  La seguridad no depende de que el archivo esté bien escrito.
+- **No toca la cuenta, ni su perfil, ni los catálogos del sistema.** Se sigue
+  entrando igual y los alimentos y ejercicios que trae Nexus siguen ahí.
+
+Para comprobar que el orden es correcto sin borrar nada, se ejecutan los `delete`
+dentro de un `begin … rollback`: si alguno violara una clave foránea, la
+transacción aborta con un `23503` y se ve. Probado en los dos sentidos — con el
+orden bueno pasa entero, y borrando `foods` primero falla como debe.
 
 ## Migraciones
 

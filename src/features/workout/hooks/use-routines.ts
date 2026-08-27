@@ -5,7 +5,7 @@ import type { AppError } from '@/core/error'
 
 import type { CreateRoutineValues } from '../schemas/workout.schema'
 import { workoutService } from '../services/workout.service'
-import type { Routine } from '../types/workout.types'
+import type { Routine, RoutineSummary } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
@@ -17,6 +17,22 @@ export function useRoutines() {
   return useQuery<Routine[], AppError>({
     queryKey: workoutKeys.routines(userId),
     queryFn: () => (userId ? workoutService.getRoutines(userId) : []),
+  })
+}
+
+/**
+ * Las rutinas con cuánta es cada una y cuándo se usó.
+ *
+ * Su clave cuelga de `sessions()` además de las rutinas: terminar un
+ * entrenamiento cambia el «última vez», aunque la rutina no se haya tocado.
+ */
+export function useRoutineSummaries() {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<RoutineSummary[], AppError>({
+    queryKey: workoutKeys.routineSummaries(userId),
+    queryFn: () => (userId ? workoutService.getRoutineSummaries(userId) : []),
   })
 }
 

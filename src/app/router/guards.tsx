@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 
 import { useAuth } from '@/core/auth'
 import { env } from '@/core/config/env'
+import { useProfile } from '@/features/profile'
 
 import { ROUTES } from './routes'
 
@@ -41,7 +42,26 @@ export function RedirectIfAuth() {
   if (status === 'authenticated') {
     // Si llegó redirigido desde una ruta protegida, vuelve a ella tras entrar.
     const from: unknown = location.state?.from
-    return <Navigate to={typeof from === 'string' ? from : ROUTES.dashboard} replace />
+    return <Navigate to={typeof from === 'string' ? from : ROUTES.today} replace />
   }
+  return <Outlet />
+}
+
+/**
+ * Manda a la bienvenida a quien nunca ha pasado por ella.
+ *
+ * Va **dentro** de `RequireAuth` y **fuera** del cascarón: hace falta sesión
+ * para saber si ya la vio, y la bienvenida no lleva barra ni menú.
+ *
+ * **Mientras el perfil está cargando no redirige a ningún lado**, deja pasar. Un
+ * desvío basado en un dato que todavía no ha llegado mandaría a la bienvenida a
+ * quien ya la hizo, cada vez que abre la aplicación.
+ */
+export function RequireOnboarding() {
+  const { data: profile, isPending } = useProfile()
+
+  if (env.authDisabled || isPending) return <Outlet />
+  if (profile && !profile.onboarding_completed) return <Navigate to={ROUTES.onboarding} replace />
+
   return <Outlet />
 }

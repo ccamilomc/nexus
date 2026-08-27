@@ -1,17 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
-import { formatDayAndMonth, parseDateKey, weekdayInitial } from './format'
+import { parseDateKey } from '@/shared/utils'
 
-describe('parseDateKey', () => {
-  it('interpreta la clave en hora local, no en UTC', () => {
-    // `new Date('2026-07-29')` daría el 28 en Colombia: por eso se parte a mano.
-    const date = parseDateKey('2026-07-29')
-
-    expect(date.getFullYear()).toBe(2026)
-    expect(date.getMonth()).toBe(6)
-    expect(date.getDate()).toBe(29)
-  })
-})
+import { describeWeekdays, formatDayAndMonth, weekdayInitial } from './format'
 
 describe('weekdayInitial', () => {
   it('usa la equis del miércoles para no confundirlo con el martes', () => {
@@ -33,5 +24,31 @@ describe('formatDayAndMonth', () => {
 
   it('funciona en cualquier mes', () => {
     expect(formatDayAndMonth(parseDateKey('2026-01-01'))).toBe('1 de enero')
+  })
+})
+
+describe('describeWeekdays', () => {
+  it('un hábito diario no dice nada', () => {
+    // Escribir «todos los días» en cada tarjeta sería repetir siete veces algo
+    // que no distingue a ninguna.
+    expect(describeWeekdays(null)).toBeNull()
+    expect(describeWeekdays([])).toBeNull()
+  })
+
+  it('marcar los siete también es diario', () => {
+    expect(describeWeekdays([1, 2, 3, 4, 5, 6, 7])).toBeNull()
+  })
+
+  it('enumera con «y» al final, como se dice', () => {
+    expect(describeWeekdays([1, 3, 5])).toBe('Lunes, miércoles y viernes')
+  })
+
+  it('un solo día no lleva «y»', () => {
+    expect(describeWeekdays([7])).toBe('Domingo')
+  })
+
+  it('los ordena aunque lleguen desordenados', () => {
+    // Marcar viernes y luego lunes no puede leerse «Viernes y lunes».
+    expect(describeWeekdays([5, 1])).toBe('Lunes y viernes')
   })
 })

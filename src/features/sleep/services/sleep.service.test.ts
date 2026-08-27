@@ -29,6 +29,8 @@ const updateLog = vi.mocked(sleepRepository.updateLog)
 const USER_ID = 'user-1'
 /** Viernes 31 de julio de 2026, por la mañana. */
 const TODAY = new Date(2026, 6, 31, 8, 0)
+/** La misma fecha como la manda el formulario: la mañana en que se despertó. */
+const TODAY_KEY = '2026-07-31'
 
 function log(date: string, minutes: number, quality: number | null = null): SleepLog {
   return {
@@ -56,79 +58,57 @@ beforeEach(() => {
 })
 
 describe('sleepService.logSleep', () => {
-  it('calcula la duración cruzando la medianoche', async () => {
-    await sleepService.logSleep(USER_ID, TODAY, { bedtime: '23:30', wakeTime: '07:00' })
+  // Las horas se convierten al armar el registro, y se prueban en
+  // `utils/sleep-input.test.ts`: aqui llegan resueltas porque la noche puede
+  // haber esperado sin red y salir despues (ADR-0011).
+  const INPUT = {
+    id: 'n-nueva',
+    userId: USER_ID,
+    dateKey: TODAY_KEY,
+    bedtimeIso: new Date(2026, 6, 30, 23, 30).toISOString(),
+    wakeTimeIso: new Date(2026, 6, 31, 7, 0).toISOString(),
+    minutes: 450,
+    qualityRating: null,
+  }
+
+  it('guarda la noche con el id que trae, para que reenviarla no duplique', async () => {
+    await sleepService.logSleep(INPUT)
 
     expect(insertLog).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: USER_ID, duration_minutes: 450 }),
+      expect.objectContaining({
+        id: 'n-nueva',
+        user_id: USER_ID,
+        date: '2026-07-31',
+        duration_minutes: 450,
+        bedtime: INPUT.bedtimeIso,
+        wake_time: INPUT.wakeTimeIso,
+      }),
     )
   })
 
-  it('guarda instantes, no horas sueltas: la acostada fue el día anterior', () => {
-    // Las columnas son `timestamptz`; enviar «23:30» reventaba contra la base.
-    void sleepService.logSleep(USER_ID, TODAY, { bedtime: '23:30', wakeTime: '07:00' })
-
-    return vi.waitFor(() => {
-      expect(insertLog).toHaveBeenCalledWith(
-        expect.objectContaining({
-          bedtime: new Date(2026, 6, 30, 23, 30).toISOString(),
-          wake_time: new Date(2026, 6, 31, 7, 0).toISOString(),
-        }),
-      )
-    })
-  })
-
-  it('guarda la noche con la fecha del día en que se despierta', async () => {
-    // Al abrir la aplicación por la mañana, «anoche» es el registro de hoy.
-    await sleepService.logSleep(USER_ID, TODAY, { bedtime: '23:00', wakeTime: '07:00' })
-
-    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ date: '2026-07-31' }))
-  })
-
   it('corrige la noche en lugar de duplicarla', async () => {
-    // Una noche sólo se duerme una vez: volver a la pantalla debe corregir.
+    // Una noche solo se duerme una vez: volver a la pantalla debe corregir.
     findLogByDate.mockResolvedValue(log('2026-07-31', 480))
 
-    await sleepService.logSleep(USER_ID, TODAY, { bedtime: '00:30', wakeTime: '06:30' })
+    await sleepService.logSleep(INPUT)
 
     expect(insertLog).not.toHaveBeenCalled()
     expect(updateLog).toHaveBeenCalledWith(
       'log-2026-07-31',
-      expect.objectContaining({ duration_minutes: 360 }),
+      expect.objectContaining({ duration_minutes: 450 }),
     )
   })
 
-  it('sin valoración guarda ausencia de dato, no un cero', async () => {
-    await sleepService.logSleep(USER_ID, TODAY, { bedtime: '23:00', wakeTime: '07:00' })
-
-    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ quality_rating: null }))
-  })
-
-  it('guarda la valoración cuando se da', async () => {
-    await sleepService.logSleep(USER_ID, TODAY, {
-      bedtime: '23:00',
-      wakeTime: '07:00',
-      qualityRating: 4,
-    })
+  it('guarda la valoracion cuando se da', async () => {
+    await sleepService.logSleep({ ...INPUT, qualityRating: 4 })
 
     expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ quality_rating: 4 }))
-  })
-
-  it('con horas imposibles avisa en cristiano y no guarda nada', async () => {
-    const error: unknown = await sleepService
-      .logSleep(USER_ID, TODAY, { bedtime: '99:99', wakeTime: '07:00' })
-      .catch((e) => e)
-
-    expect(error).toEqual({ code: 'validation', message: 'Revisa las horas: no son válidas.' })
-    expect(insertLog).not.toHaveBeenCalled()
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
     insertLog.mockRejectedValue(new Error('violates row-level security policy'))
 
-    const error: unknown = await sleepService
-      .logSleep(USER_ID, TODAY, { bedtime: '23:00', wakeTime: '07:00' })
-      .catch((e) => e)
+    const error: unknown = await sleepService.logSleep(INPUT).catch((e) => e)
 
     expect(isAppError(error)).toBe(true)
     expect((error as { message: string }).message).not.toContain('row-level security')

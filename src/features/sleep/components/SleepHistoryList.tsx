@@ -5,8 +5,9 @@ import { Button } from '@/shared/components/ui/button'
 import { formatMinutes } from '@/shared/utils'
 
 import { QUALITY_LABELS } from '../constants/sleep.constants'
-import { useRemoveSleepLog } from '../hooks/use-sleep'
+import { useRemoveSleepLog, useSleepGoal } from '../hooks/use-sleep'
 import type { SleepHistory } from '../types/sleep.types'
+import { compareWithGoal } from '../utils/against-goal'
 
 interface SleepHistoryListProps {
   readonly history: SleepHistory
@@ -21,16 +22,35 @@ function describeDate(dateKey: string): string {
   return label.charAt(0).toUpperCase() + label.slice(1)
 }
 
+/**
+ * Cuántas noches se están mirando.
+ *
+ * **La media tiene que decir de qué noches sale.** Son las últimas apuntadas,
+ * no las de la última semana: si se saltan noches, siete registros alcanzan
+ * hacia atrás lo que haga falta. Sin el número, esta media y la del Dashboard
+ * —que sí va por días— se leen como la misma cifra y no cuadran.
+ */
+function describeWindow(nights: number): string {
+  return nights === 1 ? 'Tu última noche' : `Tus últimas ${nights} noches`
+}
+
 /** Las últimas noches y lo que dicen en conjunto. */
 export function SleepHistoryList({ history }: SleepHistoryListProps) {
   const removeLog = useRemoveSleepLog()
+  // Misma consulta que la tarjeta del objetivo: TanStack la comparte, así que
+  // enseñar la comparación no cuesta ningún viaje extra.
+  const { data: goal } = useSleepGoal()
 
   if (history.logs.length === 0) return null
+
+  const comparison = compareWithGoal(history.averageMinutes, goal?.target_minutes ?? null)
 
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium text-muted-foreground">Últimas noches</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">
+          {describeWindow(history.logs.length)}
+        </h2>
         {history.averageMinutes === null ? null : (
           <p className="text-sm text-muted-foreground">
             Media:{' '}
@@ -41,6 +61,17 @@ export function SleepHistoryList({ history }: SleepHistoryListProps) {
           </p>
         )}
       </div>
+
+      {/* La comparación va aquí, con la media, y no junto al objetivo: éste se
+          fija una vez y vive al final de la página, a siete noches de scroll.
+          Los dos números estaban en pantalla sin cruzarse nunca. */}
+      {comparison === null ? null : (
+        <p className="text-xs text-muted-foreground">
+          {comparison.meetsGoal
+            ? `Duermes lo que te propones, ${formatMinutes(comparison.targetMinutes)}.`
+            : `Te faltan ${formatMinutes(comparison.missingMinutes)} para las ${formatMinutes(comparison.targetMinutes)} que quieres dormir.`}
+        </p>
+      )}
 
       {removeLog.isError ? <FormAlert>{removeLog.error.message}</FormAlert> : null}
 

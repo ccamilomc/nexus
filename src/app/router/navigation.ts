@@ -20,7 +20,15 @@ export interface NavItem {
   readonly label: string
   readonly description: string
   readonly Icon: LucideIcon
-  /** Los primarios ocupan la barra inferior en móvil; el resto vive en «Más». */
+  /**
+   * Los primarios ocupan la barra inferior en móvil; el resto vive en «Más».
+   *
+   * Son **cuatro y los elige el usuario**, no un criterio de diseño: los eligió
+   * él tras una semana usando la aplicación instalada en el teléfono —Hoy,
+   * Dashboard, Finanzas y Entreno—. Antes estaban Plan y Nutrición en vez de
+   * Dashboard y Finanzas. **No reordenarlos ni cambiarlos sin que lo pida**:
+   * esta barra la elige quien la usa a diario, no quien la programa.
+   */
   readonly isPrimary: boolean
 }
 
@@ -49,10 +57,20 @@ export const NAV_GROUPS: readonly NavGroup[] = [
     title: null,
     items: [
       {
-        to: ROUTES.dashboard,
+        to: ROUTES.today,
         label: 'Hoy',
         description: 'Tu resumen del día y las acciones rápidas.',
         Icon: LayoutDashboard,
+        isPrimary: true,
+      },
+      // Justo debajo de «Hoy» porque contesta la otra mitad de la misma
+      // pregunta: «Hoy» es cómo va el día y esto es cómo van las semanas. Al
+      // final de la lista, entre lo transversal, parecía una herramienta aparte.
+      {
+        to: ROUTES.dashboard,
+        label: 'Dashboard',
+        description: 'Cómo va todo: tendencias y comparativas.',
+        Icon: ChartColumn,
         isPrimary: true,
       },
       {
@@ -60,14 +78,14 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Plan',
         description: 'Tu plan del día, recalculado cuando algo cambia.',
         Icon: CalendarCheck,
-        isPrimary: true,
+        isPrimary: false,
       },
       {
         to: ROUTES.finance,
         label: 'Finanzas',
         description: 'Gastos, ingresos y en qué se va el mes.',
         Icon: Wallet,
-        isPrimary: false,
+        isPrimary: true,
       },
     ],
   },
@@ -86,7 +104,7 @@ export const NAV_GROUPS: readonly NavGroup[] = [
         label: 'Nutrición',
         description: 'Comidas, macros, agua y presupuesto.',
         Icon: UtensilsCrossed,
-        isPrimary: true,
+        isPrimary: false,
       },
       {
         to: ROUTES.sleep,
@@ -126,13 +144,6 @@ export const NAV_GROUPS: readonly NavGroup[] = [
   {
     title: null,
     items: [
-      {
-        to: ROUTES.analytics,
-        label: 'Analíticas',
-        description: 'Tendencias y comparativas de tus módulos.',
-        Icon: ChartColumn,
-        isPrimary: false,
-      },
       {
         to: ROUTES.settings,
         label: 'Ajustes',

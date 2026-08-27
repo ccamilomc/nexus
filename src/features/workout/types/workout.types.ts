@@ -53,6 +53,66 @@ export interface SessionStats {
   readonly durationMinutes: number | null
 }
 
+/**
+ * Una serie con el día en que se hizo, para mirar la historia de un ejercicio.
+ *
+ * Sólo lo que se agrega: sin el nombre del ejercicio —ya se sabe cuál es— ni las
+ * columnas que nadie suma.
+ */
+export interface ExerciseSetSample {
+  readonly reps: number | null
+  readonly weight: number | null
+  readonly is_warmup: boolean
+  readonly session: SessionSample
+}
+
+/** Una serie tal como se compara con la de otro día: sin adornos. */
+export interface PerformedSet {
+  readonly reps: number
+  readonly weightKg: number
+}
+
+/**
+ * Lo que se hizo la última vez en un ejercicio.
+ *
+ * Es la referencia con la que se decide el peso de hoy. Sale de la última sesión
+ * **en la que apareció ese ejercicio**, que no tiene por qué ser la última
+ * sesión: en una rutina por días, el press de banca no se toca desde hace tres.
+ */
+export interface LastPerformance {
+  readonly exerciseId: string
+  readonly performedAt: string
+  /** Series de trabajo, en el orden en que se hicieron. Sin calentamiento. */
+  readonly sets: readonly PerformedSet[]
+  /** La más pesada de aquel día: lo que hay que superar. */
+  readonly topSet: PerformedSet | null
+}
+
+/**
+ * Lo mejor que se ha hecho en un ejercicio, y cómo se llegó ahí.
+ *
+ * **Sin estimar nada.** Hay fórmulas para calcular un «máximo teórico a una
+ * repetición» a partir de una serie de ocho, y son eso: una fórmula. Aquí sólo
+ * hay pesos que se levantaron de verdad, con su fecha, porque un récord que la
+ * aplicación se inventó no es un récord.
+ */
+export interface ExerciseProgress {
+  readonly exerciseId: string
+  /** El peso más alto levantado, con las repeticiones y el día en que fue. */
+  readonly heaviest: { readonly set: PerformedSet; readonly performedAt: string } | null
+  /** La serie de más volumen (peso × repeticiones), que no siempre es la más pesada. */
+  readonly bestVolume: { readonly set: PerformedSet; readonly performedAt: string } | null
+  /** El mejor peso de cada entrenamiento, del más antiguo al más reciente. */
+  readonly topWeightBySession: readonly {
+    readonly performedAt: string
+    readonly weightKg: number
+  }[]
+  /** Entrenamientos en los que aparece. */
+  readonly sessionCount: number
+  /** Series de trabajo acumuladas. */
+  readonly setCount: number
+}
+
 /** Sesión con sus series agrupadas por ejercicio y su resumen. */
 export interface SessionDetail {
   readonly session: WorkoutSession
@@ -91,11 +151,33 @@ export interface WorkoutPeriodSeries {
 }
 
 /** Datos necesarios para registrar una serie. */
+/**
+ * Una serie lista para registrarse **o para esperar a que vuelva la red**.
+ *
+ * Todo resuelto y serializable, sin `Date` ni nada del closure: en el gimnasio
+ * esto puede quedarse encolado y enviarse al salir a la calle (ADR-0011).
+ */
 export interface LogSetInput {
+  /** Generado en el cliente: la pantalla ya enseñó la serie con este id. */
+  readonly id: string
+  /** No va a la base —la RLS entra por la sesión— pero sí decide de quién es. */
+  readonly userId: string
   readonly sessionId: string
   readonly exerciseId: string
   readonly reps: number
   readonly weightKg: number
+  /**
+   * Se calcula en el cliente desde las series ya apuntadas.
+   *
+   * Antes lo preguntaba a la base justo antes de insertar, y así no se puede
+   * enseñar la serie hasta que hay red: la pantalla necesita el número para
+   * pintarla como «Serie 3». Que dos dispositivos a la vez repitan número es un
+   * riesgo asumido —la columna no es única y las series se ordenan por él— y
+   * sale más barato que no poder ver lo apuntado en el gimnasio.
+   */
+  readonly setNumber: number
+  /** Cuándo se apuntó, no cuándo se llegó a enviar. */
+  readonly loggedAt: string
 }
 
 // ─── Rutinas ────────────────────────────────────────────────────────────────
@@ -116,4 +198,21 @@ export interface RoutineDayDetail {
 export interface RoutineDetail {
   readonly routine: Routine
   readonly days: readonly RoutineDayDetail[]
+}
+
+/** Un entrenamiento que siguió un día de rutina, para saber cuándo se usó. */
+export type RoutineDayUsage = Pick<WorkoutSession, 'routine_day_id' | 'started_at' | 'ended_at'>
+
+/**
+ * Una rutina con lo que hace falta para elegirla sin abrirla.
+ *
+ * La lista sólo decía el nombre, y un nombre no responde a lo que uno se
+ * pregunta al mirarla: **cuánta es y si la sigue usando**.
+ */
+export interface RoutineSummary {
+  readonly routine: Routine
+  readonly dayCount: number
+  readonly exerciseCount: number
+  /** Última vez que se entrenó siguiéndola; `null` si nunca. */
+  readonly lastUsedAt: string | null
 }

@@ -11,6 +11,7 @@ import { useState } from 'react'
 
 import type { PlanItemDomain, Priority, Recommendation } from '@/decision-engine'
 import { Card, CardContent } from '@/shared/components/ui/card'
+import { WIDE_TAP_AREA } from '@/shared/constants'
 import { cn } from '@/shared/lib/utils'
 import { prefersReducedMotion } from '@/shared/utils'
 
@@ -128,7 +129,13 @@ export function RecommendationCard({
           // botones llamados «Descartar» no le dicen nada a un lector de
           // pantalla.
           aria-label={`Descartar «${title}» hasta mañana`}
-          className="-m-1 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50"
+          // Medía 24 px de alto. El área sube a 44 sin mover la equis: es el
+          // único control de la tarjeta, así que no hay vecino al que quitarle
+          // el toque.
+          className={cn(
+            WIDE_TAP_AREA,
+            '-m-1 shrink-0 rounded p-1 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-50',
+          )}
         >
           <X className="h-4 w-4" aria-hidden />
         </button>

@@ -9,6 +9,8 @@ import { FormField } from '@/shared/components/form'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import { WIDE_TAP_AREA } from '@/shared/constants'
+import { cn } from '@/shared/lib/utils'
 
 import { useSaveHeight } from '../hooks/use-health'
 import type { Bmi } from '../types/health.types'
@@ -99,9 +101,12 @@ export function BmiCard({ bmi, heightCm, hasWeight }: BmiCardProps) {
             <p className="text-xs text-muted-foreground">
               Es una referencia general, no un diagnóstico: no distingue músculo de grasa. Calculado
               con {heightCm} cm de altura.{' '}
+              {/* Medía 16 px: el área sube a 44 sin mover el texto. Va en línea
+                  dentro del párrafo y no hay ningún otro control cerca, así que
+                  el área ampliada no le roba el toque a nadie. */}
               <button
                 type="button"
-                className="font-medium text-primary underline"
+                className={cn(WIDE_TAP_AREA, 'font-medium text-primary underline')}
                 onClick={() => setIsEditing(true)}
               >
                 Corregir

@@ -12,6 +12,8 @@ export function buildSleepSeries(
   samples: readonly SleepDaySample[],
   days: readonly Date[],
   previousDays: readonly Date[],
+  /** El objetivo vigente, para poder dibujar contra qué se compara. */
+  targetMinutes: number | null,
 ): SleepPeriodSeries {
   const minutesByDate = new Map(
     samples.map(({ date, duration_minutes }) => [date, duration_minutes]),
@@ -26,6 +28,7 @@ export function buildSleepSeries(
     averageMinutes: roundOrNull(seriesAverage(points)),
     averageQuality: averageQualityOf(samples, days),
     previousAverageMinutes: roundOrNull(seriesAverage(previousPoints)),
+    targetMinutes,
   }
 }
 

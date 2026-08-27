@@ -17,6 +17,30 @@ export const addFoodSchema = z.object({
 
 export type AddFoodValues = z.infer<typeof addFoodSchema>
 
+/**
+ * Varios alimentos con su cantidad, para apuntarlos de una vez.
+ *
+ * **Una comida son varias cosas.** Registrarlas de una en una obligaba a
+ * repetir el ciclo entero —buscar, elegir, cantidad, guardar— por cada plato;
+ * un almuerzo de cuatro cosas eran cuatro vueltas y cuatro escrituras que
+ * podían quedarse a medias.
+ */
+export const addFoodsSchema = z.object({
+  items: z
+    .array(
+      z.object({
+        foodId: z.string().min(1),
+        servings: z
+          .number('Escribe la cantidad.')
+          .positive('Debe ser mayor que cero.')
+          .max(MAX_SERVINGS, `Máximo ${MAX_SERVINGS}.`),
+      }),
+    )
+    .min(1, 'Elige al menos un alimento.'),
+})
+
+export type AddFoodsValues = z.infer<typeof addFoodsSchema>
+
 const MAX_NAME_LENGTH = 80
 const MAX_UNIT_LENGTH = 12
 const MAX_MACRO = 10_000

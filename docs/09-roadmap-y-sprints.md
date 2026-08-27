@@ -120,6 +120,13 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 - `daily_summaries` **sólo si** el rendimiento lo exige (con evidencia).
 - **DoD:** analytics con datos reales de las features, responsive y accesible.
 
+> **Se llama Dashboard desde el Sprint 17.** La feature nació como `analytics` y
+> se rediseñó entera —gráficas por forma del dato, calendario de hábitos, poder
+> retroceder periodos—; al hacerlo pasó a `features/dashboard/` y a `/dashboard`,
+> justo debajo de «Hoy», porque contesta la otra mitad de la misma pregunta: Hoy
+> es cómo va el día, el Dashboard cómo van las semanas. El nombre viejo sobrevive
+> sólo en [ADR-0006](adr/0006-analytics-agrega-en-el-cliente.md), que no se edita.
+
 > **Terminado.** Los seis dominios con sus indicadores y su gráfica. Las cifras
 > callan cuando no se sostienen: no se dibuja tendencia por debajo de tres días
 > de datos, y empezar de cero no se presenta como «un 100 % más». Cada dominio

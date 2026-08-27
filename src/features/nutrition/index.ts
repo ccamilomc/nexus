@@ -10,6 +10,9 @@ export type { NutritionSummary } from './hooks/use-nutrition-summary'
 export { useNutritionSummary } from './hooks/use-nutrition-summary'
 export type { QuickWater } from './hooks/use-quick-water'
 export { useQuickWater } from './hooks/use-quick-water'
+// Lo que nutrición deja pendiente cuando no hay red. Lo registra `app/`, que es
+// quien compone el cliente de Query (ADR-0011).
+export { registerNutritionOfflineMutations } from './offline'
 export { FoodsPage } from './pages/FoodsPage'
 export { GoalsPage } from './pages/GoalsPage'
 export { NutritionLayout } from './pages/NutritionLayout'
@@ -18,3 +21,7 @@ export type { FoodPurchase, RepricedFood } from './types/nutrition.types'
 // Las cifras de nutrición las formatea nutrición, aquí y en Analytics: dos
 // criterios distintos para los mismos pesos o calorías se notarían en pantalla.
 export { formatCalories, formatCop, formatVolumeMl } from './utils/format'
+// Los objetivos también se fijan desde la bienvenida, que necesita dejar la
+// aplicación lista sin obligar a pasar por la pantalla de nutrición.
+export { useSaveGoal } from './hooks/use-nutrition'
+export type { NutritionGoalValues } from './schemas/nutrition.schema'

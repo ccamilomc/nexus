@@ -1,7 +1,7 @@
 import { toDateKey } from '@/shared/utils'
 
 import type { FinancePeriodSeries, FinanceTransactionWithNames } from '../types/finance.types'
-import { calculateTotals } from './finance-totals'
+import { calculateByCategory, calculateTotals } from './finance-totals'
 
 /**
  * Arma la serie de finanzas de un periodo y las cifras del tramo anterior.
@@ -60,5 +60,8 @@ export function buildFinanceSeries(
     balance: totals.balance,
     fixedExpense: totals.fixedExpense,
     daysWithMovements: daysWithMovements.size,
+    // Mismo reparto que enseña el mes en Finanzas, con la misma funcion: dos
+    // criterios para «en que se fue» se notarian al comparar las dos pantallas.
+    byCategory: calculateByCategory(current),
   }
 }
