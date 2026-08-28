@@ -32,8 +32,10 @@ const FRAME_MS = 700
  * Con `prefers-reduced-motion` se queda **quieto en la primera postura**: es la
  * de inicio, la que responde «¿cómo me pongo?», que es la duda más frecuente.
  *
- * Los dibujos se piden **al abrirse**, no al pintar la lista: son 5,3 MB entre
- * todos y nadie mira setenta a la vez.
+ * Los dibujos se piden **al abrirse**, no al pintar la lista: son 26,6 MB entre
+ * todos —302 ejercicios por tres cuadros cada uno— y nadie mira setenta a la
+ * vez. La cifra de 5,3 MB que decía antes este comentario era de cuando había
+ * un solo cuadro por ejercicio.
  */
 export function ExerciseIllustration({ name }: ExerciseIllustrationProps) {
   const slug = EXERCISE_ILLUSTRATIONS[name]

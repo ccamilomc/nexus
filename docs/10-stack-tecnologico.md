@@ -18,7 +18,6 @@ dependencias.
 | **TanStack Query**      | Server state          | Cache, revalidación, offline, reintentos. **Único** canal a datos remotos. |
 | **React Hook Form**     | Formularios           | Rendimiento (no re-render por tecla) y ergonomía.                          |
 | **Zod**                 | Validación & esquemas | Fuente única de verdad de la validación; infiere tipos TS.                 |
-| **Zustand**             | Estado global de UI   | Ligero, sin boilerplate. **Sólo** estado de UI, no server state.           |
 | **Lucide React**        | Iconografía           | **Única** librería de iconos, para consistencia visual.                    |
 | **Recharts**            | Gráficas              | Declarativo sobre SVG; suficiente para el Dashboard.                       |
 
@@ -140,6 +139,13 @@ dependencia añadida se justifica en el PR que la introduce.
 
 ## Cambios de stack
 
-Cualquier sustitución (p. ej. cambiar Zustand por otra librería) requiere:
+**Zustand se retiró el 2026-08-28** sin haberse llegado a usar: era la única
+dependencia de producción que no importaba nadie, porque el estado que venía a
+llevar ya tenía dueño —TanStack Query los datos, React Hook Form los formularios,
+los contextos de `core/` la sesión y el tema, y `useState` lo de cada pantalla—.
+Ver [ADR-0013](./adr/0013-sin-zustand.md), que explica también qué haría falta
+para volver a traerla.
+
+Cualquier sustitución (p. ej. cambiar Recharts por otra librería de gráficas) requiere:
 un ADR nuevo que compare alternativas, ventajas/desventajas y coste de migración,
 **y** la aprobación explícita del usuario. Hasta entonces, el stack anterior manda.
