@@ -11,7 +11,7 @@ export interface DebtBalance {
 }
 
 /** Cuántos meses completos van de una fecha a otra. */
-function monthsBetween(fromKey: string, toKey: string): number {
+export function monthsBetween(fromKey: string, toKey: string): number {
   const [fromYear = 0, fromMonth = 0, fromDay = 0] = fromKey.split('-').map(Number)
   const [toYear = 0, toMonth = 0, toDay = 0] = toKey.split('-').map(Number)
 

@@ -5,6 +5,7 @@ import { financeRepository } from '../repositories/finance.repository'
 import type { DebtValues } from '../schemas/finance.schema'
 import type { DebtPayment, DebtWithBalance, FinanceDebt } from '../types/finance.types'
 import { calculateDebtBalance } from '../utils/debt-balance'
+import { calculateInstalments } from '../utils/debt-instalments'
 
 /** Traduce el formulario de una deuda a la fila de la base. */
 function toDebtRow(values: DebtValues) {
@@ -54,10 +55,13 @@ export const debtsService = {
 
       const todayKey = toDateKey(today)
 
-      return debts.map((debt) => ({
-        debt,
-        balance: calculateDebtBalance(debt, byDebt.get(debt.id) ?? [], todayKey),
-      }))
+      return debts.map((debt) => {
+        const balance = calculateDebtBalance(debt, byDebt.get(debt.id) ?? [], todayKey)
+
+        // Las cuotas salen del saldo, no de la base: lo que dice si vas al día
+        // es el dinero abonado, y eso ya está calculado justo aquí arriba.
+        return { debt, balance, instalments: calculateInstalments(debt, balance, todayKey) }
+      })
     } catch (error) {
       throw toAppError(error)
     }

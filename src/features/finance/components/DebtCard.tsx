@@ -8,7 +8,7 @@ import { cn } from '@/shared/lib/utils'
 import { formatCop } from '@/shared/utils'
 
 import { INTEREST_KIND_LABELS } from '../constants/finance.constants'
-import type { DebtWithBalance } from '../types/finance.types'
+import type { DebtInstalments, DebtWithBalance } from '../types/finance.types'
 
 interface DebtCardProps {
   readonly item: DebtWithBalance
@@ -72,7 +72,6 @@ export function DebtCard({
             <p className="text-xs text-muted-foreground">
               {iOwe ? 'Le debes' : 'Te debe'} · desde {formatDay(debt.started_on)}
               {debt.due_on ? ` · hasta ${formatDay(debt.due_on)}` : ''}
-              {debt.instalments ? ` · ${debt.instalments} cuotas` : ''}
             </p>
           </div>
 
@@ -158,6 +157,10 @@ export function DebtCard({
           </p>
         ) : null}
 
+        {/* Una deuda saldada no se avisa: reclamarle cuotas a algo ya cerrado
+            sólo confunde. */}
+        {item.instalments && !isSettled ? <Instalments plan={item.instalments} /> : null}
+
         {debt.note ? <p className="text-xs text-muted-foreground">{debt.note}</p> : null}
       </CardContent>
     </Card>
@@ -169,6 +172,39 @@ function Figure({ label, value }: { readonly label: string; readonly value: stri
     <div>
       <dt className="text-muted-foreground">{label}</dt>
       <dd className="font-medium tabular-nums">{value}</dd>
+    </div>
+  )
+}
+
+/**
+ * Qué significan las cuotas pactadas, hoy.
+ *
+ * **El retraso se dice en dinero antes que en cuotas**, porque es lo accionable:
+ * «vas atrasado $200.000» se puede pagar y «vas dos cuotas atrás» hay que
+ * traducirlo. La cuenta de cuotas va detrás, entre paréntesis.
+ *
+ * El aviso va en palabras además de en color, como los topes: quien no
+ * distingue el ámbar tiene que enterarse igual.
+ */
+function Instalments({ plan }: { readonly plan: DebtInstalments }) {
+  const isLate = plan.overdueAmount > 0
+
+  return (
+    <div className="space-y-0.5 text-xs">
+      <p className="text-muted-foreground">
+        {plan.total} cuotas de{' '}
+        <span className="font-medium tabular-nums">{formatCop(plan.amount)}</span> · van {plan.paid}
+      </p>
+
+      <p className={isLate ? 'text-warning' : 'text-muted-foreground'}>
+        {isLate
+          ? `Vas atrasado ${formatCop(plan.overdueAmount)} (${plan.overdueCount === 1 ? 'una cuota' : `${plan.overdueCount} cuotas`}).`
+          : plan.isComplete
+            ? 'Ya pusiste todas las cuotas.'
+            : plan.nextDueOn
+              ? `Al día. La próxima, el ${formatDay(plan.nextDueOn)}.`
+              : 'Al día.'}
+      </p>
     </div>
   )
 }
