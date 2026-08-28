@@ -8,6 +8,7 @@ export {
   toDateKeyFromIso,
 } from './date-key'
 export { type DayRange, dayRange } from './day-range'
+export { downloadTextFile } from './download'
 export { formatElapsed, formatMinutes } from './format-duration'
 export { formatCop } from './format-money'
 export { formatTime } from './format-time'
