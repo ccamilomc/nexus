@@ -24,18 +24,31 @@ export function useFinanceSummary(): FinanceSummary {
   const budgets = useBudgets(today)
 
   const totals = data?.totals
-  // Vienen ordenados de más apretado a menos, así que el primero es el que
-  // importa. Sin topes puestos no hay barra, y eso es correcto: la meta la pone
-  // el usuario, no Nexus.
-  const tightest = budgets.data?.[0]
 
-  const progress: readonly SummaryProgress[] = tightest
+  // **El presupuesto del mes manda sobre el tope más apretado.** Es el marco:
+  // «llevas 1.850.000 de 2.500.000» contesta la pregunta entera, mientras que
+  // «Mercado, 480.000 de 600.000» contesta una parte. Sin presupuesto puesto se
+  // cae al tope que va más justo, que es el único que puede cambiar lo que
+  // hagas hoy. Sin ninguno de los dos no hay barra, y eso es correcto: la meta
+  // la pone el usuario, no Nexus.
+  //
+  // Los topes vienen ordenados de más apretado a menos, así que basta el primero.
+  const monthBudget = budgets.data?.month ?? null
+  const tightest = budgets.data?.categories[0]
+
+  const headline = monthBudget
+    ? { label: 'Presupuesto del mes', spent: monthBudget.spent, cap: monthBudget.cap }
+    : tightest
+      ? { label: tightest.name, spent: tightest.spent, cap: tightest.cap }
+      : null
+
+  const progress: readonly SummaryProgress[] = headline
     ? [
         {
-          label: tightest.name,
-          value: tightest.spent,
-          target: tightest.cap,
-          display: `${formatCop(tightest.spent)} de ${formatCop(tightest.cap)}`,
+          label: headline.label,
+          value: headline.spent,
+          target: headline.cap,
+          display: `${formatCop(headline.spent)} de ${formatCop(headline.cap)}`,
         },
       ]
     : []

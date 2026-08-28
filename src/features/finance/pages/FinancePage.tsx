@@ -16,6 +16,7 @@ import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
 import { TransactionsExport } from '../components/TransactionsExport'
 import {
+  NO_BUDGETS,
   useAccounts,
   useBudgets,
   useCategories,
@@ -102,9 +103,12 @@ export function FinancePage() {
             curso y cuando no tiene nada que añadir. */}
         <MonthProjectionCard projection={projection} />
 
-        {/* Vacío fuera del mes en curso: un tope es un valor único, no un
-            histórico, y medir julio con el tope de agosto sería mentir. */}
-        <BudgetList budgets={budgets.data ?? []} monthProgress={monthProgressPercent(today)} />
+        {/* Se calla sola fuera del mes en curso: un tope es un valor único, no
+            un histórico, y medir julio con el tope de agosto sería mentir. */}
+        <BudgetList
+          overview={budgets.data ?? NO_BUDGETS}
+          monthProgress={monthProgressPercent(today)}
+        />
 
         <Card>
           <CardContent className="p-5">

@@ -17,7 +17,7 @@ import type {
 import { financeService } from '../services/finance.service'
 import type { CreateTransactionInput } from '../services/transactions.service'
 import type {
-  BudgetStatus,
+  BudgetsOverview,
   DebtWithBalance,
   FinanceAccount,
   FinanceBudget,
@@ -268,15 +268,18 @@ export function useArchiveAccount() {
   })
 }
 
-/** Cómo van los topes de un mes. Vacío si no es el mes en curso. */
+/** Lo que se enseña mientras carga o cuando no hay usuario: nada. */
+export const NO_BUDGETS: BudgetsOverview = { isCurrentMonth: false, month: null, categories: [] }
+
+/** El presupuesto del mes y los topes por categoría. Vacío fuera del mes en curso. */
 export function useBudgets(month: Date) {
   const { user } = useAuth()
   const today = useToday()
   const userId = user?.id
 
-  return useQuery<BudgetStatus[], AppError>({
+  return useQuery<BudgetsOverview, AppError>({
     queryKey: financeKeys.budgets(userId, monthKeyOf(month)),
-    queryFn: () => (userId ? financeService.getBudgets(userId, month, today) : []),
+    queryFn: () => (userId ? financeService.getBudgets(userId, month, today) : NO_BUDGETS),
   })
 }
 
@@ -314,6 +317,28 @@ export function useRemoveBudget() {
 
   return useMutation<void, AppError, string>({
     mutationFn: (budgetId) => financeService.removeBudget(budgetId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+  })
+}
+
+/** Pone o cambia el presupuesto del mes entero. */
+export function useSetMonthBudget() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation<void, AppError, number>({
+    mutationFn: (amount) => financeService.setMonthBudget(requireUserId(user?.id), amount),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
+  })
+}
+
+/** Quita el presupuesto del mes. */
+export function useRemoveMonthBudget() {
+  const { user } = useAuth()
+  const queryClient = useQueryClient()
+
+  return useMutation<void, AppError, void>({
+    mutationFn: () => financeService.removeMonthBudget(requireUserId(user?.id)),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: financeKeys.all }),
   })
 }

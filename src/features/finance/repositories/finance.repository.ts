@@ -6,6 +6,7 @@ import type {
   FinanceBudget,
   FinanceCategory,
   FinanceDebt,
+  FinanceMonthBudget,
   FinanceRecurring,
   FinanceTransaction,
   FinanceTransactionWithNames,
@@ -146,6 +147,40 @@ export const financeRepository = {
    */
   async deleteBudget(budgetId: string): Promise<void> {
     const { error } = await supabase.from('finance_budgets').delete().eq('id', budgetId)
+
+    if (error) throw error
+  },
+
+  /** El presupuesto del mes, o `null` si no se ha puesto ninguno. */
+  async getMonthBudget(userId: string): Promise<FinanceMonthBudget | null> {
+    // `maybeSingle`: no tener presupuesto es lo normal, no un error.
+    const { data, error } = await supabase
+      .from('finance_month_budgets')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle()
+
+    if (error) throw error
+    return data
+  },
+
+  /**
+   * Pone o cambia el presupuesto del mes.
+   *
+   * `upsert` sobre `user_id` a secas: hay uno por persona, y quien lo pone no
+   * tiene por qué saber si ya existía.
+   */
+  async upsertMonthBudget(input: TablesInsert<'finance_month_budgets'>): Promise<void> {
+    const { error } = await supabase
+      .from('finance_month_budgets')
+      .upsert(input, { onConflict: 'user_id' })
+
+    if (error) throw error
+  },
+
+  /** Quita el presupuesto: el mes vuelve a no tener límite. */
+  async deleteMonthBudget(userId: string): Promise<void> {
+    const { error } = await supabase.from('finance_month_budgets').delete().eq('user_id', userId)
 
     if (error) throw error
   },
