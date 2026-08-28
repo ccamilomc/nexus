@@ -11,6 +11,7 @@ import { FinanceNav } from '../components/FinanceNav'
 import { MonthPicker } from '../components/MonthPicker'
 import { MonthProjectionCard } from '../components/MonthProjectionCard'
 import { MonthTotals } from '../components/MonthTotals'
+import { TransactionFilters } from '../components/TransactionFilters'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
 import {
@@ -22,6 +23,11 @@ import {
   useMonthProjection,
 } from '../hooks/use-finance'
 import { monthProgressPercent } from '../utils/budgets'
+import {
+  filterTransactions,
+  NO_FILTERS,
+  type TransactionFilters as Filters,
+} from '../utils/filter-transactions'
 
 /** Tus finanzas del mes: qué entró, qué salió y en qué se fue. */
 export function FinancePage() {
@@ -30,6 +36,7 @@ export function FinancePage() {
   const [visibleMonth, setVisibleMonth] = useState(today)
   // Cuál se está corrigiendo. El formulario de arriba hace las dos cosas.
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   const accounts = useAccounts()
   const categories = useCategories()
   const debts = useDebts()
@@ -72,7 +79,10 @@ export function FinancePage() {
 
   // Se busca en lo que hay cargado: si el mes cambia y ya no está, la edición
   // se cae sola en vez de quedar apuntando a algo que no se ve.
-  const editing = month.data?.recent.find(({ id }) => id === editingId) ?? null
+  const todos = month.data?.transactions ?? []
+  const visibles = filterTransactions(todos, filters)
+
+  const editing = month.data?.transactions.find(({ id }) => id === editingId) ?? null
 
   return (
     <>
@@ -107,8 +117,16 @@ export function FinancePage() {
           </CardContent>
         </Card>
 
+        <TransactionFilters
+          filters={filters}
+          onChange={setFilters}
+          categories={categories.data ?? []}
+          shown={visibles.length}
+          total={todos.length}
+        />
+
         <TransactionList
-          transactions={month.data?.recent ?? []}
+          transactions={visibles}
           editingId={editingId}
           onEdit={(transaction) => {
             setEditingId(transaction.id)

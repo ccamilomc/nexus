@@ -8,7 +8,6 @@ import type {
   FinancePeriodSeries,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
-import { RECENT_LIMIT } from '../utils/add-transaction'
 import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { monthRange } from '../utils/month-range'
@@ -70,7 +69,7 @@ export const transactionsService = {
       return {
         totals: calculateTotals(transactions),
         byCategory: calculateByCategory(transactions),
-        recent: transactions.slice(0, RECENT_LIMIT),
+        transactions,
       }
     } catch (error) {
       throw toAppError(error)

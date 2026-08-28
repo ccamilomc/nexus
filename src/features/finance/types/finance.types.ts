@@ -162,5 +162,6 @@ export interface FinancePeriodSeries {
 export interface FinanceMonth {
   readonly totals: FinanceTotals
   readonly byCategory: readonly CategorySpend[]
-  readonly recent: readonly FinanceTransactionWithNames[]
+  /** Todos los del mes, del mas reciente al mas antiguo. */
+  readonly transactions: readonly FinanceTransactionWithNames[]
 }
