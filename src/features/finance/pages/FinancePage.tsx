@@ -14,6 +14,7 @@ import { MonthTotals } from '../components/MonthTotals'
 import { TransactionFilters } from '../components/TransactionFilters'
 import { TransactionForm } from '../components/TransactionForm'
 import { TransactionList } from '../components/TransactionList'
+import { TransactionsExport } from '../components/TransactionsExport'
 import {
   useAccounts,
   useBudgets,
@@ -116,14 +117,17 @@ export function FinancePage() {
             />
           </CardContent>
         </Card>
-
-        <TransactionFilters
-          filters={filters}
-          onChange={setFilters}
-          categories={categories.data ?? []}
-          shown={visibles.length}
-          total={todos.length}
-        />
+        {/* Juntos a propósito: el botón exporta justo lo que dejó el filtro. */}
+        <div className="space-y-2">
+          <TransactionFilters
+            filters={filters}
+            onChange={setFilters}
+            categories={categories.data ?? []}
+            shown={visibles.length}
+            total={todos.length}
+          />
+          <TransactionsExport transactions={visibles} month={visibleMonth} />
+        </div>
 
         <TransactionList
           transactions={visibles}
