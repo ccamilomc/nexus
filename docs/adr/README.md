@@ -26,3 +26,4 @@ decisión tomada, sus consecuencias y las alternativas descartadas.
 | [0010](./0010-la-cache-lleva-firmado-su-dueno.md)         | La caché guardada lleva firmado su dueño             | Aceptado |
 | [0011](./0011-la-cola-offline-es-la-de-tanstack-query.md) | La cola offline es la de TanStack Query              | Aceptado |
 | [0012](./0012-un-solo-tema.md)                            | Nexus tiene un solo tema, y es oscuro                | Aceptado |
+| [0013](./0013-sin-zustand.md)                             | El estado global de UI no hace falta, y Zustand sale | Aceptado |
