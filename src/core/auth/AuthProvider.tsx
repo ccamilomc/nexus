@@ -78,6 +78,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   }, [])
 
+  const requestSignInLink = useCallback(
+    (email: string, redirectTo: string) => authService.requestSignInLink(email, redirectTo),
+    [],
+  )
+
   const requestPasswordReset = useCallback(
     (email: string, redirectTo: string) => authService.requestPasswordReset(email, redirectTo),
     [],
@@ -91,10 +96,11 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signIn: authService.signIn,
       signUp: authService.signUp,
       signOut: authService.signOut,
+      requestSignInLink,
       requestPasswordReset,
       updatePassword: authService.updatePassword,
     }),
-    [status, session, requestPasswordReset],
+    [status, session, requestPasswordReset, requestSignInLink],
   )
 
   return <AuthContext value={value}>{children}</AuthContext>
