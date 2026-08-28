@@ -2,7 +2,7 @@ import { Check, X } from 'lucide-react'
 import { useState } from 'react'
 
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
+import { MoneyInput } from '@/shared/components/ui/money-input'
 
 interface CapFieldProps {
   /** Qué límite se está poniendo. Va al lector de pantalla. */
@@ -40,7 +40,8 @@ export function CapField({
   onRemove,
 }: CapFieldProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [draft, setDraft] = useState('')
+  // La cifra, no el texto: el campo de dinero ya se encarga de cómo se ve.
+  const [draft, setDraft] = useState(Number.NaN)
 
   if (!isEditing) {
     return (
@@ -50,7 +51,7 @@ export function CapField({
         size="sm"
         className="shrink-0 text-muted-foreground"
         onClick={() => {
-          setDraft(current === null ? '' : String(current))
+          setDraft(current ?? Number.NaN)
           setIsEditing(true)
         }}
       >
@@ -59,8 +60,7 @@ export function CapField({
     )
   }
 
-  const amount = Number(draft)
-  const canSave = draft !== '' && Number.isFinite(amount) && amount > 0
+  const canSave = Number.isFinite(draft) && draft > 0
 
   // El fallo lo cuenta quien dispara la operación, así que aquí sólo hace falta
   // no cerrar la edición: cerrarla dejaría el aviso apuntando a nada.
@@ -75,16 +75,12 @@ export function CapField({
 
   return (
     <div className="flex shrink-0 flex-wrap items-center gap-1">
-      <Input
-        type="number"
-        inputMode="numeric"
-        step={1}
-        min={1}
+      <MoneyInput
         value={draft}
-        autoFocus
         aria-label={label}
+        autoFocus
         className="h-9 w-32"
-        onChange={(event) => setDraft(event.target.value)}
+        onChange={setDraft}
       />
 
       <Button
@@ -92,7 +88,7 @@ export function CapField({
         size="icon"
         disabled={!canSave || isBusy}
         aria-label={`Guardar ${label.toLowerCase()}`}
-        onClick={() => void run(() => onSave(amount))}
+        onClick={() => void run(() => onSave(draft))}
       >
         <Check aria-hidden />
       </Button>

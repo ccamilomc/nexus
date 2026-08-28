@@ -3,8 +3,8 @@ import type { Control, UseFormRegister } from 'react-hook-form'
 import { useFieldArray } from 'react-hook-form'
 
 import { Button } from '@/shared/components/ui/button'
-import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyField } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 import { cn } from '@/shared/lib/utils'
 import { formatCop } from '@/shared/utils'
@@ -78,13 +78,10 @@ export function TransactionSplits({
 
           <div className="w-32 shrink-0">
             <Label htmlFor={`split-amount-${index}`}>Cuánto</Label>
-            <Input
+            <MoneyField
+              control={control}
+              name={`splits.${index}.amount`}
               id={`split-amount-${index}`}
-              type="number"
-              inputMode="numeric"
-              step={1}
-              min={1}
-              {...register(`splits.${index}.amount`, { valueAsNumber: true })}
             />
           </div>
 

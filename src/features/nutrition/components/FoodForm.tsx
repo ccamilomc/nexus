@@ -6,6 +6,7 @@ import { FormField } from '@/shared/components/form'
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
 import { Input } from '@/shared/components/ui/input'
+import { MoneyField } from '@/shared/components/ui/money-input'
 
 import { useCreateFood, useUpdateFood } from '../hooks/use-nutrition'
 import { createFoodSchema, type CreateFoodValues } from '../schemas/nutrition.schema'
@@ -39,10 +40,6 @@ interface FoodFormProps {
 }
 
 /** Vacío se guarda como «sin dato»: convierte '' en undefined. */
-function optionalNumber(value: string): number | undefined {
-  return value === '' ? undefined : Number(value)
-}
-
 function toFormValues(food: Food): CreateFoodValues {
   return {
     name: food.name,
@@ -76,6 +73,7 @@ export function FoodForm({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<CreateFoodValues>({
@@ -223,16 +221,13 @@ export function FoodForm({
             label="Precio por porción (COP, opcional)"
             error={errors.costPerServing?.message}
           >
-            <Input
+            <MoneyField
+              control={control}
+              name="costPerServing"
               id="food-cost"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              // El peso colombiano no tiene centavos: se avanza de 100 en 100.
-              step={100}
               placeholder="Ej. 12000"
               aria-invalid={Boolean(errors.costPerServing)}
-              {...register('costPerServing', { setValueAs: optionalNumber })}
+              optional
             />
           </FormField>
 

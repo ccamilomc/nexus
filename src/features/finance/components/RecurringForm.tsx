@@ -8,6 +8,7 @@ import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyField } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 import { toDateKey } from '@/shared/utils'
 
@@ -55,6 +56,7 @@ export function RecurringForm({
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     reset,
@@ -131,14 +133,7 @@ export function RecurringForm({
 
         <div>
           <Label htmlFor="recurring-amount">Monto</Label>
-          <Input
-            id="recurring-amount"
-            type="number"
-            inputMode="numeric"
-            step={1}
-            placeholder="120000"
-            {...register('amount', { valueAsNumber: true })}
-          />
+          <MoneyField control={control} name="amount" id="recurring-amount" placeholder="120000" />
           {errors.amount ? <FormAlert>{errors.amount.message}</FormAlert> : null}
         </div>
       </div>

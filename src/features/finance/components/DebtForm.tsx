@@ -8,6 +8,7 @@ import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyField } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 import { toDateKey } from '@/shared/utils'
 
@@ -53,6 +54,7 @@ export function DebtForm({ editing = null, onFinishEditing }: DebtFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -158,13 +160,11 @@ export function DebtForm({ editing = null, onFinishEditing }: DebtFormProps) {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="debt-principal">Monto</Label>
-          <Input
+          <MoneyField
+            control={control}
+            name="principal"
             id="debt-principal"
-            type="number"
-            inputMode="numeric"
-            step={1}
             placeholder="1000000"
-            {...register('principal', { valueAsNumber: true })}
           />
           {errors.principal ? <FormAlert>{errors.principal.message}</FormAlert> : null}
         </div>
