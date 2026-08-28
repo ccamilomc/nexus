@@ -89,8 +89,14 @@ export function ExerciseList({
                     <ExerciseSummary exercise={exercise} />
 
                     {/* Antes de «Tus marcas»: quien abre un ejercicio que no
-                        conoce quiere ver cómo se hace, no cuánto levantó. */}
-                    {EXERCISE_ILLUSTRATIONS[exercise.name] ? (
+                        conoce quiere ver cómo se hace, no cuánto levantó.
+
+                        Se abre con el dibujo **o** con el texto: uno explica la
+                        postura y el otro los fallos, y hay ejercicios que sólo
+                        tienen uno de los dos. Mientras la condición miraba sólo
+                        el dibujo, un ejercicio con instrucciones escritas no
+                        tenía dónde enseñarlas. */}
+                    {EXERCISE_ILLUSTRATIONS[exercise.name] || exercise.instructions ? (
                       <details className="group mt-2">
                         <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded text-xs font-medium text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                           <ChevronRight
@@ -99,8 +105,18 @@ export function ExerciseList({
                           />
                           Cómo se hace
                         </summary>
-                        <div className="mt-2">
-                          <ExerciseIllustration name={exercise.name} />
+                        <div className="mt-2 space-y-2">
+                          {EXERCISE_ILLUSTRATIONS[exercise.name] ? (
+                            <ExerciseIllustration name={exercise.name} />
+                          ) : null}
+                          {/* `whitespace-pre-line` porque el texto viene con sus
+                              saltos: primero cómo se hace y después el fallo
+                              típico, que leídos de corrido se pierden. */}
+                          {exercise.instructions ? (
+                            <p className="whitespace-pre-line text-sm leading-relaxed text-muted-foreground">
+                              {exercise.instructions}
+                            </p>
+                          ) : null}
                         </div>
                       </details>
                     ) : null}
