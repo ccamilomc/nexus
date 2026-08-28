@@ -64,8 +64,10 @@ describe('buildWorkoutSeries', () => {
     const series = buildWorkoutSeries(sessions, sets, DAYS, [])
 
     expect(series.totalVolumeKg).toBe(500)
-    // Las series descartadas siguen contando como series hechas.
-    expect(series.setCount).toBe(3)
+    // Antes contaban como series hechas. Se cambió al poder marcar el
+    // calentamiento: el KPI «Series» del panel iba a decir una cosa y el
+    // volumen de al lado otra.
+    expect(series.setCount).toBe(1)
   })
 
   it('suma dos entrenamientos del mismo día en un solo punto', () => {

@@ -223,7 +223,7 @@ describe('addSetToSession', () => {
       BENCH,
     )
 
-    // `setCount` sí lo cuenta —son series apuntadas— pero el volumen no.
-    expect(actual.stats).toMatchObject({ setCount: 2, totalVolumeKg: 500 })
+    // Ni en el volumen ni en la cuenta de series: son la misma definición.
+    expect(actual.stats).toMatchObject({ setCount: 1, totalVolumeKg: 500 })
   })
 })
