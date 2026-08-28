@@ -96,6 +96,8 @@ const input: LogSetInput = {
   reps: 8,
   weightKg: 60,
   setNumber: 2,
+  isWarmup: false,
+  rpe: null,
   loggedAt: '2026-08-15T10:05:00.000Z',
 }
 
@@ -198,5 +200,30 @@ describe('addSetToSession', () => {
     addSetToSession(original, input, BENCH)
 
     expect(original.exercises[0]?.sets).toHaveLength(1)
+  })
+
+  it('lleva el calentamiento y el esfuerzo tal y como se apuntaron', () => {
+    // Antes iban clavados a `false` y `null` aquí, así que la serie se veía sin
+    // ellos hasta que volvía del servidor: en el gimnasio, sin señal, nunca.
+    const actual = addSetToSession(
+      session([{ exercise: BENCH, sets: [] }]),
+      { ...input, isWarmup: true, rpe: 8 },
+      BENCH,
+    )
+
+    expect(actual.exercises[0]?.sets[0]).toMatchObject({ is_warmup: true, rpe: 8 })
+  })
+
+  it('un calentamiento apuntado sin red tampoco infla el volumen', () => {
+    // La cifra que se enseña por adelantado tiene que salir igual que la que
+    // devolverá el servidor; si no, el volumen bajaría solo al sincronizar.
+    const actual = addSetToSession(
+      session([{ exercise: BENCH, sets: [set('a', 1)] }]),
+      { ...input, isWarmup: true },
+      BENCH,
+    )
+
+    // Ni en el volumen ni en la cuenta de series: son la misma definición.
+    expect(actual.stats).toMatchObject({ setCount: 1, totalVolumeKg: 500 })
   })
 })

@@ -49,13 +49,31 @@ export function groupSetsByExercise(
 export type VolumeSet = Pick<WorkoutSet, 'reps' | 'weight' | 'is_warmup' | 'completed'>
 
 /**
- * Volumen de una serie: repeticiones × peso.
+ * Si una serie cuenta como trabajo.
  *
- * Las series de calentamiento y las no completadas no suman: no representan
- * trabajo efectivo y distorsionarían la comparación entre entrenamientos.
+ * **Es la definición de la que cuelgan el volumen y el número de series**, y por
+ * eso vive en un solo sitio: mientras el volumen descartaba los calentamientos y
+ * la cuenta de series los sumaba, la misma tarjeta podía decir «Series 3» encima
+ * de una lista con dos, y eso es lo que hace desconfiar de las cifras.
  */
+function isWorkingSet(set: VolumeSet): boolean {
+  return !set.is_warmup && set.completed
+}
+
+/**
+ * Cuántas series de trabajo hay.
+ *
+ * Los calentamientos no cuentan, igual que no cuentan para el volumen. Para
+ * saber si se ha apuntado *algo* —lo que hace falta para poder cerrar el
+ * entrenamiento— está `hasAnySet`.
+ */
+export function countWorkingSets(sets: readonly VolumeSet[]): number {
+  return sets.filter(isWorkingSet).length
+}
+
+/** Volumen de una serie: repeticiones × peso, si cuenta como trabajo. */
 function setVolume(set: VolumeSet): number {
-  if (set.is_warmup || !set.completed) return 0
+  if (!isWorkingSet(set)) return 0
   return (set.reps ?? 0) * (set.weight ?? 0)
 }
 
@@ -82,10 +100,22 @@ export function calculateSessionStats(
 
   return {
     exerciseCount: exercises.length,
-    setCount: allSets.length,
+    setCount: countWorkingSets(allSets),
     totalVolumeKg: sumVolume(allSets),
     durationMinutes: sessionDurationMinutes(session),
   }
+}
+
+/**
+ * Si el entrenamiento tiene algo apuntado, aunque sólo sean calentamientos.
+ *
+ * **No es lo mismo que `setCount > 0`**, y por eso existe: quien sólo llegó a
+ * calentar tiene cero series de trabajo, pero apuntó algo y tiene que poder
+ * cerrar la sesión. Antes las dos preguntas se contestaban con la misma cifra
+ * porque nadie podía marcar un calentamiento.
+ */
+export function hasAnySet(exercises: readonly SessionExercise[]): boolean {
+  return exercises.some(({ sets }) => sets.length > 0)
 }
 
 /** Duración en minutos entre el inicio y el fin; `null` si sigue en curso. */

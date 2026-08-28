@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
+import { useProfile } from '@/features/profile'
 import { Button } from '@/shared/components/ui/button'
 
 import { StepBody } from '../components/StepBody'
@@ -17,18 +18,27 @@ import { useOnboarding } from '../hooks/use-onboarding'
  * motivo que las pantallas de acceso: aquí no hay a dónde navegar todavía, y
  * ofrecer once destinos a quien aún no sabe qué es Nexus es justo el problema
  * que esta pantalla viene a resolver.
+ *
+ * Por eso mismo los márgenes suman el área segura: al estar fuera del cascarón,
+ * no hay nadie que aparte el «Paso 1 de 4» de la hora del teléfono ni el botón
+ * «Atrás» de la barra de gestos.
  */
 export function OnboardingPage() {
   const navigate = useNavigate()
   const onboarding = useOnboarding()
+  const { data: profile } = useProfile()
   const { step, stepNumber, stepCount, draft, suggestion, isSaving } = onboarding
+
+  // El nombre sale del perfil, no de un campo: se dio al registrarse y volver a
+  // pedirlo aquí hacía sentir que la aplicación no escucha.
+  const nombre = profile?.display_name?.trim() || null
 
   const leave = () => {
     void onboarding.finish(null).then(() => navigate(ROUTES.today))
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-4 py-8">
+    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col gap-6 px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] pt-[calc(2rem+env(safe-area-inset-top))]">
       <div className="flex items-center justify-between gap-3">
         {/* Cuántas van y cuántas quedan: sin esto, cada pantalla parece la
             antesala de otras diez y da ganas de cerrar. */}
@@ -43,13 +53,7 @@ export function OnboardingPage() {
       </div>
 
       <div className="flex-1">
-        {step === 'welcome' ? (
-          <StepWelcome
-            name={draft.displayName}
-            onNameChange={onboarding.setName}
-            onNext={onboarding.next}
-          />
-        ) : null}
+        {step === 'welcome' ? <StepWelcome name={nombre} onNext={onboarding.next} /> : null}
 
         {step === 'modules' ? (
           <StepModules
@@ -84,11 +88,11 @@ export function OnboardingPage() {
 
         {step === 'done' ? (
           <StepDone
-            name={draft.displayName}
+            name={nombre ?? ''}
             tracked={draft.tracked}
             isSaving={isSaving}
-            onFinish={() => {
-              void onboarding.finish(null)
+            onGo={(to) => {
+              void onboarding.finish(null).then(() => navigate(to))
             }}
           />
         ) : null}

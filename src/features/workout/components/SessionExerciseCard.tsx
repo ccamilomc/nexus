@@ -10,6 +10,7 @@ import { useRemoveSet } from '../hooks/use-workout-sets'
 import type { LogSetValues } from '../schemas/workout.schema'
 import type { ExerciseRef, LastPerformance, WorkoutSet } from '../types/workout.types'
 import { formatPerformedSets, formatSessionDate, formatWeight } from '../utils/format'
+import { describeSets } from '../utils/set-list'
 import { LogSetForm } from './LogSetForm'
 
 interface SessionExerciseCardProps {
@@ -99,14 +100,19 @@ export function SessionExerciseCard({
 
         {sets.length > 0 ? (
           <ol className="space-y-1.5">
-            {sets.map((set, index) => (
+            {describeSets(sets).map(({ set, label, effort }) => (
               <li
                 key={set.id}
                 className="flex items-center justify-between gap-2 rounded-md bg-muted/50 py-1.5 pl-3 pr-1.5 text-sm"
               >
-                <span className="text-muted-foreground">Serie {index + 1}</span>
-                <span className="flex-1 text-right tabular-nums">
-                  {set.reps} reps · {formatWeight(set.weight)}
+                <span className="text-muted-foreground">{label}</span>
+                <span className="flex-1 text-right">
+                  <span className="tabular-nums">
+                    {set.reps} reps · {formatWeight(set.weight)}
+                  </span>
+                  {/* El esfuerzo va detrás y apagado: es un apunte, no el dato
+                      de la serie, y casi siempre falta. */}
+                  {effort ? <span className="text-muted-foreground"> · {effort}</span> : null}
                 </span>
                 <Button
                   type="button"
@@ -114,7 +120,7 @@ export function SessionExerciseCard({
                   size="iconSm"
                   className="text-muted-foreground hover:text-destructive"
                   disabled={removeSet.isPending}
-                  aria-label={`Eliminar la serie ${index + 1} de ${exercise.name}`}
+                  aria-label={`Eliminar ${label.toLowerCase()} de ${exercise.name}`}
                   onClick={() => removeSet.mutate(set.id)}
                 >
                   <Trash2 aria-hidden />

@@ -6,6 +6,7 @@ import { workoutRepository } from '../repositories/workout.repository'
 import type {
   Exercise,
   ExerciseRef,
+  LogSetInput,
   RoutineDay,
   RoutineExerciseWithExercise,
   WorkoutSession,
@@ -346,6 +347,8 @@ describe('workoutService.logSet', () => {
       reps: 8,
       weightKg: 62.5,
       setNumber: 3,
+      isWarmup: false,
+      rpe: null,
       loggedAt: '2026-08-15T10:00:00.000Z',
     })
 
@@ -356,7 +359,52 @@ describe('workoutService.logSet', () => {
       set_number: 3,
       reps: 8,
       weight: 62.5,
+      is_warmup: false,
+      rpe: null,
     })
+  })
+
+  it('guarda el calentamiento y el esfuerzo cuando se anotan', async () => {
+    insertSet.mockResolvedValue(SAVED_SET)
+
+    await workoutService.logSet({
+      id: 'set-nuevo',
+      userId: 'u1',
+      sessionId: 's1',
+      exerciseId: BENCH.id,
+      reps: 5,
+      weightKg: 80,
+      setNumber: 4,
+      isWarmup: true,
+      rpe: 9,
+      loggedAt: '2026-08-15T10:00:00.000Z',
+    })
+
+    expect(insertSet).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ is_warmup: true, rpe: 9 }),
+    )
+  })
+
+  it('una serie que se quedó en la cola con la versión anterior sigue entrando', async () => {
+    // Sus variables se guardaron sin `isWarmup` ni `rpe`, y al volver la red se
+    // envían con este código. Sin los `??` del servicio entraría `undefined`.
+    insertSet.mockResolvedValue(SAVED_SET)
+    const antigua = {
+      id: 'set-viejo',
+      userId: 'u1',
+      sessionId: 's1',
+      exerciseId: BENCH.id,
+      reps: 8,
+      weightKg: 60,
+      setNumber: 1,
+      loggedAt: '2026-08-15T10:00:00.000Z',
+    } as LogSetInput
+
+    await workoutService.logSet(antigua)
+
+    expect(insertSet).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ is_warmup: false, rpe: null }),
+    )
   })
 
   it('ya no pregunta a la base por el último número: lo trae resuelto', async () => {
@@ -370,6 +418,8 @@ describe('workoutService.logSet', () => {
       reps: 10,
       weightKg: 40,
       setNumber: 1,
+      isWarmup: false,
+      rpe: null,
       loggedAt: '2026-08-15T10:00:00.000Z',
     })
 

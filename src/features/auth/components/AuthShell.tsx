@@ -1,4 +1,3 @@
-import { Sparkles } from 'lucide-react'
 import type { PropsWithChildren, ReactNode } from 'react'
 
 interface AuthShellProps extends PropsWithChildren {
@@ -7,24 +6,56 @@ interface AuthShellProps extends PropsWithChildren {
   readonly footer?: ReactNode
 }
 
-/** Marco visual compartido por todas las pantallas de autenticación. */
+/**
+ * Marco visual compartido por las pantallas de acceso.
+ *
+ * **La marca, no un adorno.** Aquí hubo un cuadrado con unas chispas que no
+ * decía nada y hacía que la aplicación pareciera otra cosa; se quitó. Lo que
+ * hay ahora es el icono de verdad —el mismo que el usuario tocó para abrir— al
+ * lado del nombre: quien llega necesita reconocer en un segundo que está en
+ * Nexus y no en otra pestaña.
+ *
+ * **El icono se lee de `/favicon.svg`, no se redibuja aquí.** El nudo ya vive
+ * en ese archivo; copiarlo a un componente daría una cuarta copia que se iría
+ * quedando vieja. Además el service worker ya lo precachea, así que esta
+ * pantalla también se ve sin señal.
+ *
+ * El fondo redondeado del icono es del mismo negro que `bg-background` a
+ * propósito (está escrito en `docs/13`), así que aquí se funde y sólo se ve el
+ * nudo.
+ *
+ * Todo va alineado a la izquierda y no centrado, como el resto de la
+ * aplicación: todas las pantallas empiezan por el borde izquierdo, y una
+ * centrada se sentía de otro sitio.
+ *
+ * **Los márgenes de arriba y de abajo suman el área segura.** La página llega
+ * hasta los bordes de la pantalla (`viewport-fit=cover` en el `index.html`), así
+ * que el contenido tiene que apartarse solo de donde el teléfono pinta la hora y
+ * la barra de gestos. Aquí no hay barra inferior que lo haga por su cuenta, como
+ * sí ocurre dentro de la aplicación.
+ */
 export function AuthShell({ title, subtitle, footer, children }: AuthShellProps) {
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-background px-4 py-10 text-foreground">
-      <div className="w-full max-w-sm">
-        <div className="mb-6 flex flex-col items-center gap-2 text-center">
-          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
-            <Sparkles className="h-6 w-6" aria-hidden />
-          </span>
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
-          {subtitle ? <p className="text-sm text-muted-foreground">{subtitle}</p> : null}
+    <main className="flex min-h-dvh flex-col justify-center bg-background px-4 pb-[calc(2.5rem+env(safe-area-inset-bottom))] pt-[calc(2.5rem+env(safe-area-inset-top))] text-foreground">
+      <div className="mx-auto w-full max-w-sm">
+        <div className="mb-8 space-y-3">
+          <div className="flex items-center gap-2.5">
+            {/* Decorativo: el nombre va justo al lado, así que un texto
+                alternativo sólo repetiría «Nexus» al lector de pantalla. */}
+            <img src="/favicon.svg" alt="" width={36} height={36} className="shrink-0" />
+            <p className="text-sm font-semibold uppercase tracking-[0.2em]">
+              NE<span className="text-primary">X</span>US
+            </p>
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+            {subtitle ? <p className="text-muted-foreground">{subtitle}</p> : null}
+          </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-card p-6 shadow-sm">{children}</div>
+        {children}
 
-        {footer ? (
-          <div className="mt-4 text-center text-sm text-muted-foreground">{footer}</div>
-        ) : null}
+        {footer ? <div className="mt-6 text-sm text-muted-foreground">{footer}</div> : null}
       </div>
     </main>
   )

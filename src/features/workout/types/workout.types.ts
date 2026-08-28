@@ -176,6 +176,20 @@ export interface LogSetInput {
    * sale más barato que no poder ver lo apuntado en el gimnasio.
    */
   readonly setNumber: number
+  /**
+   * Si la serie fue de calentamiento.
+   *
+   * Las cuentas ya la descartaban del volumen y del progreso desde el primer
+   * día; lo que faltaba era poder decirlo.
+   */
+  readonly isWarmup: boolean
+  /**
+   * Cuánto costó, en la escala RPE (0–10), o `null` si no se contestó.
+   *
+   * La pantalla pregunta en repeticiones en reserva y convierte; el porqué está
+   * en `utils/effort.ts`.
+   */
+  readonly rpe: number | null
   /** Cuándo se apuntó, no cuándo se llegó a enviar. */
   readonly loggedAt: string
 }

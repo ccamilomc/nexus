@@ -17,6 +17,8 @@ export interface AuthContextValue {
   user: User | null
   signIn: (credentials: Credentials) => Promise<void>
   signUp: (input: RegisterInput) => Promise<{ needsConfirmation: boolean }>
+  /** Manda un enlace al correo para entrar sin contrasena. */
+  requestSignInLink: (email: string, redirectTo: string) => Promise<void>
   signOut: () => Promise<void>
   requestPasswordReset: (email: string, redirectTo: string) => Promise<void>
   updatePassword: (password: string) => Promise<void>

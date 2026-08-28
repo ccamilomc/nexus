@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 
 import { useAuth } from '@/core/auth'
@@ -14,13 +15,11 @@ import { type StepId, stepsFor } from '../utils/steps'
 
 /** Lo que se va recogiendo mientras se avanza. */
 interface Draft {
-  readonly displayName: string
   readonly tracked: readonly TrackableId[]
   readonly body: BodyValues | null
 }
 
 const EMPTY: Draft = {
-  displayName: '',
   tracked: [],
   body: null,
 }
@@ -35,6 +34,7 @@ const EMPTY: Draft = {
  */
 export function useOnboarding() {
   const { user } = useAuth()
+  const client = useQueryClient()
   const today = useToday()
   const { data: profile } = useProfile()
   const saveNutritionGoal = useSaveGoal()
@@ -64,7 +64,6 @@ export function useOnboarding() {
   const next = useCallback(() => setIndex((current) => current + 1), [])
   const back = useCallback(() => setIndex((current) => Math.max(0, current - 1)), [])
 
-  const setName = useCallback((displayName: string) => setDraft((d) => ({ ...d, displayName })), [])
   /**
    * Marca o desmarca un modulo.
    *
@@ -85,12 +84,23 @@ export function useOnboarding() {
   const setBody = useCallback((body: BodyValues) => setDraft((d) => ({ ...d, body })), [])
 
   /**
-   * Guarda todo de una vez y deja anotado que ya pasó por aquí.
+   * Guarda todo de una vez, deja anotado que ya pasó por aquí y **espera**.
    *
    * El perfil se marca como completado **aunque no se haya llenado nada**: quien
    * se salta la bienvenida está diciendo que no la quiere, y volver a
    * enseñársela cada vez que entra sería no escucharle. Todo lo que se pregunta
    * aquí se puede poner después en su propia pantalla.
+   *
+   * **Devuelve una promesa y quien navegue tiene que esperarla.** Salir antes de
+   * que termine dejaba al guardia leyendo un perfil sin completar y devolvía a
+   * la bienvenida, que además arrancaba de cero: se veía como que el botón «Ir a
+   * Hoy» no hacía nada.
+   *
+   * Al final **se refresca todo lo consultado**, no sólo el perfil. Lo que se
+   * escribe aquí lo leen después varias pantallas —la estatura en Salud, las
+   * calorías en Nutrición, el objetivo en Sueño— y guardar sin avisar a la caché
+   * dejaba a esas pantallas enseñando lo de antes: la estatura simplemente no
+   * aparecía, y parecía que no se había guardado.
    */
   const finish = useCallback(
     async (goals: GoalsValues | null) => {
@@ -99,7 +109,6 @@ export function useOnboarding() {
       setIsSaving(true)
       try {
         await profileService.save(user.id, {
-          ...(draft.displayName.trim() && { displayName: draft.displayName.trim() }),
           ...(draft.body && {
             heightCm: draft.body.heightCm,
             birthDate: draft.body.birthDate,
@@ -118,11 +127,12 @@ export function useOnboarding() {
         }
 
         await profileService.completeOnboarding(user.id)
+        await client.invalidateQueries()
       } finally {
         setIsSaving(false)
       }
     },
-    [draft, saveNutritionGoal, saveSleepGoal, user?.id],
+    [client, draft, saveNutritionGoal, saveSleepGoal, user?.id],
   )
 
   return {
@@ -134,7 +144,6 @@ export function useOnboarding() {
     isSaving,
     next,
     back,
-    setName,
     toggleTracked,
     setBody,
     finish,
