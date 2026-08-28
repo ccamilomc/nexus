@@ -1,13 +1,50 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!--
     Variante «maskable» del icono: Android la recorta con la forma que decida el
     lanzador (círculo, cuadrado redondeado…). Dos diferencias con el favicon:
 
     1. El fondo va **a sangre**, sin esquinas redondeadas. Las pone la máscara;
        si las trajera el icono se verían dos redondeos, uno dentro de otro.
-    2. La N se queda dentro de la **zona segura** (el 80 % central). Va de 10 a
-       22 sobre 32, o sea del 31 % al 69 %: sobrevive a cualquier recorte.
+    2. El nudo va al 72 % y no al 82 %, para quedarse dentro de la **zona
+       segura** (el 80 % central). Su radio queda en 20 sobre un lienzo de 64,
+       o sea el 62 % del ancho: sobrevive a cualquier recorte.
+
+    El dibujo es el mismo de `favicon.svg` y ahí está explicado. Se repite
+    entero porque un icono tiene que ser un archivo que se abra solo, sin
+    depender de otro.
   -->
-  <rect width="32" height="32" fill="#09090b" />
-  <path d="M10 22V10h2.2l7.6 8.2V10H22v12h-2.2L12.2 13.8V22H10Z" fill="#fafafa" />
+  <defs>
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#a78bfa" />
+      <stop offset="1" stop-color="#7c5cf0" />
+    </linearGradient>
+    <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#2f6fe0" />
+    </linearGradient>
+    <linearGradient id="c" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#67e8f9" />
+      <stop offset="1" stop-color="#12b8d4" />
+    </linearGradient>
+    <clipPath id="over1"><circle cx="45.95" cy="26.26" r="6.4" /></clipPath>
+    <clipPath id="over2"><circle cx="26.05" cy="37.74" r="6.4" /></clipPath>
+  </defs>
+
+  <rect width="64" height="64" fill="#0B0A0F" />
+
+  <g transform="translate(32 32) scale(0.72) translate(-32 -32)" fill="none" stroke-width="6.5">
+    <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    <circle cx="24" cy="38.93" r="14" stroke="#0B0A0F" stroke-width="11" />
+    <circle cx="24" cy="38.93" r="14" stroke="url(#b)" />
+    <circle cx="40" cy="38.93" r="14" stroke="#0B0A0F" stroke-width="11" />
+    <circle cx="40" cy="38.93" r="14" stroke="url(#c)" />
+    <g clip-path="url(#over1)">
+      <circle cx="32" cy="25.07" r="14" stroke="#0B0A0F" stroke-width="11" />
+      <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    </g>
+    <g clip-path="url(#over2)">
+      <circle cx="32" cy="25.07" r="14" stroke="#0B0A0F" stroke-width="11" />
+      <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    </g>
+  </g>
 </svg>

@@ -24,7 +24,22 @@ export function AppShell() {
       <Sidebar />
 
       <div className="lg:pl-64">
-        <main id="contenido" className="mx-auto w-full max-w-5xl px-4 pb-28 pt-8 lg:pb-12">
+        {/*
+          El `pt` suma el área segura de arriba.
+
+          El `viewport-fit=cover` del `index.html` hace que la página ocupe la
+          pantalla entera, **incluido el trozo donde el teléfono pinta la hora y
+          la batería**. Eso es lo que se quiere —así el fondo llega hasta el
+          borde en vez de dejar una banda— pero entonces el contenido tiene que
+          apartarse solo. Sin esta suma, el saludo quedaba pegado al reloj.
+
+          En escritorio `env(safe-area-inset-top)` vale cero y quedan los 2rem
+          de siempre. Es el mismo recurso que ya usaba `BottomNav` abajo.
+        */}
+        <main
+          id="contenido"
+          className="mx-auto w-full max-w-5xl px-4 pb-28 pt-[calc(2rem+env(safe-area-inset-top))] lg:pb-12"
+        >
           {env.authDisabled ? (
             <div className="mb-4 rounded-md bg-warning/15 px-3 py-2 text-center text-xs font-medium text-warning">
               Modo desarrollo · login desactivado (VITE_AUTH_DISABLED)

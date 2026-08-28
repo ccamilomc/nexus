@@ -1,7 +1,58 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="8" fill="#09090b" />
-  <path
-    d="M10 22V10h2.2l7.6 8.2V10H22v12h-2.2L12.2 13.8V22H10Z"
-    fill="#fafafa"
-  />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    El nudo de Nexus: tres anillos entrelazados.
+
+    Ninguno de los tres sujeta a los otros dos por sí solo; sólo se sostienen
+    juntos. Es lo que hace la aplicación —entreno, comida y hábitos aguantan
+    como conjunto— y es también lo que significa la palabra «nexus».
+
+    Dos decisiones que conviene no deshacer sin querer:
+
+    1. **El cruce se dibuja con un hueco, no con una sombra.** Cada anillo se
+       pinta dos veces: primero un trazo del color del fondo y más gordo (el
+       `stroke-width="11"`), y encima el trazo de color. Ese trazo grueso es el
+       que interrumpe al anillo de debajo. Por eso el color del casing **tiene
+       que ser el mismo del fondo**: si cambia uno, cambian los dos.
+    2. **Los degradados van en `userSpaceOnUse`.** Con el valor por defecto
+       (`objectBoundingBox`) una línea recta tiene caja de ancho cero y el
+       navegador no la pinta. Aquí son círculos y no pasaría, pero se deja así
+       para que las tres piezas compartan la misma dirección de luz.
+
+    El nudo va al 82 % para dejar aire alrededor. La variante recortable, con
+    otro margen, vive en `icons/maskable.svg`.
+  -->
+  <defs>
+    <linearGradient id="a" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#a78bfa" />
+      <stop offset="1" stop-color="#7c5cf0" />
+    </linearGradient>
+    <linearGradient id="b" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#2f6fe0" />
+    </linearGradient>
+    <linearGradient id="c" gradientUnits="userSpaceOnUse" x1="10" y1="8" x2="54" y2="56">
+      <stop offset="0" stop-color="#67e8f9" />
+      <stop offset="1" stop-color="#12b8d4" />
+    </linearGradient>
+    <clipPath id="over1"><circle cx="45.95" cy="26.26" r="6.4" /></clipPath>
+    <clipPath id="over2"><circle cx="26.05" cy="37.74" r="6.4" /></clipPath>
+  </defs>
+
+  <rect width="64" height="64" rx="16" fill="#0B0A0F" />
+
+  <g transform="translate(32 32) scale(0.82) translate(-32 -32)" fill="none" stroke-width="6.5">
+    <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    <circle cx="24" cy="38.93" r="14" stroke="#0B0A0F" stroke-width="11" />
+    <circle cx="24" cy="38.93" r="14" stroke="url(#b)" />
+    <circle cx="40" cy="38.93" r="14" stroke="#0B0A0F" stroke-width="11" />
+    <circle cx="40" cy="38.93" r="14" stroke="url(#c)" />
+    <g clip-path="url(#over1)">
+      <circle cx="32" cy="25.07" r="14" stroke="#0B0A0F" stroke-width="11" />
+      <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    </g>
+    <g clip-path="url(#over2)">
+      <circle cx="32" cy="25.07" r="14" stroke="#0B0A0F" stroke-width="11" />
+      <circle cx="32" cy="25.07" r="14" stroke="url(#a)" />
+    </g>
+  </g>
 </svg>

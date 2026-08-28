@@ -138,11 +138,27 @@ y sin peso extra en el bundle de producción.
 
 **Iconos.** El manifiesto declara un PNG de 192 y el SVG para los tamaños
 grandes, que escala sin perder nitidez y evita arrastrar más binarios; más una
-variante `maskable` (fondo a sangre y la N dentro de la zona segura del 80 %).
+variante `maskable` (fondo a sangre y el nudo dentro de la zona segura del 80 %).
 iOS ignora el manifiesto, así que su icono va como `apple-touch-icon` en el
 `index.html` y **tiene que ser PNG**. Si algún día el splash de Android pide un
 PNG de 512, se genera desde `favicon.svg` con un `<canvas>` (`drawImage` sobre un
 lienzo del tamaño deseado y `toDataURL('image/png')`), sin añadir dependencias.
+
+**El dibujo es un nudo de tres anillos** y está explicado dentro de
+`public/favicon.svg`, que es la fuente: el `maskable` repite el mismo trazado con
+otro margen porque un icono tiene que abrirse solo. **Lleva degradados y la
+interfaz no**: los únicos otros del proyecto son el relleno del área en
+`TrendChart`, y ahí cumplen una función. Una marca puede tener su propio
+tratamiento; los botones y las tarjetas siguen planos. Que la marca lleve azul y
+cian y `--primary` sea índigo tampoco es un descuido: son cosas distintas, y
+ninguna de las dos toca el verde, el ámbar o el rojo, que dentro de la aplicación
+ya significan «vas bien», «cuidado» y «error».
+
+**Los dos colores negros tienen que ser el mismo.** `theme_color` y
+`background_color` del manifiesto, el `<meta name="theme-color">` del
+`index.html` y `--background` de `globals.css` valen todos `#0B0A0F`. Cuando no
+coincidían, la pantalla de arranque pintaba un negro y al segundo otro, y se veía
+como un parpadeo al abrir desde el icono.
 
 **Comprobado de punta a punta:** con el build servido, el service worker queda
 activo con 36 ficheros cacheados, y **apagando el servidor la aplicación sigue
