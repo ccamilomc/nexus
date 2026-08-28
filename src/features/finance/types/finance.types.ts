@@ -49,6 +49,8 @@ export interface DebtPaymentRow {
 /** Una deuda con sus cuentas hechas. */
 export interface DebtWithBalance {
   readonly debt: FinanceDebt
+  /** Lo que significan sus cuotas hoy. `null` cuando no se pactó a plazos. */
+  readonly instalments: DebtInstalments | null
   readonly balance: {
     readonly principal: number
     readonly interest: number
@@ -164,4 +166,29 @@ export interface FinanceMonth {
   readonly byCategory: readonly CategorySpend[]
   /** Todos los del mes, del mas reciente al mas antiguo. */
   readonly transactions: readonly FinanceTransactionWithNames[]
+}
+
+/**
+ * Cómo va una deuda pactada a plazos.
+ *
+ * Hasta ahora las cuotas se guardaban y se escribían —«12 cuotas»— sin calcular
+ * nada. Un dato en pantalla que no responde ninguna pregunta es peor que no
+ * tenerlo, porque parece que la app lo está siguiendo.
+ */
+export interface DebtInstalments {
+  /** Lo que toca pagar cada mes según lo acordado, redondeado a pesos. */
+  readonly amount: number
+  /** Cuántas se pactaron. */
+  readonly total: number
+  /** Cuántas cubren los abonos hechos. */
+  readonly paid: number
+  /** Cuántas deberían estar cubiertas a día de hoy. */
+  readonly due: number
+  /** Cuántas van con retraso. Cero cuando se va al día. */
+  readonly overdueCount: number
+  /** Cuánto hay que poner para ponerse al día. Cero cuando se va al día. */
+  readonly overdueAmount: number
+  /** Cuándo toca la siguiente. `null` cuando ya están todas cubiertas. */
+  readonly nextDueOn: string | null
+  readonly isComplete: boolean
 }
