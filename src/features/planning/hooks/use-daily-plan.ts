@@ -8,6 +8,7 @@ import { useStudyContext } from '@/features/study'
 import { useWorkoutContext } from '@/features/workout'
 import { toDateKey } from '@/shared/utils'
 
+import { hasNothingSetUp } from '../utils/blank-slate'
 import { useDismissedKeys } from './use-dismissed'
 import { useTodayPlan } from './use-today-plan'
 
@@ -17,6 +18,11 @@ export interface DailyPlan {
   readonly recommendations: readonly Recommendation[]
   /** El día está al día: no hay nada pendiente. */
   readonly isClear: boolean
+  /**
+   * No hay nada pendiente **porque la cuenta aún no tiene nada puesto en
+   * marcha**, no porque se vaya al día. Ver `utils/blank-slate.ts`.
+   */
+  readonly isBlank: boolean
 }
 
 /**
@@ -54,7 +60,7 @@ export function useDailyPlan(): DailyPlan {
 
   // Todos los hooks quedan por encima de esta salida: si alguno viviera debajo,
   // React vería un número distinto de hooks entre renders.
-  if (isPending) return { isPending: true, recommendations: [], isClear: false }
+  if (isPending) return { isPending: true, recommendations: [], isClear: false, isBlank: false }
 
   const context: DailyContext = {
     date: toDateKey(today),
@@ -87,5 +93,10 @@ export function useDailyPlan(): DailyPlan {
   const discarded = new Set(dismissed.data ?? [])
   const recommendations = evaluate(context).filter(({ key }) => !discarded.has(key))
 
-  return { isPending: false, recommendations, isClear: recommendations.length === 0 }
+  return {
+    isPending: false,
+    recommendations,
+    isClear: recommendations.length === 0,
+    isBlank: hasNothingSetUp(context),
+  }
 }

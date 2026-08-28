@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarCheck } from 'lucide-react'
+import { ArrowRight, CalendarCheck, Compass } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 import { ROUTES } from '@/app/router/routes'
@@ -34,7 +34,7 @@ const MAX_ON_DASHBOARD = 2
  */
 export function TodayFocus() {
   const today = useToday()
-  const { isPending, recommendations, isClear } = useDailyPlan()
+  const { isPending, recommendations, isClear, isBlank } = useDailyPlan()
   const dismiss = useDismissRecommendation(today)
 
   if (isPending) {
@@ -52,12 +52,24 @@ export function TodayFocus() {
 
       {/* Sin nada pendiente se dice en una línea, no con una tarjeta grande:
           ocupar media pantalla para anunciar que no hay nada que hacer sería
-          justo el ruido que este panel tiene de más. */}
+          justo el ruido que este panel tiene de más.
+
+          Y se distingue **no te falta nada** de **no has empezado**: el motor
+          calla en los dos casos, pero decirle «vas al día» con un visto verde a
+          quien acaba de crear la cuenta es felicitarle por no haber hecho nada,
+          justo el día en que decide si vuelve a abrir la aplicación. */}
       {isClear ? (
-        <p className="flex items-center gap-2 text-sm text-muted-foreground">
-          <CalendarCheck className="h-4 w-4 shrink-0 text-success" aria-hidden />
-          Vas al día: nada pendiente con lo que llevas registrado.
-        </p>
+        isBlank ? (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Compass className="h-4 w-4 shrink-0" aria-hidden />
+            Todavía no sigues nada. Empieza por lo de abajo y Nexus te irá diciendo qué te falta.
+          </p>
+        ) : (
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarCheck className="h-4 w-4 shrink-0 text-success" aria-hidden />
+            Vas al día: nada pendiente con lo que llevas registrado.
+          </p>
+        )
       ) : (
         <>
           <ul className="space-y-3">

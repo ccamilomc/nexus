@@ -1,4 +1,4 @@
-import { CalendarCheck, Plus } from 'lucide-react'
+import { CalendarCheck, Compass, Plus } from 'lucide-react'
 import { useState } from 'react'
 
 import { useToday } from '@/core/time'
@@ -27,7 +27,7 @@ import {
  */
 export function PlanningPage() {
   const today = useToday()
-  const { isPending, recommendations, isClear } = useDailyPlan()
+  const { isPending, recommendations, isClear, isBlank } = useDailyPlan()
   const plan = useTodayPlan(today)
   const dismiss = useDismissRecommendation(today)
   const addItem = useAddPlanItem(today)
@@ -99,12 +99,23 @@ export function PlanningPage() {
               Lo que te falta
             </h2>
 
+            {/* «No te falta nada» y «no has empezado» se cuentan distinto: el
+                motor calla en los dos casos, pero sólo en uno de ellos ir al día
+                significa algo. Ver `utils/blank-slate.ts`. */}
             {isClear ? (
-              <EmptyState
-                icon={CalendarCheck}
-                title="Vas al día"
-                description="No hay nada pendiente con lo que llevas registrado. Buen momento para descansar."
-              />
+              isBlank ? (
+                <EmptyState
+                  icon={Compass}
+                  title="Aún no hay nada que seguir"
+                  description="Nexus avisa comparando lo que registras con tus objetivos, tus hábitos y tu rutina. En cuanto pongas alguno, esto se llena solo."
+                />
+              ) : (
+                <EmptyState
+                  icon={CalendarCheck}
+                  title="Vas al día"
+                  description="No hay nada pendiente con lo que llevas registrado. Buen momento para descansar."
+                />
+              )
             ) : (
               <ul className="space-y-3">
                 {recommendations.map((recommendation) => (
