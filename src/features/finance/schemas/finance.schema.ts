@@ -26,6 +26,22 @@ export const transactionSchema = z
     debtId: z.string().nullable(),
     occurredOn: z.string().min(1, 'Elige una fecha.'),
     note: z.string().trim().max(200, 'La nota es demasiado larga.').optional(),
+    /**
+     * Las partes que se van a otras categorías.
+     *
+     * **Se recortan del total; no lo sustituyen.** Lo que no se reparta se
+     * queda en `categoryId`, así que el resto no hay que teclearlo y no puede
+     * quedar descuadrado.
+     */
+    splits: z.array(
+      z.object({
+        categoryId: z.string().min(1, 'Elige una categoría.'),
+        amount: z
+          .number({ message: 'Escribe cuánto.' })
+          .int('Los pesos no llevan centavos.')
+          .positive('Tiene que ser mayor que cero.'),
+      }),
+    ),
   })
   // La misma forma que exige la base, dicha aquí para que el error salga en el
   // campo y no como un fallo del servidor.
@@ -36,6 +52,33 @@ export const transactionSchema = z
   .refine((values) => values.kind !== 'transfer' || values.toAccountId !== values.accountId, {
     message: 'Tiene que ser una cuenta distinta.',
     path: ['toAccountId'],
+  })
+  // Un traspaso no se gasta en nada: cambia de cajón. La base lo rechaza
+  // también; aquí se dice antes de intentarlo.
+  .refine((values) => values.kind !== 'transfer' || values.splits.length === 0, {
+    message: 'Un traspaso no se reparte entre categorías.',
+    path: ['splits'],
+  })
+  // El total manda sobre las partes, siempre. Con `amount` sin escribir todavía
+  // es `NaN`, y compararlo diría que no cabe nada: el aviso saldría antes de
+  // que hubiera nada mal.
+  .refine(
+    (values) =>
+      Number.isNaN(values.amount) ||
+      values.splits.reduce((sum, split) => sum + split.amount, 0) <= values.amount,
+    { message: 'Lo repartido no cabe en el total.', path: ['splits'] },
+  )
+  // Dos partes de la misma categoría son dos formas de decir lo mismo, y el
+  // índice único de la base las rechaza.
+  .refine(
+    (values) =>
+      new Set(values.splits.map((split) => split.categoryId)).size === values.splits.length,
+    { message: 'Esa categoría ya está repartida.', path: ['splits'] },
+  )
+  // Recortar parte de una categoría para dársela a ella misma no significa nada.
+  .refine((values) => values.splits.every((split) => split.categoryId !== values.categoryId), {
+    message: 'Esa ya es la categoría del movimiento.',
+    path: ['splits'],
   })
 
 export type TransactionValues = z.infer<typeof transactionSchema>

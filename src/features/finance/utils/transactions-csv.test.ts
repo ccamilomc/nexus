@@ -24,6 +24,7 @@ function movimiento(
     account: { name: 'Nequi' },
     toAccount: null,
     category: { name: 'Restaurantes' },
+    splits: [],
     ...overrides,
   }
 }
@@ -173,5 +174,36 @@ describe('transactionsCsvFileName', () => {
 
   it('rellena el mes de una cifra', () => {
     expect(transactionsCsvFileName(new Date(2026, 0, 3))).toBe('nexus-movimientos-2026-01.csv')
+  })
+})
+
+describe('toTransactionsCsv con un gasto repartido', () => {
+  const repartido = movimiento({
+    amount: 164_800,
+    category: { name: 'Mercado' },
+    splits: [{ category_id: 'c2', amount: 40_000, category: { name: 'Hogar' } }],
+  })
+
+  it('saca una fila por categoría, no una por movimiento', () => {
+    // En una sola fila, cualquier tabla dinámica contaría los 164.800 enteros
+    // como mercado: justo el error que repartirlo venía a evitar.
+    const filas = lineas(toTransactionsCsv([repartido])).slice(1)
+
+    expect(filas).toHaveLength(2)
+    expect(filas[0]).toContain('Mercado')
+    expect(filas[1]).toContain('Hogar')
+  })
+
+  it('las filas suman lo que se pagó', () => {
+    const montos = lineas(toTransactionsCsv([repartido]))
+      .slice(1)
+      .map((fila) => Number(fila.split(';')[2]))
+
+    expect(montos).toEqual([124_800, 40_000])
+    expect(montos.reduce((sum, monto) => sum + monto, 0)).toBe(164_800)
+  })
+
+  it('lo que no está repartido sigue saliendo en una sola fila', () => {
+    expect(lineas(toTransactionsCsv([movimiento()]))).toHaveLength(2)
   })
 })

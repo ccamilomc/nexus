@@ -1,5 +1,5 @@
 import type { FinanceTransactionWithNames } from '../types/finance.types'
-import { UNCATEGORISED_LABEL } from './finance-totals'
+import { transactionParts } from './finance-totals'
 
 /**
  * El punto y coma, no la coma.
@@ -63,7 +63,28 @@ function escapeField(value: string): string {
   return /[;"\r\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text
 }
 
-function toRow(transaction: FinanceTransactionWithNames): readonly string[] {
+/**
+ * Las filas de un movimiento: una por categoría en la que cayó.
+ *
+ * **Un gasto repartido sale en varias filas**, cada una con su parte, y entre
+ * todas suman lo que se pagó. Sacarlo en una sola con la categoría principal
+ * haría que cualquier tabla dinámica contara los 164.800 enteros como mercado,
+ * que es justo el error que repartirlo venía a evitar.
+ *
+ * Un movimiento sin repartir —casi todos— sale en una sola fila, igual que
+ * siempre.
+ */
+function toRows(transaction: FinanceTransactionWithNames): readonly (readonly string[])[] {
+  if (transaction.kind === 'transfer') return [toRow(transaction, null, transaction.amount)]
+
+  return transactionParts(transaction).map((part) => toRow(transaction, part.name, part.amount))
+}
+
+function toRow(
+  transaction: FinanceTransactionWithNames,
+  categoryName: string | null,
+  amount: number,
+): readonly string[] {
   return [
     // ISO, no `10/08/2026`: el formato del día ordena bien como texto y no se
     // confunde con el americano, donde ese mismo día sería el 8 de octubre.
@@ -73,8 +94,8 @@ function toRow(transaction: FinanceTransactionWithNames): readonly string[] {
     // quien dice de qué lado cae es la columna «Tipo»: un número con signo
     // invita a sumar la columna entera, y esa suma saldría mal en cuanto haya
     // un traspaso, que ni entra ni sale.
-    String(transaction.amount),
-    transaction.kind === 'transfer' ? '' : (transaction.category?.name ?? UNCATEGORISED_LABEL),
+    String(amount),
+    categoryName ?? '',
     transaction.account?.name ?? '',
     transaction.toAccount?.name ?? '',
     transaction.note ?? '',
@@ -92,9 +113,7 @@ function toRow(transaction: FinanceTransactionWithNames): readonly string[] {
  * cuántos son antes de pulsarlo.
  */
 export function toTransactionsCsv(transactions: readonly FinanceTransactionWithNames[]): string {
-  const rows = transactions.map((transaction) =>
-    toRow(transaction).map(escapeField).join(SEPARATOR),
-  )
+  const rows = transactions.flatMap(toRows).map((row) => row.map(escapeField).join(SEPARATOR))
 
   return BOM + [HEADERS.join(SEPARATOR), ...rows].join(EOL) + EOL
 }

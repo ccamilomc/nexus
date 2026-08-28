@@ -477,6 +477,15 @@ lo proyecta.
   acordarse de descartar esa fila. **No se mide sumando los topes**, porque la
   mayor parte del gasto no tiene ninguno.
 
+- **finance_transaction_splits**: cuando un pago cayó en varias categorías —la
+  compra del súper con jabón dentro—. **Las partes se recortan del total, no lo
+  sustituyen**: el movimiento conserva su `amount`, que es lo que salió de la
+  cuenta, y su categoría se queda con lo que no se repartió. Así el saldo sale
+  siempre de una sola cifra y un fallo al escribir las partes no puede
+  descuadrarlo; lo peor que puede pasar es que un reparto se vea raro.
+  Un trigger comprueba que las partes quepan en el total **por los dos lados**:
+  al tocar una parte y al bajar el total.
+
 ### El importe siempre es positivo; la dirección la pone `kind`
 
 Guardar importes con signo invita a un gasto negativo que suma en vez de restar,
@@ -542,6 +551,7 @@ erDiagram
     finance_accounts ||--o{ finance_transactions : origina
     finance_categories ||--o{ finance_transactions : clasifica
     finance_categories ||--o{ finance_budgets : topa
+    finance_transactions ||--o{ finance_transaction_splits : reparte
     finance_debts ||--o{ finance_transactions : abona
     finance_recurring ||--o{ finance_transactions : genera
 ```

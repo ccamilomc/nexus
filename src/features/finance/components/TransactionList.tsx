@@ -9,7 +9,7 @@ import { formatCop } from '@/shared/utils'
 
 import { useRemoveTransaction } from '../hooks/use-finance'
 import type { FinanceTransactionWithNames } from '../types/finance.types'
-import { UNCATEGORISED_LABEL } from '../utils/finance-totals'
+import { transactionParts } from '../utils/finance-totals'
 
 interface TransactionListProps {
   readonly transactions: readonly FinanceTransactionWithNames[]
@@ -59,7 +59,12 @@ export function TransactionList({ transactions, onEdit, editingId }: Transaction
                 <p className="flex items-center gap-1.5 truncate text-sm font-medium">
                   {transaction.kind === 'transfer'
                     ? 'Traspaso'
-                    : (transaction.category?.name ?? UNCATEGORISED_LABEL)}
+                    : // Un gasto repartido enseña sus categorías, no sólo la
+                      // principal: si dijera «Mercado» a secas, el reparto que
+                      // se acaba de hacer no se vería por ninguna parte.
+                      transactionParts(transaction)
+                        .map((part) => part.name)
+                        .join(' + ')}
 
                   {/* Los que salieron de un pago fijo se marcan: en una lista
                       larga hay que poder distinguir lo que ya estaba decidido

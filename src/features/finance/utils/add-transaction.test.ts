@@ -24,6 +24,7 @@ function movimiento(
     account: { name: 'Efectivo' },
     toAccount: null,
     category: { name: 'Mercado' },
+    splits: [],
     ...overrides,
   }
 }
