@@ -295,3 +295,23 @@ describe('calculateByCategory con movimientos repartidos', () => {
     expect(spend.find((entry) => entry.categoryId === 'cat-2')?.amount).toBe(50_000)
   })
 })
+
+describe('un movimiento guardado antes de que existieran las partes', () => {
+  /** Como llega de la caché del teléfono: sin `splits` en ninguna parte. */
+  function deLaCacheVieja(): FinanceTransactionWithNames {
+    const { splits: _splits, ...resto } = movement({ amount: 50_000 })
+    return resto as FinanceTransactionWithNames
+  }
+
+  it('no deja la pantalla en blanco', () => {
+    // Paso de verdad: al desplegar el reparto, la caché del móvil seguía
+    // trayendo movimientos sin partes y la lista reventaba entera.
+    expect(transactionParts(deLaCacheVieja())).toEqual([
+      { categoryId: 'cat-1', name: 'Mercado', amount: 50_000 },
+    ])
+  })
+
+  it('y el reparto por categorías sigue saliendo', () => {
+    expect(calculateByCategory([deLaCacheVieja()])).toHaveLength(1)
+  })
+})

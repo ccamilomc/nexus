@@ -34,7 +34,7 @@ export function useFinanceSummary(): FinanceSummary {
   //
   // Los topes vienen ordenados de más apretado a menos, así que basta el primero.
   const monthBudget = budgets.data?.month ?? null
-  const tightest = budgets.data?.categories[0]
+  const tightest = budgets.data?.categories?.[0]
 
   const headline = monthBudget
     ? { label: 'Presupuesto del mes', spent: monthBudget.spent, cap: monthBudget.cap }

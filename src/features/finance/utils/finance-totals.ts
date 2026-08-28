@@ -78,9 +78,14 @@ export function transactionParts(
     name: transaction.category?.name ?? UNCATEGORISED_LABEL,
   }
 
-  if (transaction.splits.length === 0) return [{ ...own, amount: transaction.amount }]
+  // `?? []` no es paranoia: la caché guardada en el teléfono puede traer
+  // movimientos de antes de que existieran las partes, y leer `length` sobre
+  // eso deja la pantalla en blanco. Ver CACHE_BUSTER.
+  const splits = transaction.splits ?? []
 
-  const parts = transaction.splits.map((split) => ({
+  if (splits.length === 0) return [{ ...own, amount: transaction.amount }]
+
+  const parts = splits.map((split) => ({
     categoryId: split.category_id,
     name: split.category?.name ?? UNCATEGORISED_LABEL,
     amount: split.amount,
