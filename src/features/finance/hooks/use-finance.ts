@@ -208,6 +208,15 @@ function toNamedTransaction(
     account: nameOf(accounts, values.accountId),
     toAccount: isTransfer ? nameOf(accounts, values.toAccountId) : null,
     category: isTransfer ? null : nameOf(categories, values.categoryId),
+    // Las partes también, con su nombre: sin esto un gasto repartido sin red se
+    // pinta como si no lo estuviera, y al volver la conexión cambiaría solo.
+    splits: isTransfer
+      ? []
+      : values.splits.map((split) => ({
+          category_id: split.categoryId,
+          amount: split.amount,
+          category: nameOf(categories, split.categoryId),
+        })),
   }
 }
 
@@ -218,11 +227,12 @@ interface UpdateTransactionVariables {
 
 /** Corrige un movimiento ya apuntado. */
 export function useUpdateTransaction() {
+  const { user } = useAuth()
   const refresh = useRefreshMovements()
 
   return useMutation<void, AppError, UpdateTransactionVariables>({
     mutationFn: ({ transactionId, values }) =>
-      financeService.updateTransaction(transactionId, values),
+      financeService.updateTransaction(transactionId, requireUserId(user?.id), values),
     onSuccess: refresh,
   })
 }

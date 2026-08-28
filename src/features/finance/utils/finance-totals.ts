@@ -1,4 +1,5 @@
 import type {
+  CategoryPart,
   CategorySpend,
   FinanceTotals,
   FinanceTransactionWithNames,
@@ -55,6 +56,41 @@ export function calculateTotals(
  * lo que son. Un reparto que suma 80 % y calla el resto invita a confiar en una
  * cifra incompleta.
  */
+/**
+ * En qué categorías cae un movimiento, y cuánto en cada una.
+ *
+ * Casi siempre es una sola: el movimiento entero en su categoría. Cuando está
+ * repartido, **las partes se recortan del total y su categoría se queda con el
+ * resto**: una compra de 164.800 con 40.000 apuntados a Hogar deja 124.800 en
+ * Mercado, sin tener que teclear esa cifra.
+ *
+ * El resto se calla cuando es cero —se repartió todo— porque una categoría con
+ * cero pesos no es una categoría en la que se gastó.
+ *
+ * No recorta un resto negativo a propósito. La base impide que las partes pasen
+ * del total, así que si alguna vez se viera, es un fallo que hay que ver.
+ */
+export function transactionParts(
+  transaction: FinanceTransactionWithNames,
+): readonly CategoryPart[] {
+  const own = {
+    categoryId: transaction.category_id,
+    name: transaction.category?.name ?? UNCATEGORISED_LABEL,
+  }
+
+  if (transaction.splits.length === 0) return [{ ...own, amount: transaction.amount }]
+
+  const parts = transaction.splits.map((split) => ({
+    categoryId: split.category_id,
+    name: split.category?.name ?? UNCATEGORISED_LABEL,
+    amount: split.amount,
+  }))
+
+  const rest = transaction.amount - parts.reduce((sum, part) => sum + part.amount, 0)
+
+  return rest === 0 ? parts : [{ ...own, amount: rest }, ...parts]
+}
+
 export function calculateByCategory(
   transactions: readonly FinanceTransactionWithNames[],
 ): CategorySpend[] {
@@ -63,13 +99,13 @@ export function calculateByCategory(
 
   const byId = new Map<string | null, { name: string; amount: number }>()
 
-  for (const transaction of expenses) {
-    const key = transaction.category_id
-    const existing = byId.get(key)
-    const name = transaction.category?.name ?? UNCATEGORISED_LABEL
+  // Por partes y no por movimiento: un gasto repartido cuenta en cada una de
+  // sus categorías, que es justo para lo que sirve repartirlo.
+  for (const part of expenses.flatMap(transactionParts)) {
+    const existing = byId.get(part.categoryId)
 
-    if (existing) existing.amount += transaction.amount
-    else byId.set(key, { name, amount: transaction.amount })
+    if (existing) existing.amount += part.amount
+    else byId.set(part.categoryId, { name: part.name, amount: part.amount })
   }
 
   return [...byId.entries()]

@@ -62,7 +62,10 @@ export const financeRepository = {
       // traspasos hay dos claves foráneas hacia `finance_accounts` (origen y
       // destino) y sin la pista PostgREST no sabe cuál de las dos quieres.
       .select(
-        '*, account:finance_accounts!account_id(name), toAccount:finance_accounts!counterpart_account_id(name), category:finance_categories(name)',
+        // Las partes viajan con el movimiento: un gasto repartido no se puede
+        // leer sin ellas, y pedirlas aparte sería una consulta por mes para
+        // algo que casi siempre viene vacío.
+        '*, account:finance_accounts!account_id(name), toAccount:finance_accounts!counterpart_account_id(name), category:finance_categories(name), splits:finance_transaction_splits(category_id, amount, category:finance_categories(name))',
       )
       .eq('user_id', userId)
       .is('deleted_at', null)
@@ -329,6 +332,24 @@ export const financeRepository = {
     if (error) throw error
   },
 
+  /** Quita todas las partes de un movimiento. */
+  async deleteTransactionSplits(transactionId: string): Promise<void> {
+    const { error } = await supabase
+      .from('finance_transaction_splits')
+      .delete()
+      .eq('transaction_id', transactionId)
+
+    if (error) throw error
+  },
+
+  /** Apunta las partes de un movimiento. */
+  async insertTransactionSplits(rows: TablesInsert<'finance_transaction_splits'>[]): Promise<void> {
+    if (rows.length === 0) return
+
+    const { error } = await supabase.from('finance_transaction_splits').insert(rows)
+
+    if (error) throw error
+  },
   /** Borrado lógico: el histórico no se pierde y la sincronización lo entiende. */
   async softDeleteTransaction(transactionId: string): Promise<void> {
     const { error } = await supabase

@@ -38,6 +38,7 @@ function movement({
     account: { name: 'Efectivo' },
     toAccount: kind === 'transfer' ? { name: 'Nequi' } : null,
     category: kind === 'transfer' ? null : { name: 'Mercado' },
+    splits: [],
   }
 }
 

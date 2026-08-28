@@ -5,6 +5,7 @@ import {
   calculateAccountBalance,
   calculateByCategory,
   calculateTotals,
+  transactionParts,
   UNCATEGORISED_LABEL,
 } from './finance-totals'
 
@@ -46,6 +47,7 @@ function movement({
     account: { name: 'Efectivo' },
     toAccount: toAccountId === null ? null : { name: 'Nequi' },
     category: categoryName === null ? null : { name: categoryName },
+    splits: [],
   }
 }
 
@@ -191,5 +193,105 @@ describe('calculateAccountBalance', () => {
 
     expect(calculateAccountBalance(500_000, movements, 'acc-1')).toBe(300_000)
     expect(calculateAccountBalance(0, movements, 'acc-2')).toBe(200_000)
+  })
+})
+
+/** Una compra repartida: el total se queda igual y las partes lo recortan. */
+function repartido(
+  amount: number,
+  splits: readonly { categoryId: string | null; name: string | null; amount: number }[],
+): FinanceTransactionWithNames {
+  return {
+    ...movement({ amount }),
+    splits: splits.map((split) => ({
+      category_id: split.categoryId,
+      amount: split.amount,
+      category: split.name === null ? null : { name: split.name },
+    })),
+  }
+}
+
+describe('transactionParts', () => {
+  it('sin repartir, el movimiento entero va a su categoría', () => {
+    expect(transactionParts(movement({ amount: 164_800 }))).toEqual([
+      { categoryId: 'cat-1', name: 'Mercado', amount: 164_800 },
+    ])
+  })
+
+  it('lo repartido se recorta del total y el resto se queda en su categoría', () => {
+    // 164.800 de compra con 40.000 de hogar dentro: mercado son 124.800, y esa
+    // cifra no la teclea nadie.
+    const partes = transactionParts(
+      repartido(164_800, [{ categoryId: 'cat-2', name: 'Hogar', amount: 40_000 }]),
+    )
+
+    expect(partes).toEqual([
+      { categoryId: 'cat-1', name: 'Mercado', amount: 124_800 },
+      { categoryId: 'cat-2', name: 'Hogar', amount: 40_000 },
+    ])
+  })
+
+  it('las partes siempre suman el total', () => {
+    // Es la propiedad que hace que el saldo no pueda descuadrar.
+    const partes = transactionParts(
+      repartido(200_000, [
+        { categoryId: 'cat-2', name: 'Hogar', amount: 40_000 },
+        { categoryId: 'cat-3', name: 'Aseo', amount: 25_000 },
+      ]),
+    )
+
+    expect(partes.reduce((sum, parte) => sum + parte.amount, 0)).toBe(200_000)
+  })
+
+  it('repartido del todo, la categoría original no aparece con cero', () => {
+    // Una categoría en la que se gastó cero no es una categoría en la que se
+    // gastó, y saldría en el reparto como una porción vacía.
+    const partes = transactionParts(
+      repartido(100_000, [{ categoryId: 'cat-2', name: 'Hogar', amount: 100_000 }]),
+    )
+
+    expect(partes).toEqual([{ categoryId: 'cat-2', name: 'Hogar', amount: 100_000 }])
+  })
+
+  it('una parte que perdió su categoría se dice, no se calla', () => {
+    const partes = transactionParts(
+      repartido(100_000, [{ categoryId: null, name: null, amount: 30_000 }]),
+    )
+
+    expect(partes[1]).toEqual({ categoryId: null, name: 'Sin categoría', amount: 30_000 })
+  })
+})
+
+describe('calculateByCategory con movimientos repartidos', () => {
+  it('cada parte cuenta en su categoría', () => {
+    const spend = calculateByCategory([
+      repartido(164_800, [{ categoryId: 'cat-2', name: 'Hogar', amount: 40_000 }]),
+    ])
+
+    expect(spend).toEqual([
+      { categoryId: 'cat-1', name: 'Mercado', amount: 124_800, share: expect.closeTo(75.7, 1) },
+      { categoryId: 'cat-2', name: 'Hogar', amount: 40_000, share: expect.closeTo(24.3, 1) },
+    ])
+  })
+
+  it('el reparto sigue sumando el 100 %', () => {
+    // Un reparto que suma 80 % y calla el resto invita a confiar en una cifra
+    // incompleta.
+    const spend = calculateByCategory([
+      repartido(200_000, [{ categoryId: 'cat-2', name: 'Hogar', amount: 50_000 }]),
+      movement({ amount: 100_000, categoryId: 'cat-3', categoryName: 'Ocio' }),
+    ])
+
+    expect(spend.reduce((sum, entry) => sum + entry.share, 0)).toBeCloseTo(100, 5)
+    expect(spend.reduce((sum, entry) => sum + entry.amount, 0)).toBe(300_000)
+  })
+
+  it('una parte se suma a lo que ya había en esa categoría', () => {
+    const spend = calculateByCategory([
+      repartido(100_000, [{ categoryId: 'cat-2', name: 'Hogar', amount: 30_000 }]),
+      movement({ amount: 20_000, categoryId: 'cat-2', categoryName: 'Hogar' }),
+    ])
+
+    expect(spend.find((entry) => entry.categoryId === 'cat-2')?.amount).toBe(50_000)
   })
 })

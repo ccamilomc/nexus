@@ -1,4 +1,4 @@
-import { toAppError } from '@/core/error'
+import { createAppError, isRaisedError, toAppError } from '@/core/error'
 import { toDateKey } from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
@@ -33,6 +33,45 @@ export interface CreateTransactionInput {
  * revés. Cambiar de tipo en el formulario arrastraría lo elegido antes y la
  * escritura se rechazaría con un error técnico.
  */
+/**
+ * Las partes tal y como van a la base.
+ *
+ * Un traspaso nunca lleva: cambia de cajón, no se gasta en nada. La base lo
+ * rechaza también, y esto evita el viaje.
+ */
+function toSplitRows(transactionId: string, userId: string, values: TransactionValues) {
+  if (values.kind === 'transfer') return []
+
+  return values.splits.map((split) => ({
+    transaction_id: transactionId,
+    user_id: userId,
+    category_id: split.categoryId,
+    amount: split.amount,
+  }))
+}
+
+/**
+ * El error del trigger, dicho en cristiano.
+ *
+ * La base lanza un nombre corto y el texto se escribe aquí: una migración no es
+ * sitio para redactar lo que lee el usuario, y el mismo fallo se cuenta distinto
+ * según lo que estuviera haciendo.
+ */
+function toSplitError(error: unknown) {
+  if (isRaisedError(error, 'splits_exceed_total')) {
+    return createAppError(
+      'validation',
+      'Lo repartido no cabe en el total. Baja alguna parte o sube el monto.',
+    )
+  }
+
+  if (isRaisedError(error, 'splits_on_transfer')) {
+    return createAppError('validation', 'Un traspaso no se reparte entre categorías.')
+  }
+
+  return toAppError(error)
+}
+
 function toTransactionRow(values: TransactionValues) {
   const isTransfer = values.kind === 'transfer'
 
@@ -135,8 +174,17 @@ export const transactionsService = {
         user_id: input.userId,
         ...toTransactionRow(input.values),
       })
+
+      // **El movimiento primero y las partes después, en ese orden.** Sin
+      // transacciones desde el cliente, si falla lo segundo el dinero ya quedó
+      // apuntado —que es lo que no se puede perder— y el reparto se vuelve a
+      // hacer corrigiendo. Al revés se perdería el gasto por no haber podido
+      // guardar un detalle suyo.
+      await financeRepository.insertTransactionSplits(
+        toSplitRows(input.id, input.userId, input.values),
+      )
     } catch (error) {
-      throw toAppError(error)
+      throw toSplitError(error)
     }
   },
 
@@ -148,11 +196,21 @@ export const transactionsService = {
    * `toTransactionRow` limpia lo que no aplica —pasar de gasto a traspaso deja
    * la categoría atrás— en vez de sólo escribir lo que cambió.
    */
-  async updateTransaction(transactionId: string, values: TransactionValues): Promise<void> {
+  async updateTransaction(
+    transactionId: string,
+    userId: string,
+    values: TransactionValues,
+  ): Promise<void> {
     try {
+      // **Los tres pasos van en este orden y no en otro.** La base no deja que
+      // las partes pasen del total, así que bajar el total con las partes
+      // viejas puestas se rechaza, y subir las partes antes de subir el total
+      // también. Vaciarlas primero deja el camino libre en los dos sentidos.
+      await financeRepository.deleteTransactionSplits(transactionId)
       await financeRepository.updateTransaction(transactionId, toTransactionRow(values))
+      await financeRepository.insertTransactionSplits(toSplitRows(transactionId, userId, values))
     } catch (error) {
-      throw toAppError(error)
+      throw toSplitError(error)
     }
   },
 

@@ -103,11 +103,25 @@ export type FinanceTransaction = Tables<'finance_transactions'>
  * nombre de la categoría no dice nada. Sólo su nombre: el resto de sus columnas
  * viajaría por nada.
  */
+/**
+ * Una parte de un movimiento que se fue a otra categoría.
+ *
+ * **Se recorta del total, no lo sustituye.** El movimiento conserva su `amount`
+ * —lo que salió de la cuenta— y su categoría se queda con lo que no se repartió.
+ */
+export interface TransactionSplit {
+  readonly category_id: string | null
+  readonly amount: number
+  readonly category: { readonly name: string } | null
+}
+
 export interface FinanceTransactionWithNames extends FinanceTransaction {
   readonly account: { readonly name: string } | null
   /** La cuenta destino. Sólo en un traspaso. */
   readonly toAccount: { readonly name: string } | null
   readonly category: { readonly name: string } | null
+  /** Lo que se repartió a otras categorías. Vacío es el caso normal. */
+  readonly splits: readonly TransactionSplit[]
 }
 
 /** Lo gastado y lo ingresado en un tramo, con su saldo. */
@@ -154,6 +168,14 @@ export interface MonthProjection {
   readonly estimatedVariable: number | null
   /** El cierre contando también el ritmo. `null` cuando no se puede estimar. */
   readonly projectedBalance: number | null
+}
+
+/** Cuánto de un movimiento cayó en una categoría. Casi siempre, todo. */
+export interface CategoryPart {
+  readonly categoryId: string | null
+  /** «Sin categoría» cuando no la tiene o se borró. */
+  readonly name: string
+  readonly amount: number
 }
 
 /** Cuánto se fue en una categoría, para la comparación entre ellas. */

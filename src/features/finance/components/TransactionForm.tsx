@@ -23,6 +23,7 @@ import type {
 } from '../types/finance.types'
 import { AccountField } from './AccountField'
 import { FoodPricingSection } from './FoodPricingSection'
+import { TransactionSplits } from './TransactionSplits'
 
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
@@ -88,10 +89,12 @@ export function TransactionForm({
     categoryId: null,
     debtId: payingDebt?.debt.id ?? null,
     occurredOn: toDateKey(today),
+    splits: [],
   }
 
   const {
     register,
+    control,
     handleSubmit,
     watch,
     setValue,
@@ -120,13 +123,26 @@ export function TransactionForm({
       debtId: editing.debt_id,
       occurredOn: editing.occurred_on,
       note: editing.note ?? '',
+      // Las partes que ya tenía: sin esto, corregir cualquier cosa de un gasto
+      // repartido lo dejaría sin repartir sin avisar.
+      splits: editing.splits.map((split) => ({
+        categoryId: split.category_id ?? '',
+        amount: split.amount,
+      })),
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps -- ver el comentario
   }, [editingId, reset])
 
   const kind = watch('kind')
+  const amount = watch('amount')
+  const splits = watch('splits')
+  const categoryId = watch('categoryId')
   const accountId = watch('accountId')
   const isTransfer = kind === 'transfer'
+  // Con quién se queda lo que no se reparta. Sin categoría elegida también hay
+  // resto: va a «Sin categoría», y decirlo evita pensar que se pierde.
+  const restName =
+    categories.find((category) => category.id === categoryId)?.name ?? 'Sin categoría'
   // Un traspaso no tiene categoría: no se gastó en nada.
   const visibleCategories = isTransfer
     ? []
@@ -305,6 +321,19 @@ export function TransactionForm({
           </div>
         )}
       </div>
+
+      {/* Un traspaso no se reparte: cambia de cajón, no se gasta en nada. */}
+      {!isTransfer ? (
+        <TransactionSplits
+          control={control}
+          register={register}
+          categories={visibleCategories}
+          amount={amount}
+          restName={restName}
+          splits={splits}
+          error={errors.splits?.message ?? errors.splits?.root?.message}
+        />
+      ) : null}
 
       {/* Sólo aparece si hay deudas del sentido que toca: pagar una deuda es un
           gasto, y cobrar lo que te deben es un ingreso. Sin deudas vivas, el

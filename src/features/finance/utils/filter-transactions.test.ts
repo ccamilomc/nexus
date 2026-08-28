@@ -30,6 +30,7 @@ function movimiento(
     account: { name: 'Nequi' },
     toAccount: null,
     category: { name: 'Restaurantes' },
+    splits: [],
     ...overrides,
   }
 }
