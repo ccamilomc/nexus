@@ -1,15 +1,78 @@
-import { Plus, UtensilsCrossed } from 'lucide-react'
-import { useState } from 'react'
+import { Plus, ScanBarcode, UtensilsCrossed } from 'lucide-react'
+import { useCallback, useState } from 'react'
 
 import { EmptyState, FormAlert, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { matchesQuery } from '@/shared/utils'
 
+import { BarcodeScanner } from '../components/BarcodeScanner'
 import { FoodForm } from '../components/FoodForm'
 import { FoodList } from '../components/FoodList'
+import { useBarcodeLookup } from '../hooks/use-barcode-lookup'
 import { useDeleteFood, useFoods } from '../hooks/use-nutrition'
+import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { Food } from '../types/nutrition.types'
+import { canScanBarcodes } from '../utils/barcode-detector'
+import type { ScanResult } from '../utils/scanned-food'
+
+/** Un formulario ya relleno con lo que salió del escaneo, y de dónde salió. */
+interface Escaneado {
+  readonly values: CreateFoodValues
+  readonly note: string
+}
+
+/** Lo mínimo para empezar un alimento a mano: 100 g y las cifras en cero. */
+const VACIO = {
+  servingSize: 100,
+  servingUnit: 'g',
+  calories: 0,
+  proteinG: 0,
+  carbsG: 0,
+  fatG: 0,
+} as const
+
+/**
+ * Qué enseñar según lo que devolvió el escaneo.
+ *
+ * **Los tres desenlaces se cuentan distinto.** Que el producto exista sin cifras
+ * no es lo mismo que no existir: en el primero ya está el nombre puesto, y
+ * decir «no se encontró» sería mentir y hacer teclearlo otra vez.
+ */
+function describirEscaneo(result: ScanResult): Escaneado {
+  if (result.kind === 'listo') {
+    const { food } = result
+    return {
+      values: {
+        name: food.name,
+        servingSize: food.servingSize,
+        servingUnit: food.servingUnit,
+        calories: food.calories,
+        proteinG: food.proteinG,
+        carbsG: food.carbsG,
+        fatG: food.fatG,
+        ...(food.brand ? { brand: food.brand } : {}),
+      },
+      note: 'Lo trajimos de Open Food Facts, una base abierta que llena la gente. Las cifras van por 100 g: compáralas con el paquete antes de guardar.',
+    }
+  }
+
+  if (result.kind === 'sin-macros') {
+    return {
+      values: {
+        ...VACIO,
+        name: result.name,
+        ...(result.brand ? { brand: result.brand } : {}),
+      },
+      note: `Encontramos «${result.name}», pero sin sus cifras. Cópialas del paquete: el nombre ya está puesto.`,
+    }
+  }
+
+  return {
+    values: { ...VACIO, name: '' },
+    note: 'Ese código no está en Open Food Facts. Escríbelo y queda en tu catálogo para siempre.',
+  }
+}
 
 /** Catálogo de alimentos y gestión de los propios. */
 export function FoodsPage() {
@@ -21,11 +84,32 @@ export function FoodsPage() {
   /** Del que se copia para crear uno propio; no se edita. */
   const [copying, setCopying] = useState<Food | null>(null)
   const [savedName, setSavedName] = useState<string | null>(null)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanned, setScanned] = useState<Escaneado | null>(null)
+  const lookup = useBarcodeLookup()
+  const { mutate: buscarCodigo } = lookup
+
+  /**
+   * Estable a propósito: el escáner la tiene como dependencia de su efecto, y
+   * una función nueva en cada render apagaría y encendería la cámara sin parar.
+   */
+  const onDetected = useCallback(
+    (barcode: string) => {
+      setIsScanning(false)
+      buscarCodigo(barcode, {
+        onSuccess: (result) => {
+          setScanned(describirEscaneo(result))
+        },
+      })
+    },
+    [buscarCodigo],
+  )
 
   if (isPending) return <SkeletonList label="Cargando alimentos" rows={6} rowClassName="h-16" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
 
-  const isFormOpen = isCreating || editing !== null || copying !== null
+  const isFormOpen = isCreating || editing !== null || copying !== null || scanned !== null
+  const isBusy = isFormOpen || isScanning || lookup.isPending
   const visible = data.filter((food) => matchesQuery(food.name, query))
 
   /** Todo lo que abre el formulario cierra los otros modos y limpia los avisos. */
@@ -34,6 +118,9 @@ export function FoodsPage() {
     setEditing(null)
     setCopying(null)
     setSavedName(null)
+    setScanned(null)
+    setIsScanning(false)
+    lookup.reset()
     deleteFood.reset()
   }
 
@@ -56,6 +143,7 @@ export function FoodsPage() {
     setIsCreating(false)
     setEditing(null)
     setCopying(null)
+    setScanned(null)
     setSavedName(food.name)
   }
 
@@ -65,13 +153,47 @@ export function FoodsPage() {
         <p className="text-sm text-muted-foreground">
           {data.length} {data.length === 1 ? 'alimento' : 'alimentos'}
         </p>
-        {isFormOpen ? null : (
-          <Button type="button" size="sm" onClick={openCreate}>
-            <Plus aria-hidden />
-            Crear alimento
-          </Button>
+        {isBusy ? null : (
+          <div className="flex items-center gap-1.5">
+            {/* Sólo donde puede funcionar. Chrome en Android trae el lector
+                nativo; Safari en iPhone no, y un botón que no hace nada es peor
+                que no tenerlo. */}
+            {canScanBarcodes() ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  closeOthers()
+                  setIsScanning(true)
+                }}
+              >
+                <ScanBarcode aria-hidden />
+                Escanear
+              </Button>
+            ) : null}
+            <Button type="button" size="sm" onClick={openCreate}>
+              <Plus aria-hidden />
+              Crear alimento
+            </Button>
+          </div>
         )}
       </div>
+
+      {isScanning ? (
+        <BarcodeScanner
+          onDetected={onDetected}
+          onCancel={() => {
+            setIsScanning(false)
+          }}
+        />
+      ) : null}
+
+      {lookup.isPending ? (
+        <p className="text-sm text-muted-foreground">Buscando el producto…</p>
+      ) : null}
+
+      {lookup.isError ? <FormAlert>{lookup.error.message}</FormAlert> : null}
 
       {savedName ? (
         <FormAlert variant="success">Guardamos «{savedName}» en tu catálogo.</FormAlert>
@@ -83,11 +205,18 @@ export function FoodsPage() {
         <FoodForm food={editing} onSaved={onSaved} onCancel={() => setEditing(null)} />
       ) : copying ? (
         <FoodForm template={copying} onSaved={onSaved} onCancel={() => setCopying(null)} />
+      ) : scanned ? (
+        <FoodForm
+          prefill={scanned.values}
+          prefillNote={scanned.note}
+          onSaved={onSaved}
+          onCancel={() => setScanned(null)}
+        />
       ) : isCreating ? (
         <FoodForm onSaved={onSaved} onCancel={() => setIsCreating(false)} />
       ) : null}
 
-      {isFormOpen ? null : (
+      {isBusy ? null : (
         <Input
           type="search"
           value={query}
@@ -98,7 +227,7 @@ export function FoodsPage() {
       )}
 
       {visible.length === 0 ? (
-        isFormOpen ? null : (
+        isBusy ? null : (
           <EmptyState
             icon={UtensilsCrossed}
             title={query ? 'Ningún alimento coincide' : 'Aún no hay alimentos'}

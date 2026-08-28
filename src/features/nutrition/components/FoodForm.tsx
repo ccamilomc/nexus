@@ -24,6 +24,16 @@ interface FoodFormProps {
    * impide tocarlo.
    */
   readonly template?: Food
+  /**
+   * Casillas ya rellenas que no salen de ningún alimento del catálogo.
+   *
+   * Hoy lo usa el lector de códigos de barras: lo que llega de fuera se enseña
+   * **en el formulario de siempre** para poder revisarlo y corregirlo antes de
+   * guardar. Nada entra al catálogo sin pasar por aquí.
+   */
+  readonly prefill?: CreateFoodValues
+  /** De dónde salen las casillas ya rellenas, para poder decirlo en pantalla. */
+  readonly prefillNote?: string
   readonly onSaved: (food: Food) => void
   readonly onCancel: () => void
 }
@@ -48,7 +58,15 @@ function toFormValues(food: Food): CreateFoodValues {
 }
 
 /** Formulario para crear o editar un alimento propio. */
-export function FoodForm({ initialName = '', food, template, onSaved, onCancel }: FoodFormProps) {
+export function FoodForm({
+  initialName = '',
+  food,
+  template,
+  prefill,
+  prefillNote,
+  onSaved,
+  onCancel,
+}: FoodFormProps) {
   const createFood = useCreateFood()
   const updateFood = useUpdateFood()
   const isEditing = food !== undefined
@@ -62,17 +80,19 @@ export function FoodForm({ initialName = '', food, template, onSaved, onCancel }
     formState: { errors },
   } = useForm<CreateFoodValues>({
     resolver: zodResolver(createFoodSchema),
-    defaultValues: source
-      ? toFormValues(source)
-      : {
-          name: initialName,
-          servingSize: 100,
-          servingUnit: 'g',
-          calories: 0,
-          proteinG: 0,
-          carbsG: 0,
-          fatG: 0,
-        },
+    defaultValues:
+      prefill ??
+      (source
+        ? toFormValues(source)
+        : {
+            name: initialName,
+            servingSize: 100,
+            servingUnit: 'g',
+            calories: 0,
+            proteinG: 0,
+            carbsG: 0,
+            fatG: 0,
+          }),
   })
 
   const onSubmit = handleSubmit((values) => {
@@ -92,6 +112,10 @@ export function FoodForm({ initialName = '', food, template, onSaved, onCancel }
             se recalculan solas.
           </p>
         ) : null}
+
+        {/* Lo que llega de fuera se dice de dónde viene y se pide revisarlo:
+            nadie ha comprobado esas cifras y la etiqueta del paquete manda. */}
+        {prefillNote ? <p className="mb-3 text-xs text-muted-foreground">{prefillNote}</p> : null}
 
         <form onSubmit={onSubmit} className="space-y-4" noValidate>
           <FormField id="food-name" label="Nombre" error={errors.name?.message}>

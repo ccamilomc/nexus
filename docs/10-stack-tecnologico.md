@@ -90,6 +90,33 @@ TypeScript** desde el esquema (`db:types`). Evita tocar la base de datos a mano 
 mantener tipos manualmente. Scripts en `package.json` (`db:link`, `db:push`,
 `db:types`, `db:pull`, `db:diff`).
 
+### Open Food Facts, y el lector de códigos **sin librería** (1.0.0)
+
+El lector de códigos de barras de Nutrición no añadió **ninguna dependencia**, y
+esa fue la decisión:
+
+- **El lector es el del navegador.** Chrome en Android trae `BarcodeDetector`
+  nativo. Safari en iPhone no lo tiene y haría falta una librería de unos 40 KB;
+  hasta que alguien la necesite no se añade, y **donde no se puede escanear el
+  botón no se ofrece** —un botón que no hace nada es peor que no tenerlo—.
+- **Los datos salen de [Open Food Facts](https://world.openfoodfacts.org)**, una
+  base abierta y gratuita, sin clave y sin SDK: se llama con `fetch` desde
+  `nutrition/repositories/open-food-facts.repository.ts`, que es el único punto
+  que la toca. **No se le manda nada del usuario**: sólo viaja el código de
+  barras del paquete.
+
+**Se midió antes de construir**, que es la regla del proyecto. Sobre 600
+productos vendidos en Colombia: **7.189 en la base, el 92 % con código
+colombiano, el 88 % con nombre y el 65 % con las cuatro macros**. Y sobre 16
+códigos reales de marcas de aquí —Ramo, Zenú, Colombina—, **15 volvieron
+completos**. La diferencia entre las dos cifras importa: lo que la gente compra
+de verdad está mucho mejor fichado que la cola larga del catálogo.
+
+Por eso el escaneo tiene **tres desenlaces y no dos** (`utils/scanned-food.ts`):
+el producto está completo, **está pero sin cifras** —y entonces el nombre ya es
+un ahorro— o no está. Uno de cada tres cae en los dos últimos, así que no son la
+excepción rara.
+
 ## Política de dependencias
 
 Antes de instalar **cualquier** dependencia nueva hay que responder:
