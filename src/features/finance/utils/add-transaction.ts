@@ -6,20 +6,11 @@ import type {
 } from '../types/finance.types'
 
 /**
- * Cuántos movimientos recientes enseña el mes.
- *
- * Vive aquí y no en el servicio porque hacen falta los dos a la vez: el
- * servicio corta la lista al leerla y esto la vuelve a cortar al añadir. Con la
- * cifra en dos sitios, el movimiento recién apuntado podría dejar nueve.
- */
-export const RECENT_LIMIT = 8
-
-/**
  * El mes con el movimiento recién apuntado, para verlo antes de que salga.
  *
- * Las cifras **se suman a las que ya había** en vez de recalcularse: sólo se
- * guardan los últimos movimientos del mes, así que rehacer los totales desde
- * ellos daría un mes recortado. Sumar es además exacto.
+ * Las cifras **se suman a las que ya había** en vez de recalcularse. Rehacerlas
+ * desde la lista funcionaría —ya vienen todas—, pero sumar es más barato y da
+ * exactamente lo mismo.
  *
  * Se respetan las mismas reglas que al leerlos del servidor: un traspaso no es
  * gasto ni ingreso —el dinero sigue siendo tuyo, sólo cambió de cajón— y el
@@ -35,7 +26,7 @@ export function addTransactionToMonth(
   return {
     totals,
     byCategory: addToCategories(month.byCategory, transaction, totals.expense),
-    recent: [transaction, ...month.recent].slice(0, RECENT_LIMIT),
+    transactions: [transaction, ...month.transactions],
   }
 }
 

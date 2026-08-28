@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FinanceMonth, FinanceTransactionWithNames } from '../types/finance.types'
-import { addTransactionToMonth, RECENT_LIMIT } from './add-transaction'
+import { addTransactionToMonth } from './add-transaction'
 
 function movimiento(
   overrides: Partial<FinanceTransactionWithNames> = {},
@@ -32,7 +32,7 @@ function mes(overrides: Partial<FinanceMonth> = {}): FinanceMonth {
   return {
     totals: { income: 100_000, expense: 80_000, fixedExpense: 30_000, balance: 20_000 },
     byCategory: [{ categoryId: 'c1', name: 'Mercado', amount: 80_000, share: 100 }],
-    recent: [],
+    transactions: [],
     ...overrides,
   }
 }
@@ -41,7 +41,7 @@ describe('addTransactionToMonth', () => {
   it('pone el movimiento el primero de la lista', () => {
     const actual = addTransactionToMonth(mes(), movimiento())
 
-    expect(actual.recent[0]?.id).toBe('t-nuevo')
+    expect(actual.transactions[0]?.id).toBe('t-nuevo')
   })
 
   it('un gasto sube el gasto y baja el saldo', () => {
@@ -61,7 +61,7 @@ describe('addTransactionToMonth', () => {
 
     expect(actual.totals).toEqual(mes().totals)
     expect(actual.byCategory).toEqual(mes().byCategory)
-    expect(actual.recent[0]?.id).toBe('t-nuevo')
+    expect(actual.transactions[0]?.id).toBe('t-nuevo')
   })
 
   it('no toca el gasto fijo: lo que se apunta a mano no viene de un pago recurrente', () => {
@@ -99,14 +99,17 @@ describe('addTransactionToMonth', () => {
     expect(actual.byCategory[0]).toMatchObject({ categoryId: null, name: 'Sin categoría' })
   })
 
-  it('la lista de recientes no crece: el que entra empuja al último', () => {
-    const llena = mes({
-      recent: Array.from({ length: RECENT_LIMIT }, (_, i) => movimiento({ id: `viejo-${i}` })),
+  it('el mes se queda con todos los movimientos, no con los ultimos', () => {
+    // Antes la lista se cortaba en ocho y la pantalla ensenaba ocho de ciento
+    // quince sin decirlo. Ahora vienen todos y quien recorta es el filtro.
+    const lleno = mes({
+      transactions: Array.from({ length: 40 }, (_, i) => movimiento({ id: `viejo-${i}` })),
     })
 
-    const actual = addTransactionToMonth(llena, movimiento())
+    const actual = addTransactionToMonth(lleno, movimiento({ id: 't-nuevo' }))
 
-    expect(actual.recent).toHaveLength(RECENT_LIMIT)
-    expect(actual.recent.at(-1)?.id).toBe(`viejo-${RECENT_LIMIT - 2}`)
+    expect(actual.transactions).toHaveLength(41)
+    expect(actual.transactions[0]?.id).toBe('t-nuevo')
+    expect(actual.transactions.at(-1)?.id).toBe('viejo-39')
   })
 })
