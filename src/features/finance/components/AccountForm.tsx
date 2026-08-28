@@ -6,6 +6,7 @@ import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyField } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 
 import { ACCOUNT_KIND_LABELS } from '../constants/finance.constants'
@@ -27,6 +28,7 @@ export function AccountForm({ onCreated }: AccountFormProps) {
 
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors, isSubmitting },
@@ -70,13 +72,13 @@ export function AccountForm({ onCreated }: AccountFormProps) {
 
         <div>
           <Label htmlFor="account-balance">¿Cuánto hay ahora?</Label>
-          <Input
+          {/* Puede ser negativo: una tarjeta de crédito empieza debiendo. */}
+          <MoneyField
+            control={control}
+            name="initialBalance"
             id="account-balance"
-            type="number"
-            inputMode="numeric"
-            step={1}
             placeholder="0"
-            {...register('initialBalance', { valueAsNumber: true })}
+            allowNegative
           />
           {errors.initialBalance ? <FormAlert>{errors.initialBalance.message}</FormAlert> : null}
         </div>

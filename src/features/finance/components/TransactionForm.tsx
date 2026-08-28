@@ -9,6 +9,7 @@ import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyField } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 import { cn } from '@/shared/lib/utils'
 import { formatCop, toDateKey } from '@/shared/utils'
@@ -253,15 +254,12 @@ export function TransactionForm({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <Label htmlFor="finance-amount">Monto</Label>
-          <Input
+          <MoneyField
+            control={control}
+            name="amount"
             id="finance-amount"
-            type="number"
-            inputMode="numeric"
-            step={1}
-            min={1}
             placeholder="12500"
             autoFocus
-            {...register('amount', { valueAsNumber: true })}
           />
           {errors.amount ? <FormAlert>{errors.amount.message}</FormAlert> : null}
         </div>

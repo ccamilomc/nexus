@@ -6,6 +6,7 @@ import { ROUTES } from '@/app/router/routes'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
+import { MoneyInput } from '@/shared/components/ui/money-input'
 import { Select } from '@/shared/components/ui/select'
 import { formatCop } from '@/shared/utils'
 
@@ -189,15 +190,14 @@ function PurchaseRow({ draft, foods, canRemove, onChange, onRemove }: PurchaseRo
 
         <div>
           <Label htmlFor={`purchase-${draft.key}-paid`}>Lo que pagaste</Label>
-          <Input
+          {/* El borrador guarda texto; el campo de dinero habla en cifras. */}
+          <MoneyInput
             id={`purchase-${draft.key}-paid`}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={100}
             placeholder="18000"
-            value={draft.paid}
-            onChange={(event) => onChange({ ...draft, paid: event.target.value })}
+            value={draft.paid === '' ? Number.NaN : Number(draft.paid)}
+            onChange={(paid) =>
+              onChange({ ...draft, paid: Number.isNaN(paid) ? '' : String(paid) })
+            }
           />
         </div>
       </div>

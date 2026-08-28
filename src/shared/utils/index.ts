@@ -14,6 +14,7 @@ export { formatCop } from './format-money'
 export { formatTime } from './format-time'
 export { calculateProgress, type GoalProgress } from './goal-progress'
 export { toLoggedAt } from './logged-at'
+export { caretAfterFormat, digitsBefore, formatMoneyInput, parseMoneyInput } from './money-input'
 export { prefersReducedMotion } from './reduced-motion'
 export { matchesQuery } from './search'
 export {
