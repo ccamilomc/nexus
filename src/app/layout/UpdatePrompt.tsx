@@ -32,7 +32,19 @@ export function UpdatePrompt() {
   return (
     <div
       role="status"
-      className="fixed inset-x-3 bottom-3 z-50 mx-auto flex max-w-md flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-md border border-border bg-card px-3 py-2 text-center text-xs shadow-lg lg:bottom-4"
+      /*
+        Por encima de la barra inferior, no encima de ella.
+
+        Iba a `bottom-3` y **tapaba la navegación entera**: medido a 375 px, la
+        barra ocupa de 755 a 813 y el aviso caía en 766. Justo cuando aparece una
+        versión nueva, desaparecían «Hoy», «Dashboard», «Finanzas» y «Entreno».
+
+        Los 5rem despejan los 58 px de la barra con margen de sobra, y el área
+        segura se suma aparte porque en el teléfono la barra de gestos va debajo
+        de todo. En escritorio no hay barra inferior (`lg:hidden`), así que ahí
+        vuelve abajo del todo.
+      */
+      className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-50 mx-auto flex max-w-md flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-md border border-border bg-card px-3 py-2 text-center text-xs shadow-lg lg:bottom-4"
     >
       <span className="font-medium">Hay una versión nueva de Nexus.</span>
       <span className="flex gap-2">
