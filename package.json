@@ -23,7 +23,9 @@
     "db:types": "supabase gen types typescript --linked > src/core/supabase/database.types.ts",
     "db:pull": "supabase db pull",
     "db:diff": "supabase db diff -f",
-    "prepare": "husky"
+    "prepare": "husky",
+    "knip": "knip",
+    "size": "node scripts/check-bundle-size.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -47,6 +49,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
     "autoprefixer": "^10.5.4",
+    "axe-core": "^4.13.0",
     "eslint": "^10.7.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
@@ -55,6 +58,7 @@
     "globals": "^17.7.0",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
+    "knip": "^6.33.0",
     "lint-staged": "^17.1.1",
     "postcss": "^8.5.22",
     "prettier": "^3.9.6",
