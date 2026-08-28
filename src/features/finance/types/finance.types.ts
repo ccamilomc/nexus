@@ -9,11 +9,16 @@ export type FinanceInterestKind = Enums<'finance_interest_kind'>
 export type FinanceDebt = Tables<'finance_debts'>
 export type FinanceRecurrence = Enums<'finance_recurrence'>
 export type FinanceBudget = Tables<'finance_budgets'>
+export type FinanceMonthBudget = Tables<'finance_month_budgets'>
 
-/** Cómo va un tope mensual: lo gastado, el límite y lo que queda. */
-export interface BudgetStatus {
-  readonly categoryId: string
-  readonly name: string
+/**
+ * Lo gastado contra un límite, sea el de una categoría o el del mes entero.
+ *
+ * Vive aparte para que las dos cuentas no puedan separarse: si una recortara el
+ * porcentaje a 100 y la otra no, la misma barra significaría cosas distintas
+ * dentro de la misma tarjeta.
+ */
+export interface SpendAgainstCap {
   readonly spent: number
   readonly cap: number
   /** Puede pasar de 100, y entonces `isExceeded`. */
@@ -21,6 +26,34 @@ export interface BudgetStatus {
   /** Lo que queda. Negativo cuando se pasó, y eso es el dato. */
   readonly remaining: number
   readonly isExceeded: boolean
+}
+
+/** Cómo va el tope mensual de una categoría. */
+export interface BudgetStatus extends SpendAgainstCap {
+  readonly categoryId: string
+  readonly name: string
+}
+
+/**
+ * Los topes de un mes: el del mes entero y el de cada categoría.
+ *
+ * **Van juntos porque se leen juntos.** El presupuesto del mes es el marco y
+ * los topes son el detalle; separarlos en dos consultas traería dos veces los
+ * mismos movimientos para responder a la misma pregunta.
+ */
+export interface BudgetsOverview {
+  /**
+   * Si el mes que se mira es el de hoy.
+   *
+   * Un tope es un valor único, no un histórico: medir julio con el tope de
+   * agosto sería medir con una regla que entonces no existía. Fuera del mes en
+   * curso la pantalla no dibuja nada, y sin este dato «vacío» y «no aplica» se
+   * verían igual.
+   */
+  readonly isCurrentMonth: boolean
+  /** El presupuesto del mes entero. `null` cuando no se ha puesto. */
+  readonly month: SpendAgainstCap | null
+  readonly categories: readonly BudgetStatus[]
 }
 export type FinanceRecurring = Tables<'finance_recurring'>
 

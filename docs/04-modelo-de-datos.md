@@ -470,6 +470,12 @@ lo proyecta.
   **no los apunta solo**.
 - **finance_budgets**: el tope mensual de una categoría de gasto. Uno por
   categoría, sin histórico: un tope es un ajuste vigente, no un registro.
+- **finance_month_budgets**: cuánto te propusiste gastar en el mes **en total**.
+  Uno por persona. Va en su propia tabla y no como un `finance_budgets` con la
+  categoría en nulo: en Postgres dos NULL no chocan entre sí, así que el índice
+  único no impediría dos presupuestos, y todo lector de los topes tendría que
+  acordarse de descartar esa fila. **No se mide sumando los topes**, porque la
+  mayor parte del gasto no tiene ninguno.
 
 ### El importe siempre es positivo; la dirección la pone `kind`
 
@@ -532,6 +538,7 @@ erDiagram
     profiles ||--o{ finance_debts : debe
     profiles ||--o{ finance_recurring : programa
     profiles ||--o{ finance_budgets : limita
+    profiles ||--o{ finance_month_budgets : presupuesta
     finance_accounts ||--o{ finance_transactions : origina
     finance_categories ||--o{ finance_transactions : clasifica
     finance_categories ||--o{ finance_budgets : topa

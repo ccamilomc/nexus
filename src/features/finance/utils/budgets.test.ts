@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest'
 
-import type { CategorySpend, FinanceBudget, FinanceCategory } from '../types/finance.types'
-import { calculateBudgets, monthProgressPercent } from './budgets'
+import { formatCop } from '@/shared/utils'
+
+import type {
+  CategorySpend,
+  FinanceBudget,
+  FinanceCategory,
+  FinanceMonthBudget,
+} from '../types/finance.types'
+import {
+  calculateBudgets,
+  calculateMonthBudget,
+  capMessage,
+  compareToCap,
+  monthProgressPercent,
+} from './budgets'
 
 describe('monthProgressPercent', () => {
   it('el último día del mes es el 100 %', () => {
@@ -133,5 +146,85 @@ describe('calculateBudgets', () => {
     )
 
     expect(result.map(({ categoryId }) => categoryId)).toEqual(['cat-3', 'cat-1', 'cat-2'])
+  })
+})
+
+function monthBudget(amount: number): FinanceMonthBudget {
+  return {
+    id: 'mb-1',
+    user_id: 'u-1',
+    amount,
+    created_at: '2026-08-01T10:00:00Z',
+    updated_at: '2026-08-01T10:00:00Z',
+  }
+}
+
+describe('compareToCap', () => {
+  it('dice lo que queda', () => {
+    expect(compareToCap(400_000, 600_000)).toMatchObject({
+      remaining: 200_000,
+      isExceeded: false,
+    })
+  })
+
+  it('el porcentaje pasa de 100 cuando te pasaste', () => {
+    // Recortarlo a 100 escondería justo cuánto te pasaste, que es el dato.
+    const status = compareToCap(750_000, 500_000)
+
+    expect(status.percent).toBe(150)
+    expect(status.isExceeded).toBe(true)
+  })
+
+  it('lo que queda se va en negativo al pasarse', () => {
+    expect(compareToCap(750_000, 500_000).remaining).toBe(-250_000)
+  })
+
+  it('gastar justo el límite todavía no es pasarse', () => {
+    expect(compareToCap(500_000, 500_000).isExceeded).toBe(false)
+  })
+})
+
+describe('calculateMonthBudget', () => {
+  it('sin presupuesto puesto no hay nada que medir', () => {
+    expect(calculateMonthBudget(null, 1_200_000)).toBeNull()
+  })
+
+  it('mide el gasto del mes contra el presupuesto', () => {
+    const status = calculateMonthBudget(monthBudget(2_500_000), 1_850_000)
+
+    expect(status).toMatchObject({ spent: 1_850_000, cap: 2_500_000, remaining: 650_000 })
+  })
+
+  it('avisa cuando el mes se pasó', () => {
+    expect(calculateMonthBudget(monthBudget(2_000_000), 2_400_000)?.isExceeded).toBe(true)
+  })
+})
+
+describe('capMessage', () => {
+  it('cuando te pasaste dice cuánto, en positivo', () => {
+    // «Te pasaste -250.000» no se entiende.
+    expect(capMessage(compareToCap(750_000, 500_000), 50)).toBe(`Te pasaste ${formatCop(250_000)}.`)
+  })
+
+  it('yendo a tiempo sólo dice lo que queda', () => {
+    // El 50 % del tope el día 15 de un mes de 30 es justo el ritmo.
+    expect(capMessage(compareToCap(250_000, 500_000), 50)).toBe(`Te quedan ${formatCop(250_000)}.`)
+  })
+
+  it('avisa de ir por delante del mes aunque no te hayas pasado', () => {
+    // El 80 % el día 10 acaba mal aunque el tope siga entero.
+    expect(capMessage(compareToCap(400_000, 500_000), 33)).toBe(
+      `Te quedan ${formatCop(100_000)}, y vas por delante del mes.`,
+    )
+  })
+
+  it('ir un poco adelantado no es motivo de aviso', () => {
+    // Diez puntos de margen: si no, avisaría por ir un día por delante.
+    expect(capMessage(compareToCap(280_000, 500_000), 50)).toBe(`Te quedan ${formatCop(220_000)}.`)
+  })
+
+  it('haberse pasado manda sobre ir por delante', () => {
+    // Los dos son verdad a la vez, y sólo uno se puede decir.
+    expect(capMessage(compareToCap(600_000, 500_000), 10)).toBe(`Te pasaste ${formatCop(100_000)}.`)
   })
 })
