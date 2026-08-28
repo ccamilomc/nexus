@@ -1,4 +1,4 @@
-import { Pencil } from 'lucide-react'
+import { HandCoins, Pencil } from 'lucide-react'
 
 import { Button } from '@/shared/components/ui/button'
 import { Card, CardContent } from '@/shared/components/ui/card'
@@ -16,6 +16,10 @@ interface DebtCardProps {
   /** Se está corrigiendo ahora mismo, y se marca para no perderla de vista. */
   readonly isEditing: boolean
   readonly onEdit: () => void
+  /** Se está abonando ahora mismo; el botón se marca para no perderlo de vista. */
+  readonly isPaying?: boolean
+  /** Ausente en las saldadas: a una deuda pagada no se le abona nada. */
+  readonly onPay?: (() => void) | undefined
   readonly onToggleSettled: (debtId: string, isSettled: boolean) => void
   readonly onRemove: (debtId: string) => void
 }
@@ -48,6 +52,8 @@ export function DebtCard({
   isBusy,
   isEditing,
   onEdit,
+  isPaying = false,
+  onPay,
   onToggleSettled,
   onRemove,
 }: DebtCardProps) {
@@ -70,7 +76,24 @@ export function DebtCard({
             </p>
           </div>
 
-          <div className="flex shrink-0 gap-1">
+          <div className="flex shrink-0 items-center gap-1">
+            {/* La acción principal de una deuda es abonarla, así que va primera
+                y con nombre. El resto son grises: corregirla, cerrarla y
+                borrarla se hacen una vez; abonar, muchas. */}
+            {onPay ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={isPaying ? 'default' : 'outline'}
+                aria-label={`Abonar a la deuda de ${debt.counterpart}`}
+                disabled={isBusy}
+                onClick={onPay}
+              >
+                <HandCoins aria-hidden />
+                Abonar
+              </Button>
+            ) : null}
+
             {/* El nombre lleva el de la contraparte: en una lista, varios
                 botones «Corregir» no le dicen nada a un lector de pantalla. */}
             <Button
@@ -85,9 +108,12 @@ export function DebtCard({
               <Pencil aria-hidden />
             </Button>
 
+            {/* «Saldada» era el nombre de un estado, no de una acción, al lado
+                de dos verbos: leyéndolo rápido parecía decir cómo estaba la
+                deuda, no que se pudiera pulsar. */}
             <ConfirmButton
-              label={isSettled ? 'Reabrir' : 'Saldada'}
-              confirmLabel={isSettled ? 'Sí, reabrir' : 'Sí, saldada'}
+              label={isSettled ? 'Reabrir' : 'Dar por saldada'}
+              confirmLabel={isSettled ? 'Sí, reabrir' : 'Sí, saldarla'}
               disabled={isBusy}
               onConfirm={() => onToggleSettled(debt.id, !isSettled)}
               className="text-muted-foreground"
