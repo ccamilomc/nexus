@@ -17,6 +17,7 @@ import type { Exercise, SessionDetail } from '../types/workout.types'
 import { formatOptionalTargets, formatSessionDate } from '../utils/format'
 import { findLastSetAt } from '../utils/last-set-at'
 import { buildSessionItems } from '../utils/session-items'
+import { hasAnySet } from '../utils/session-stats'
 import { ExercisePicker } from './ExercisePicker'
 import { RestTimer } from './RestTimer'
 import { SessionExerciseCard } from './SessionExerciseCard'
@@ -60,7 +61,9 @@ export function ActiveSession({ detail }: ActiveSessionProps) {
   const forgetDraft = (exerciseId: string) =>
     setDrafts((current) => current.filter((exercise) => exercise.id !== exerciseId))
 
-  const hasSets = stats.setCount > 0
+  // No es `stats.setCount > 0`: quien sólo llegó a calentar tiene cero series
+  // de trabajo, pero apuntó algo y tiene que poder cerrar el entrenamiento.
+  const hasSets = hasAnySet(exercises)
   const lastSetAt = findLastSetAt(exercises)
 
   return (

@@ -242,6 +242,12 @@ export const workoutService = {
         set_number: input.setNumber,
         reps: input.reps,
         weight: input.weightKg,
+        // Los `??` no sobran aunque el tipo diga que vienen siempre: una serie
+        // que se quedó en la cola offline con la versión anterior se guardó sin
+        // estos dos campos, y al volver la red se envía con este código. Sin
+        // ellos entraría `undefined` en la columna.
+        is_warmup: input.isWarmup ?? false,
+        rpe: input.rpe ?? null,
       })
     } catch (error) {
       throw toAppError(error)

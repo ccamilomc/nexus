@@ -1,7 +1,7 @@
 import { seriesTotal, toDateKey, toDateKeyFromIso } from '@/shared/utils'
 
 import type { SessionSample, VolumeSetSample, WorkoutPeriodSeries } from '../types/workout.types'
-import { sessionDurationMinutes, sumVolume } from './session-stats'
+import { countWorkingSets, sessionDurationMinutes, sumVolume } from './session-stats'
 
 /** Cifras de una sesión ya resuelta, situada en su día. */
 interface DaySession {
@@ -30,7 +30,9 @@ export function buildWorkoutSeries(
     return {
       dateKey: toDateKeyFromIso(session.started_at),
       volumeKg: sumVolume(sessionSets),
-      setCount: sessionSets.length,
+      // Las de calentamiento no cuentan, igual que no cuentan para el volumen
+      // que va justo encima: son la misma pregunta contada dos veces.
+      setCount: countWorkingSets(sessionSets),
       durationMinutes: sessionDurationMinutes(session),
     }
   })

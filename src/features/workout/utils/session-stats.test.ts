@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { WorkoutSetWithExercise } from '../types/workout.types'
-import { calculateSessionStats, groupSetsByExercise } from './session-stats'
+import { calculateSessionStats, groupSetsByExercise, hasAnySet } from './session-stats'
 
 const PRESS: WorkoutSetWithExercise['exercise'] = {
   id: 'ex-press',
@@ -93,7 +93,7 @@ describe('calculateSessionStats', () => {
     expect(stats.totalVolumeKg).toBe(10 * 60 + 8 * 70 + 12 * 40)
   })
 
-  it('excluye del volumen el calentamiento y las series no completadas', () => {
+  it('el calentamiento y lo no completado no cuentan, ni en volumen ni en series', () => {
     const exercises = groupSetsByExercise([
       makeSet(PRESS, { reps: 10, weight: 20, is_warmup: true }),
       makeSet(PRESS, { reps: 10, weight: 60, completed: false }),
@@ -102,7 +102,10 @@ describe('calculateSessionStats', () => {
 
     const stats = calculateSessionStats(session, exercises)
 
-    expect(stats.setCount).toBe(3)
+    // `setCount` contaba las tres y el volumen sólo una: la misma tarjeta podía
+    // decir «Series 3» encima de una lista con una. Las dos cifras salen ahora
+    // de la misma definición.
+    expect(stats.setCount).toBe(1)
     expect(stats.totalVolumeKg).toBe(600)
   })
 
@@ -123,5 +126,33 @@ describe('calculateSessionStats', () => {
     const active = { started_at: '2026-07-24T10:00:00.000Z', ended_at: null }
 
     expect(calculateSessionStats(active, []).durationMinutes).toBeNull()
+  })
+})
+
+describe('hasAnySet', () => {
+  const session = { started_at: '2026-07-24T10:00:00.000Z', ended_at: null }
+
+  it('sin ejercicios no hay nada apuntado', () => {
+    expect(hasAnySet([])).toBe(false)
+  })
+
+  it('un ejercicio abierto pero todavía sin series no cuenta', () => {
+    expect(hasAnySet([{ exercise: PRESS, sets: [] }])).toBe(false)
+  })
+
+  it('sólo calentamientos ya es algo apuntado', () => {
+    // Es la razón de existir de esta función: `setCount` vale cero aquí, y aun
+    // así el entrenamiento tiene que poder cerrarse. Con la comprobación
+    // antigua (`setCount > 0`) quien sólo llegó a calentar se quedaba encerrado.
+    const exercises = groupSetsByExercise([makeSet(PRESS, { is_warmup: true })])
+
+    expect(calculateSessionStats(session, exercises).setCount).toBe(0)
+    expect(hasAnySet(exercises)).toBe(true)
+  })
+
+  it('basta con que uno de los ejercicios tenga series', () => {
+    const exercises = groupSetsByExercise([makeSet(ROW)])
+
+    expect(hasAnySet([{ exercise: PRESS, sets: [] }, ...exercises])).toBe(true)
   })
 })
