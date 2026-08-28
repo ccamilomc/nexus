@@ -31,6 +31,16 @@ interface TransactionFormProps {
   /** El movimiento que se está corrigiendo, o `null` para apuntar uno nuevo. */
   readonly editing?: FinanceTransactionWithNames | null
   readonly onFinishEditing?: () => void
+  /**
+   * La deuda que se viene a abonar, cuando se llega desde su tarjeta.
+   *
+   * Un abono es un movimiento como cualquier otro —por eso se usa este mismo
+   * formulario y no otro— pero llegando desde la deuda ya se sabe **el sentido
+   * y cuál es**: pagar lo que debes es un gasto y cobrar lo que te deben, un
+   * ingreso. Dejar que se eligieran a mano sería pedir dos veces algo que ya
+   * está dicho, y permitiría equivocarse.
+   */
+  readonly payingDebt?: DebtWithBalance | null
 }
 
 const KIND_OPTIONS = [
@@ -54,6 +64,7 @@ export function TransactionForm({
   debts,
   editing = null,
   onFinishEditing,
+  payingDebt = null,
 }: TransactionFormProps) {
   const today = useToday()
   const create = useCreateTransaction()
@@ -64,13 +75,18 @@ export function TransactionForm({
   // Sube tras guardar para vaciar los campos de la compra remontándolos.
   const [purchaseReset, setPurchaseReset] = useState(0)
 
+  // Llegando desde una deuda, el sentido y la deuda vienen resueltos.
   const blankValues: TransactionValues = {
-    kind: 'expense',
+    kind: payingDebt
+      ? payingDebt.debt.direction === 'owed_to_me'
+        ? 'income'
+        : 'expense'
+      : 'expense',
     amount: Number.NaN,
     accountId: accounts[0]?.id ?? '',
     toAccountId: null,
     categoryId: null,
-    debtId: null,
+    debtId: payingDebt?.debt.id ?? null,
     occurredOn: toDateKey(today),
   }
 
