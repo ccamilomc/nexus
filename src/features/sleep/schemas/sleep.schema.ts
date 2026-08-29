@@ -23,7 +23,15 @@ export const logSleepSchema = z.object({
    * sueño se registra al levantarse y olvidarse un par de días es lo normal.
    * Por defecto es hoy, que es el caso de casi siempre.
    */
-  date: z.string().min(1, 'Elige la noche.'),
+  date: z.string().min(1, 'Elige el día.'),
+  /**
+   * Sueño principal o siesta.
+   *
+   * **Cambia lo que pasa al guardar.** Una noche corrige la de esa fecha —sólo
+   * se duerme una vez— y una siesta se suma: quien duerme seis de noche y tres
+   * por la tarde durmió nueve, no tres.
+   */
+  kind: z.enum(['night', 'nap']),
   bedtime: time,
   wakeTime: time,
   qualityRating: z.number().int().min(1).max(5).optional(),

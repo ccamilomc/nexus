@@ -7,7 +7,7 @@ const DAYS = [new Date(2026, 6, 27), new Date(2026, 6, 28), new Date(2026, 6, 29
 const PREVIOUS_DAYS = [new Date(2026, 6, 24), new Date(2026, 6, 25), new Date(2026, 6, 26)]
 
 function night(date: string, minutes: number, quality: number | null = null): SleepDaySample {
-  return { date, duration_minutes: minutes, quality_rating: quality }
+  return { date, duration_minutes: minutes, quality_rating: quality, kind: 'night' }
 }
 
 describe('buildSleepSeries', () => {

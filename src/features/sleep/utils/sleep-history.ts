@@ -1,4 +1,5 @@
 import type { SleepHistory, SleepLog } from '../types/sleep.types'
+import { totalMinutesByDate } from './daily-sleep'
 
 /** Media redondeada de una lista de números; `null` si está vacía. */
 function average(values: readonly number[]): number | null {
@@ -10,8 +11,13 @@ function average(values: readonly number[]): number | null {
 /**
  * Compone el historial de sueño con sus medias.
  *
- * La media de calidad sólo cuenta las noches valoradas: puntuar es opcional, y
- * tratar «no lo valoré» como un cero hundiría la media de quien simplemente no
+ * **La media es por día, no por registro**, y desde que existen las siestas eso
+ * no es un matiz: un día de seis horas de noche más tres de siesta son dos
+ * filas, y promediarlas daría 4 h 30 min para un día en el que se durmieron
+ * nueve. La media se saca de lo dormido cada día.
+ *
+ * La media de calidad sólo cuenta lo valorado: puntuar es opcional, y tratar
+ * «no lo valoré» como un cero hundiría la media de quien simplemente no
  * respondió.
  */
 export function buildSleepHistory(logs: readonly SleepLog[]): SleepHistory {
@@ -21,7 +27,7 @@ export function buildSleepHistory(logs: readonly SleepLog[]): SleepHistory {
 
   return {
     logs,
-    averageMinutes: average(logs.map((log) => log.duration_minutes)),
+    averageMinutes: average([...totalMinutesByDate(logs).values()]),
     averageQuality: average(qualities),
   }
 }

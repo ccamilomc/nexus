@@ -26,7 +26,7 @@ export const sleepService = {
    */
   async getLastNight(userId: string, today: Date): Promise<SleepLog | null> {
     try {
-      return await sleepRepository.findLogByDate(userId, toDateKey(today))
+      return await sleepRepository.findNightByDate(userId, toDateKey(today))
     } catch (error) {
       throw toAppError(error)
     }
@@ -110,8 +110,12 @@ export const sleepService = {
    *
    * La duración se **calcula** de las horas: nadie sabe cuántos minutos durmió,
    * pero todo el mundo recuerda cuándo se acostó y cuándo sonó el despertador.
-   * Si ya había registro para esa fecha se actualiza, porque una noche sólo se
-   * duerme una vez y volver a la pantalla debe corregir, no duplicar.
+   *
+   * **La noche corrige; la siesta se suma.** Una noche sólo se duerme una vez,
+   * así que volver a guardarla actualiza la que hubiera —volver a la pantalla
+   * debe corregir, no duplicar—. Una siesta es otra cosa: se puede echar una
+   * después de comer y otra a media tarde, y las dos cuentan. Por eso una
+   * siesta siempre entra como registro nuevo.
    *
    * **La noche llega en los valores y no como el día de hoy.** El sueño se
    * apunta al levantarse y olvidarse un par de días es lo normal; sin poder
@@ -131,16 +135,21 @@ export const sleepService = {
 
       // La consulta se queda aquí: una mutación en cola no llega a ejecutarse
       // hasta que vuelve la red, así que cuando esto corre siempre hay conexión.
-      const existing = await sleepRepository.findLogByDate(input.userId, input.dateKey)
-      if (existing) {
-        await sleepRepository.updateLog(existing.id, row)
-        return
+      if (input.kind === 'night') {
+        const existing = await sleepRepository.findNightByDate(input.userId, input.dateKey)
+        if (existing) {
+          await sleepRepository.updateLog(existing.id, row)
+          return
+        }
       }
 
       await sleepRepository.insertLog({
         id: input.id,
         user_id: input.userId,
         date: input.dateKey,
+        // Sin esto la base pone su valor por defecto —noche— y una siesta se
+        // guardaba como noche, pisando la de ese día. Pasó de verdad.
+        kind: input.kind,
         ...row,
       })
     } catch (error) {

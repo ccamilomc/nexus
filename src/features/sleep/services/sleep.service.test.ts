@@ -14,7 +14,7 @@ import { sleepService } from './sleep.service'
 vi.mock('../repositories/sleep.repository', () => ({
   sleepRepository: {
     listRecentLogs: vi.fn(),
-    findLogByDate: vi.fn(),
+    findNightByDate: vi.fn(),
     insertLog: vi.fn(),
     updateLog: vi.fn(),
     softDeleteLog: vi.fn(),
@@ -22,7 +22,7 @@ vi.mock('../repositories/sleep.repository', () => ({
 }))
 
 const listRecentLogs = vi.mocked(sleepRepository.listRecentLogs)
-const findLogByDate = vi.mocked(sleepRepository.findLogByDate)
+const findNightByDate = vi.mocked(sleepRepository.findNightByDate)
 const insertLog = vi.mocked(sleepRepository.insertLog)
 const updateLog = vi.mocked(sleepRepository.updateLog)
 
@@ -41,6 +41,7 @@ function log(date: string, minutes: number, quality: number | null = null): Slee
     wake_time: '07:00:00',
     duration_minutes: minutes,
     quality_rating: quality,
+    kind: 'night' as const,
     interruptions: 0,
     notes: null,
     created_at: `${date}T07:30:00.000Z`,
@@ -52,7 +53,7 @@ function log(date: string, minutes: number, quality: number | null = null): Slee
 beforeEach(() => {
   vi.clearAllMocks()
   listRecentLogs.mockResolvedValue([])
-  findLogByDate.mockResolvedValue(null)
+  findNightByDate.mockResolvedValue(null)
   insertLog.mockResolvedValue(log('2026-07-31', 480))
   updateLog.mockResolvedValue(log('2026-07-31', 480))
 })
@@ -65,6 +66,7 @@ describe('sleepService.logSleep', () => {
     id: 'n-nueva',
     userId: USER_ID,
     dateKey: TODAY_KEY,
+    kind: 'night' as const,
     bedtimeIso: new Date(2026, 6, 30, 23, 30).toISOString(),
     wakeTimeIso: new Date(2026, 6, 31, 7, 0).toISOString(),
     minutes: 450,
@@ -88,7 +90,7 @@ describe('sleepService.logSleep', () => {
 
   it('corrige la noche en lugar de duplicarla', async () => {
     // Una noche solo se duerme una vez: volver a la pantalla debe corregir.
-    findLogByDate.mockResolvedValue(log('2026-07-31', 480))
+    findNightByDate.mockResolvedValue(log('2026-07-31', 480))
 
     await sleepService.logSleep(INPUT)
 
@@ -103,6 +105,25 @@ describe('sleepService.logSleep', () => {
     await sleepService.logSleep({ ...INPUT, qualityRating: 4 })
 
     expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ quality_rating: 4 }))
+  })
+
+  it('guarda la clase que se le pide, no la que ponga la base', async () => {
+    // Sin `kind` en el insert, Postgres pone su valor por defecto —noche— y una
+    // siesta acababa guardada como noche, pisando la de ese dia. Paso de verdad.
+    await sleepService.logSleep({ ...INPUT, kind: 'nap' })
+
+    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ kind: 'nap' }))
+  })
+
+  it('una siesta se suma: no busca ni corrige nada', async () => {
+    // Se pueden echar dos en un dia, y la segunda no sustituye a la primera.
+    findNightByDate.mockResolvedValue(log('2026-07-31', 480))
+
+    await sleepService.logSleep({ ...INPUT, kind: 'nap', minutes: 90 })
+
+    expect(findNightByDate).not.toHaveBeenCalled()
+    expect(updateLog).not.toHaveBeenCalled()
+    expect(insertLog).toHaveBeenCalledWith(expect.objectContaining({ duration_minutes: 90 }))
   })
 
   it('traduce un fallo del repositorio a un error con mensaje humano', async () => {
@@ -148,6 +169,6 @@ describe('sleepService.getLastNight', () => {
   it('busca la noche por la fecha de hoy', async () => {
     await sleepService.getLastNight(USER_ID, TODAY)
 
-    expect(findLogByDate).toHaveBeenCalledExactlyOnceWith(USER_ID, '2026-07-31')
+    expect(findNightByDate).toHaveBeenCalledExactlyOnceWith(USER_ID, '2026-07-31')
   })
 })

@@ -21,7 +21,9 @@ export function SleepPage() {
   const today = useToday()
   const lastNight = useLastNight(today)
   const history = useSleepHistory()
-  const [isEditing, setIsEditing] = useState(false)
+  // Qué se está apuntando, o nada. Son dos gestos distintos: corregir la
+  // noche que ya está, y añadir una siesta a este día.
+  const [apuntando, setApuntando] = useState<'night' | 'nap' | null>(null)
 
   if (lastNight.isPending || history.isPending) {
     return <SkeletonList label="Cargando tu sueño" rows={3} rowClassName="h-24" />
@@ -34,24 +36,34 @@ export function SleepPage() {
   }
 
   const log = lastNight.data ?? null
-  const showForm = log === null || isEditing
+  // Sin noche registrada el formulario sale solo: quien entra por la mañana
+  // viene a apuntarla, no a buscar un botón.
+  const abierto = apuntando ?? (log === null ? 'night' : null)
 
   return (
     <>
       <PageHeader title="Sueño" description="Cuánto y cómo duermes." />
 
       <div className="space-y-4">
-        {showForm ? (
+        {abierto ? (
           <SleepForm
             today={today}
-            log={log}
-            pattern={sleepPattern(history.data?.logs ?? [])}
-            onSaved={() => setIsEditing(false)}
-            onCancel={log ? () => setIsEditing(false) : undefined}
+            // Una siesta empieza en blanco: los horarios de la noche no le
+            // sirven de nada, y arrancar en «23:30 → 05:30» para una siesta
+            // sería empezar borrando.
+            log={abierto === 'night' ? log : null}
+            kind={abierto}
+            pattern={abierto === 'night' ? sleepPattern(history.data?.logs ?? []) : null}
+            onSaved={() => setApuntando(null)}
+            onCancel={log ? () => setApuntando(null) : undefined}
           />
-        ) : (
-          <LastNightCard log={log} onEdit={() => setIsEditing(true)} />
-        )}
+        ) : log ? (
+          <LastNightCard
+            log={log}
+            onEdit={() => setApuntando('night')}
+            onAddNap={() => setApuntando('nap')}
+          />
+        ) : null}
 
         {history.data ? <SleepHistoryList history={history.data} /> : null}
 
