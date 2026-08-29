@@ -1,6 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["scripts/*.mjs"],
+  "entry": ["scripts/*.mjs", "src/**/index.ts"],
   "project": ["src/**/*.{ts,tsx}", "scripts/*.mjs"],
   "ignore": ["src/core/supabase/database.types.ts"],
   "rules": {
@@ -9,11 +9,12 @@
     "devDependencies": "error",
     "unlisted": "error",
     "binaries": "error",
-    "exports": "off",
-    "types": "off",
-    "nsExports": "off",
-    "nsTypes": "off",
+    "exports": "error",
+    "types": "error",
+    "nsExports": "error",
+    "nsTypes": "error",
     "enumMembers": "off",
     "duplicates": "off"
-  }
+  },
+  "ignoreExportsUsedInFile": true
 }

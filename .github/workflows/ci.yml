@@ -39,7 +39,14 @@ jobs:
         run: npm run test
 
       # Codigo y dependencias que ya no usa nadie. Cazo asi `zustand`, que
-      # llevaba diecisiete sprints instalada sin una sola importacion.
+      # llevaba diecisiete sprints instalada sin una sola importacion, y nueve
+      # exportaciones muertas mas.
+      #
+      # Los barriles (`index.ts`) van como puntos de entrada: sin eso, cada
+      # reexportacion que nadie importa por ahi salia como muerta y eran
+      # treinta y una de ruido. El precio es que algo alcanzable **solo** por
+      # un barril no se ve; el resto del codigo si, comprobado metiendo una
+      # funcion muerta a proposito.
       - name: Dead code
         run: npm run knip
 
