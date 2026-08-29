@@ -1,20 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Check } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 
 import { useToday } from '@/core/time'
-import { type FoodPurchase, useRepriceFoods } from '@/features/nutrition'
 import { FormAlert } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { Label } from '@/shared/components/ui/label'
 import { MoneyField } from '@/shared/components/ui/money-input'
-import { Select } from '@/shared/components/ui/select'
-import { cn } from '@/shared/lib/utils'
-import { formatCop, toDateKey } from '@/shared/utils'
+import { toDateKey } from '@/shared/utils'
 
 import { useCreateTransaction, useUpdateTransaction } from '../hooks/use-finance'
+import { useFoodPricing } from '../hooks/use-food-pricing'
 import { transactionSchema, type TransactionValues } from '../schemas/finance.schema'
 import type {
   DebtWithBalance,
@@ -22,9 +20,11 @@ import type {
   FinanceCategory,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
-import { AccountField } from './AccountField'
 import { FoodPricingSection } from './FoodPricingSection'
+import { TransactionDebtField } from './TransactionDebtField'
+import { TransactionKindPicker } from './TransactionKindPicker'
 import { TransactionSplits } from './TransactionSplits'
+import { TransactionTarget } from './TransactionTarget'
 
 interface TransactionFormProps {
   readonly accounts: readonly FinanceAccount[]
@@ -60,6 +60,9 @@ const KIND_OPTIONS = [
  * primera, la categoría puede quedarse vacía y la nota es opcional — en el caso
  * corriente sólo hay que escribir el monto y pulsar.
  */
+/** Un `<select>` no sabe de `null`: la opción vacía llega como cadena vacía. */
+const toNullable = (value: string) => (value === '' ? null : value)
+
 export function TransactionForm({
   accounts,
   categories,
@@ -71,11 +74,9 @@ export function TransactionForm({
   const today = useToday()
   const create = useCreateTransaction()
   const update = useUpdateTransaction()
-  const reprice = useRepriceFoods()
-  // Lo comprado, si el gasto vino del supermercado. Vacío es el caso normal.
-  const [purchases, setPurchases] = useState<readonly FoodPurchase[]>([])
-  // Sube tras guardar para vaciar los campos de la compra remontándolos.
-  const [purchaseReset, setPurchaseReset] = useState(0)
+  // Los precios del supermercado son de Nutrición, no del formulario: aquí
+  // sólo se ofrecen en el momento en que la persona tiene el recibo delante.
+  const pricing = useFoodPricing()
 
   // Llegando desde una deuda, el sentido y la deuda vienen resueltos.
   const blankValues: TransactionValues = {
@@ -193,59 +194,34 @@ export function TransactionForm({
         resetField('amount')
         resetField('note')
 
-        if (purchases.length === 0) return
-
-        // **El gasto primero y los precios después, en ese orden.** Sin
-        // transacciones desde el cliente, si falla lo segundo el dinero ya
-        // quedó apuntado —que es lo que no se puede perder— y los precios se
-        // reintentan sin coste, con los campos todavía llenos. Al revés se
-        // perdería el gasto por no haber podido actualizar un precio.
-        reprice.mutate(purchases, {
-          onSuccess: () => {
-            setPurchases([])
-            setPurchaseReset((key) => key + 1)
-          },
-        })
+        // Con el gasto ya a salvo. El porqué del orden está en el hook.
+        pricing.submit()
       },
     })
   })
 
-  const pending = create.isPending || update.isPending || reprice.isPending
+  const pending = create.isPending || update.isPending || pricing.isPending
   const failure = create.error ?? update.error
-  const repriced = reprice.data ?? []
 
   return (
     <form onSubmit={onSubmit} className="space-y-4">
-      <fieldset>
-        <legend className="mb-2 text-sm font-medium">
-          {editing ? 'Corrige el movimiento' : '¿Qué apuntas?'}
-        </legend>
-        <div className="flex flex-wrap gap-2">
-          {visibleKinds.map(({ value, label }) => (
-            <Button
-              key={value}
-              type="button"
-              variant={kind === value ? 'default' : 'outline'}
-              onClick={() => {
-                setValue('kind', value)
-                // Lo que no aplica al tipo nuevo se limpia: dejarlo puesto
-                // guardaría un gasto clasificado como «Salario», o un traspaso
-                // con la cuenta destino de otro tipo.
-                setValue('categoryId', null)
-                setValue('toAccountId', null)
-                // La compra también: el bloque desaparece al salir de «gasto»,
-                // pero lo escrito seguía en memoria y se habría aplicado al
-                // guardar un ingreso, que es justo lo que nadie espera.
-                setPurchases([])
-                setPurchaseReset((key) => key + 1)
-              }}
-              className={cn('min-w-24 flex-1')}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
-      </fieldset>
+      <TransactionKindPicker
+        options={visibleKinds}
+        value={kind}
+        isEditing={Boolean(editing)}
+        onSelect={(next) => {
+          setValue('kind', next)
+          // Lo que no aplica al tipo nuevo se limpia: dejarlo puesto guardaría
+          // un gasto clasificado como «Salario», o un traspaso con la cuenta
+          // destino de otro tipo.
+          setValue('categoryId', null)
+          setValue('toAccountId', null)
+          // La compra también: el bloque desaparece al salir de «gasto», pero
+          // lo escrito seguía en memoria y se habría aplicado al guardar un
+          // ingreso, que es justo lo que nadie espera.
+          pricing.clear()
+        }}
+      />
 
       {/* Monto y fecha comparten fila en pantalla ancha. Sueltos ocupaban el
           ancho entero de la tarjeta —casi 900 px para teclear cinco dígitos—,
@@ -271,54 +247,17 @@ export function TransactionForm({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <AccountField
-          id="finance-account"
-          label={isTransfer ? 'Desde' : 'Cuenta'}
-          accounts={accounts}
-          registration={register('accountId')}
-          error={errors.accountId?.message}
-        />
-
-        {isTransfer ? (
-          <div>
-            <Label htmlFor="finance-to-account">Hacia</Label>
-            <Select
-              id="finance-to-account"
-              {...register('toAccountId', {
-                setValueAs: (value: string) => (value === '' ? null : value),
-              })}
-            >
-              <option value="">Elige una cuenta</option>
-              {destinations.map((account) => (
-                <option key={account.id} value={account.id}>
-                  {account.name}
-                </option>
-              ))}
-            </Select>
-            {errors.toAccountId ? <FormAlert>{errors.toAccountId.message}</FormAlert> : null}
-          </div>
-        ) : (
-          <div>
-            <Label htmlFor="finance-category">Categoría</Label>
-            <Select
-              id="finance-category"
-              {...register('categoryId', {
-                // Un `<select>` no sabe de `null`: la opción vacía llega como ''
-                // y aquí se traduce a «sin categoría», que es lo que significa.
-                setValueAs: (value: string) => (value === '' ? null : value),
-              })}
-            >
-              <option value="">Sin categoría</option>
-              {visibleCategories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </Select>
-          </div>
-        )}
-      </div>
+      <TransactionTarget
+        accounts={accounts}
+        destinations={destinations}
+        categories={visibleCategories}
+        isTransfer={isTransfer}
+        accountRegistration={register('accountId')}
+        toAccountRegistration={register('toAccountId', { setValueAs: toNullable })}
+        categoryRegistration={register('categoryId', { setValueAs: toNullable })}
+        accountError={errors.accountId?.message}
+        toAccountError={errors.toAccountId?.message}
+      />
 
       {/* Un traspaso no se reparte: cambia de cajón, no se gasta en nada. */}
       {!isTransfer ? (
@@ -333,29 +272,11 @@ export function TransactionForm({
         />
       ) : null}
 
-      {/* Sólo aparece si hay deudas del sentido que toca: pagar una deuda es un
-          gasto, y cobrar lo que te deben es un ingreso. Sin deudas vivas, el
-          campo no existe y el formulario no crece por nada. */}
-      {relevantDebts.length > 0 ? (
-        <div>
-          <Label htmlFor="finance-debt">
-            {kind === 'income' ? '¿Te abonan una deuda?' : '¿Abona una deuda?'}
-          </Label>
-          <Select
-            id="finance-debt"
-            {...register('debtId', {
-              setValueAs: (value: string) => (value === '' ? null : value),
-            })}
-          >
-            <option value="">No</option>
-            {relevantDebts.map(({ debt, balance }) => (
-              <option key={debt.id} value={debt.id}>
-                {debt.counterpart} · faltan {formatCop(balance.remaining)}
-              </option>
-            ))}
-          </Select>
-        </div>
-      ) : null}
+      <TransactionDebtField
+        debts={relevantDebts}
+        isIncome={kind === 'income'}
+        registration={register('debtId', { setValueAs: toNullable })}
+      />
 
       <div>
         <Label htmlFor="finance-note">Nota (opcional)</Label>
@@ -367,7 +288,7 @@ export function TransactionForm({
           semanas no es venir del supermercado, y repreciar entonces pondría el
           precio de entonces como si fuera el de hoy. */}
       {kind === 'expense' && !editing ? (
-        <FoodPricingSection onChange={setPurchases} resetKey={purchaseReset} />
+        <FoodPricingSection onChange={pricing.setPurchases} resetKey={pricing.resetKey} />
       ) : null}
 
       <div className="flex flex-wrap gap-2">
@@ -395,18 +316,18 @@ export function TransactionForm({
 
       {/* El fallo de los precios se cuenta aparte del de arriba, y diciendo que
           el gasto sí quedó: si no, parecería que se perdió todo. */}
-      {reprice.isError ? (
+      {pricing.error ? (
         <FormAlert>
           El gasto quedó apuntado, pero no se pudieron actualizar los precios.{' '}
-          {reprice.error.message}
+          {pricing.error.message}
         </FormAlert>
       ) : null}
 
-      {repriced.length > 0 ? (
+      {pricing.repriced.length > 0 ? (
         <p className="text-xs text-muted-foreground">
-          {repriced.length === 1
-            ? `Precio de ${repriced[0]?.name} puesto al día.`
-            : `Precio de ${repriced.length} alimentos puesto al día.`}
+          {pricing.repriced.length === 1
+            ? `Precio de ${pricing.repriced[0]?.name} puesto al día.`
+            : `Precio de ${pricing.repriced.length} alimentos puesto al día.`}
         </p>
       ) : null}
     </form>
