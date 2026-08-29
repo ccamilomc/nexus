@@ -1,11 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useCallback } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 
 import { profileService } from '../services/profile.service'
-import type { Profile, ProfileChanges } from '../types/profile.types'
+import type { Profile } from '../types/profile.types'
 
 export const profileKeys = {
   all: ['profile'] as const,
@@ -26,24 +25,5 @@ export function useProfile() {
     queryKey: profileKeys.detail(user?.id),
     queryFn: () => profileService.get(requireUserId(user?.id)),
     enabled: Boolean(user?.id),
-  })
-}
-
-function useRefreshProfile() {
-  const client = useQueryClient()
-
-  return useCallback(() => {
-    void client.invalidateQueries({ queryKey: profileKeys.all })
-  }, [client])
-}
-
-/** Guarda los cambios del perfil que se le pasen. */
-export function useSaveProfile() {
-  const { user } = useAuth()
-  const refresh = useRefreshProfile()
-
-  return useMutation<void, AppError, ProfileChanges>({
-    mutationFn: (changes) => profileService.save(requireUserId(user?.id), changes),
-    onSuccess: refresh,
   })
 }

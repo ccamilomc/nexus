@@ -9,8 +9,6 @@ import type { Habit } from '../types/habits.types'
  * preferencias. `Date.getDay()` cuenta distinto —0 es domingo—, así que se
  * traduce aquí y en un solo sitio.
  */
-export const MONDAY = 1
-export const SUNDAY = 7
 
 /** El día de la semana de una fecha, de 1 (lunes) a 7 (domingo). */
 export function weekdayOf(date: Date): number {

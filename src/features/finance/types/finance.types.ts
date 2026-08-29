@@ -2,8 +2,6 @@ import type { Enums, Tables } from '@/core/supabase'
 import type { SeriesPoint } from '@/shared/utils'
 
 export type FinanceAccountKind = Enums<'finance_account_kind'>
-export type FinanceEntryKind = Enums<'finance_entry_kind'>
-export type FinanceDebtDirection = Enums<'finance_debt_direction'>
 export type FinanceInterestKind = Enums<'finance_interest_kind'>
 
 export type FinanceDebt = Tables<'finance_debts'>

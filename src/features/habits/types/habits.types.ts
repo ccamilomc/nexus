@@ -1,11 +1,10 @@
-import type { Enums, Tables } from '@/core/supabase'
+import type { Tables } from '@/core/supabase'
 import type { SeriesPoint } from '@/shared/utils'
 
 /** Tipos del dominio de hábitos. Las filas se usan tal cual las da Supabase. */
 
 export type Habit = Tables<'habits'>
 export type HabitLog = Tables<'habit_logs'>
-export type HabitFrequency = Enums<'habit_frequency'>
 
 /**
  * Un hábito con lo que la pantalla necesita saber hoy.

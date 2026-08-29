@@ -36,8 +36,6 @@ export const ROUTES = {
   more: '/mas',
 } as const
 
-export type RoutePath = (typeof ROUTES)[keyof typeof ROUTES]
-
 /** Patrón de ruta del detalle de una rutina (con parámetro), para el router. */
 export const WORKOUT_ROUTINE_DETAIL_PATTERN = `${ROUTES.workoutRoutines}/:routineId`
 

@@ -9,17 +9,6 @@ import type { Routine, RoutineSummary } from '../types/workout.types'
 import { requireUserId } from './require-user-id'
 import { workoutKeys } from './workout.keys'
 
-/** Rutinas del usuario. Server state vía TanStack Query. */
-export function useRoutines() {
-  const { user } = useAuth()
-  const userId = user?.id
-
-  return useQuery<Routine[], AppError>({
-    queryKey: workoutKeys.routines(userId),
-    queryFn: () => (userId ? workoutService.getRoutines(userId) : []),
-  })
-}
-
 /**
  * Las rutinas con cuánta es cada una y cuándo se usó.
  *

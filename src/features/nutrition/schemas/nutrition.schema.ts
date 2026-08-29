@@ -15,8 +15,6 @@ export const addFoodSchema = z.object({
     .max(MAX_SERVINGS, `Máximo ${MAX_SERVINGS}.`),
 })
 
-export type AddFoodValues = z.infer<typeof addFoodSchema>
-
 /**
  * Varios alimentos con su cantidad, para apuntarlos de una vez.
  *
