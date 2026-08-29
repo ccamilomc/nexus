@@ -25,7 +25,8 @@
     "db:diff": "supabase db diff -f",
     "prepare": "husky",
     "knip": "knip",
-    "size": "node scripts/check-bundle-size.mjs"
+    "size": "node scripts/check-bundle-size.mjs",
+    "data:alimentos": "node scripts/descargar-alimentos-colombia.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

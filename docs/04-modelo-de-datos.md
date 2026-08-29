@@ -486,6 +486,30 @@ lo proyecta.
   Un trigger comprueba que las partes quepan en el total **por los dos lados**:
   al tocar una parte y al bajar el total.
 
+### El catálogo colombiano no vive en la base
+
+Nexus lleva dentro **2.141 productos que se venden en Colombia**, sacados de Open
+Food Facts con `npm run data:alimentos`. Están en un archivo, no en una tabla, y
+la razón es que no son datos del usuario: son una **foto de una base de fuera**
+que se mueve despacio y que nadie edita desde la aplicación.
+
+Sirven para dos cosas: buscar un producto por su nombre —el buscador de Open Food
+Facts **no se puede llamar desde el navegador**, no manda cabecera CORS— y
+resolver un código de barras sin salir a internet, que es donde peor anda la
+señal: en el súper.
+
+**Nada de ahí entra al catálogo del usuario por su cuenta.** Al elegir un producto
+se abre el mismo formulario que al escanear, con las cifras puestas y el aviso de
+compararlas con el paquete. Es la misma regla de siempre: lo que llega de fuera no
+se da por bueno.
+
+El archivo **no viaja al instalar**: son 64 KB comprimidos que se bajan la primera
+vez que alguien busca, y a partir de ahí quedan guardados. Mismo trato que las
+ilustraciones de los ejercicios y que el descodificador de códigos de barras.
+
+Los datos son de Open Food Facts, con licencia **ODbL**: obliga a atribuir y a
+compartir igual lo derivado. La atribución va visible en la pantalla que los usa.
+
 ### El importe siempre es positivo; la dirección la pone `kind`
 
 Guardar importes con signo invita a un gasto negativo que suma en vez de restar,

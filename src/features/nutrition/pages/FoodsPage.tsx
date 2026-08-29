@@ -8,6 +8,7 @@ import { matchesQuery } from '@/shared/utils'
 
 import { BarcodePhotoScanner } from '../components/BarcodePhotoScanner'
 import { BarcodeScanner } from '../components/BarcodeScanner'
+import { CatalogSuggestions } from '../components/CatalogSuggestions'
 import { FoodForm } from '../components/FoodForm'
 import { FoodList } from '../components/FoodList'
 import { useBarcodeLookup } from '../hooks/use-barcode-lookup'
@@ -15,6 +16,7 @@ import { useDeleteFood, useFoods } from '../hooks/use-nutrition'
 import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { Food } from '../types/nutrition.types'
 import { scanMode } from '../utils/barcode-detector'
+import { type LocalFood, toScannedFood } from '../utils/local-catalog'
 import type { ScanResult } from '../utils/scanned-food'
 
 /** Un formulario ya relleno con lo que salió del escaneo, y de dónde salió. */
@@ -108,6 +110,11 @@ export function FoodsPage() {
     },
     [buscarCodigo],
   )
+
+  /** Del catálogo al formulario, por el mismo camino que un escaneo. */
+  const onPickFromCatalog = (food: LocalFood) => {
+    setScanned(describirEscaneo({ kind: 'listo', food: toScannedFood(food) }))
+  }
 
   if (isPending) return <SkeletonList label="Cargando alimentos" rows={6} rowClassName="h-16" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
@@ -260,6 +267,10 @@ export function FoodsPage() {
           }}
         />
       )}
+
+      {/* Debajo de lo tuyo, nunca encima: lo que buscabas son tus alimentos, y
+          esto es una ayuda para no teclear siete cifras. */}
+      {isBusy ? null : <CatalogSuggestions query={query} onPick={onPickFromCatalog} />}
     </div>
   )
 }
