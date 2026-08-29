@@ -16,6 +16,7 @@ import type {
 } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
 import type { CreateTransactionInput } from '../services/transactions.service'
+import type { SpendingTypicals } from '../services/transactions.service'
 import type {
   BudgetsOverview,
   DebtWithBalance,
@@ -30,7 +31,6 @@ import type {
   RecurringWithStatus,
 } from '../types/finance.types'
 import { addTransactionToMonth } from '../utils/add-transaction'
-import type { CategoryTypical } from '../utils/category-typicals'
 import { projectMonthEnd } from '../utils/projection'
 import { financeKeys } from './finance.keys'
 
@@ -76,19 +76,19 @@ export function useMonth(date: Date) {
 }
 
 /**
- * Cuánto sueles gastar en cada categoría.
+ * Cuánto sueles gastar: por categoría y por tramo.
  *
  * Ventana móvil, así que la clave lleva el día: al cambiar de día se vuelve a
  * pedir, y no al cambiar de mes en el selector.
  */
-export function useCategoryTypicals() {
+export function useSpendingTypicals() {
   const { user } = useAuth()
   const today = useToday()
   const userId = user?.id
 
-  return useQuery<readonly CategoryTypical[], AppError>({
-    queryKey: financeKeys.categoryTypicals(userId, toDateKey(today)),
-    queryFn: () => (userId ? financeService.getCategoryTypicals(userId, today) : []),
+  return useQuery<SpendingTypicals | null, AppError>({
+    queryKey: financeKeys.spendingTypicals(userId, toDateKey(today)),
+    queryFn: () => (userId ? financeService.getSpendingTypicals(userId, today) : null),
   })
 }
 

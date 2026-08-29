@@ -8,7 +8,12 @@ import type {
   FinancePeriodSeries,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
-import { type CategoryTypical, categoryTypicals } from '../utils/category-typicals'
+import {
+  type CategoryTypical,
+  categoryTypicals,
+  type WindowTypical,
+  windowTypicals,
+} from '../utils/category-typicals'
 import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { monthRange } from '../utils/month-range'
@@ -19,6 +24,25 @@ import { monthRange } from '../utils/month-range'
  * Ver `getCategoryTypicals`, donde está la medida que lo eligió.
  */
 const TYPICAL_DAYS = 180
+
+/**
+ * Tamaños de tramo para los que se calcula lo normal.
+ *
+ * **Son los tres periodos que ofrece el panel.** Van aquí como constante y no
+ * importados de `dashboard`, que es otra feature: si allí se añade un cuarto,
+ * hay que añadirlo aquí. De 90 días no saldrá nada mientras no haya año y medio
+ * de historia, y eso está bien: entonces el panel compara contra el tramo
+ * anterior, como siempre.
+ */
+const DASHBOARD_WINDOW_SIZES = [7, 30, 90] as const
+
+/** Lo que se sabe de cuánto sueles gastar, de una sola consulta. */
+export interface SpendingTypicals {
+  /** Por categoría, para marcar el gasto suelto que se sale. */
+  readonly byCategory: readonly CategoryTypical[]
+  /** Por tramo, para que el panel compare contra lo tuyo y no contra el mes pasado. */
+  readonly byWindow: readonly WindowTypical[]
+}
 
 /**
  * Un movimiento listo para apuntarse **o para esperar a que vuelva la red**.
@@ -155,7 +179,7 @@ export const transactionsService = {
   },
 
   /**
-   * Cuánto sueles gastar en cada categoría, y cuánto se mueve.
+   * Cuánto sueles gastar: en cada categoría y en un tramo de cada tamaño.
    *
    * **Ciento ochenta días, y está medido.** Sobre los gastos reales, con noventa
    * hablan cuatro categorías y cubren 90 gastos; con ciento ochenta, seis y 133.
@@ -166,7 +190,7 @@ export const transactionsService = {
    * mes y esto es una ventana móvil que no cambia al cambiar de mes, así que
    * comparten poco y se guardan aparte.
    */
-  async getCategoryTypicals(userId: string, today: Date): Promise<readonly CategoryTypical[]> {
+  async getSpendingTypicals(userId: string, today: Date): Promise<SpendingTypicals> {
     try {
       const from = minusDays(today, TYPICAL_DAYS - 1)
       const transactions = await financeRepository.listTransactionsBetween(
@@ -175,7 +199,10 @@ export const transactionsService = {
         toDateKey(today),
       )
 
-      return categoryTypicals(transactions)
+      return {
+        byCategory: categoryTypicals(transactions),
+        byWindow: windowTypicals(transactions, today, DASHBOARD_WINDOW_SIZES),
+      }
     } catch (error) {
       throw toAppError(error)
     }

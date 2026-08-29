@@ -20,10 +20,10 @@ import {
   useAccounts,
   useBudgets,
   useCategories,
-  useCategoryTypicals,
   useDebts,
   useMonth,
   useMonthProjection,
+  useSpendingTypicals,
 } from '../hooks/use-finance'
 import { monthProgressPercent } from '../utils/budgets'
 import {
@@ -48,7 +48,7 @@ export function FinancePage() {
   // Por encima de las salidas tempranas: un hook detrás de un `return` dejaría
   // de llamarse en cuanto la página cargue.
   const projection = useMonthProjection(visibleMonth)
-  const typicals = useCategoryTypicals()
+  const typicals = useSpendingTypicals()
 
   if (accounts.isPending || month.isPending) {
     return <SkeletonList label="Cargando tus finanzas" rows={3} rowClassName="h-28" />
@@ -138,7 +138,7 @@ export function FinancePage() {
         <TransactionList
           transactions={visibles}
           editingId={editingId}
-          typicals={typicals.data ?? []}
+          typicals={typicals.data?.byCategory ?? []}
           onEdit={(transaction) => {
             setEditingId(transaction.id)
             // El formulario está arriba: sin subir, al pulsar «corregir» no
