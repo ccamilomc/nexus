@@ -38,5 +38,15 @@ jobs:
       - name: Test
         run: npm run test
 
+      # Codigo y dependencias que ya no usa nadie. Cazo asi `zustand`, que
+      # llevaba diecisiete sprints instalada sin una sola importacion.
+      - name: Dead code
+        run: npm run knip
+
       - name: Build
         run: npm run build
+
+      # El paquete se descarga entero al instalar la aplicacion en el telefono.
+      # Sin un tope, crece de PR en PR sin que nadie lo note.
+      - name: Bundle size
+        run: npm run size
