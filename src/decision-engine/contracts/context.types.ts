@@ -116,6 +116,21 @@ export interface RoutineDaySnapshot {
   readonly exercises: readonly PrescribedExerciseSnapshot[]
 }
 
+/**
+ * Lo normal en el usuario para una medida.
+ *
+ * **El motor la recibe, no la calcula.** La mediana y su mínimo de días son
+ * estadística y viven en `shared/utils/baseline`; aquí sólo llega el resultado,
+ * que es lo que el motor necesita para razonar. Por eso el tipo se declara en el
+ * contrato y no se importa: el motor no depende de nada de fuera (docs/06).
+ */
+export interface TypicalValue {
+  /** Lo típico, ya redondeado. */
+  readonly value: number
+  /** Sobre cuántos días se calculó. Pocos días no son una costumbre. */
+  readonly days: number
+}
+
 export interface DailyContext {
   /** Día evaluado, ISO 8601. */
   readonly date: string
@@ -159,5 +174,13 @@ export interface DailyContext {
   }
   readonly sleep: {
     readonly lastNightMinutes?: number
+    /**
+     * Lo que **suele** dormir. `undefined` mientras no haya días suficientes.
+     *
+     * Con esto el motor deja de comparar contra una constante de fábrica y pasa
+     * a comparar contra la persona: seis horas y media es una mala noche para
+     * quien duerme ocho y una buena para quien duerme seis.
+     */
+    readonly typicalMinutes?: TypicalValue
   }
 }

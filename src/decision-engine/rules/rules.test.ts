@@ -195,6 +195,64 @@ describe('sleepShortRule', () => {
     expect(recommendation?.message).not.toMatch(/debes|tienes que|necesitas/i)
   })
 
+  describe('comparando contigo, sin objetivo fijado', () => {
+    const withTypical = (lastNightMinutes: number, value: number, days = 30): DailyContext => ({
+      ...EMPTY,
+      sleep: { lastNightMinutes, typicalMinutes: { value, days } },
+    })
+
+    it('a quien se apaña con cinco y media no le avisa cada mañana', () => {
+      // Es el caso que justifica todo esto. Con la constante de seis horas,
+      // esta persona recibía el aviso **todos los días de su vida**.
+      expect(sleepShortRule.appliesTo(withTypical(5 * 60 + 20, 5 * 60 + 30))).toBe(false)
+    })
+
+    it('a quien duerme ocho, siete horas ya le dice algo', () => {
+      // Y a esta otra la constante no le decía nada nunca, porque siete horas
+      // están por encima de seis.
+      expect(sleepShortRule.appliesTo(withTypical(7 * 60, 8 * 60 + 30))).toBe(true)
+    })
+
+    it('dice contra qué se está comparando', () => {
+      // «40 min menos de tu objetivo» y «menos de lo que sueles dormir» son dos
+      // cosas distintas, y quien lee tiene derecho a saber cuál le dicen.
+      const [recommendation] = sleepShortRule.evaluate(withTypical(5 * 60, 7 * 60 + 10))
+
+      expect(recommendation?.reason).toContain('Sueles dormir')
+      expect(recommendation?.reason).toContain('7 h 10 min')
+      expect(recommendation?.reason).not.toContain('objetivo')
+    })
+
+    it('dice sobre cuántos días se apoya', () => {
+      // Apoyado en treinta días es un dato; en siete, una impresión.
+      const [recommendation] = sleepShortRule.evaluate(withTypical(5 * 60, 7 * 60, 12))
+
+      expect(recommendation?.reason).toContain('12 días')
+    })
+
+    it('el vaivén de un día no cuenta', () => {
+      // Media hora arriba o abajo es acostarse antes o después, no dormir poco.
+      expect(sleepShortRule.appliesTo(withTypical(6 * 60 + 40, 7 * 60))).toBe(false)
+    })
+
+    it('el objetivo manda sobre la costumbre', () => {
+      // Lo que él decidió pesa más que lo que hace: si dice que quiere ocho, la
+      // vara son ocho aunque venga durmiendo seis.
+      const context: DailyContext = {
+        ...EMPTY,
+        goals: { sleepMinutes: 8 * 60 },
+        sleep: { lastNightMinutes: 6 * 60, typicalMinutes: { value: 6 * 60, days: 30 } },
+      }
+
+      expect(sleepShortRule.evaluate(context)[0]?.reason).toContain('objetivo')
+    })
+
+    it('sin objetivo y sin costumbre, quedan las seis horas de fábrica', () => {
+      // Alguien que acaba de entrar: no hay nada suyo con lo que compararlo.
+      expect(sleepShortRule.evaluate(withSleep(5 * 60))[0]?.reason).toContain('6 h')
+    })
+  })
+
   describe('con objetivo propio', () => {
     const withGoal = (lastNightMinutes: number, targetMinutes: number): DailyContext => ({
       ...EMPTY,
