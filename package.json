@@ -25,7 +25,8 @@
     "db:diff": "supabase db diff -f",
     "prepare": "husky",
     "knip": "knip",
-    "size": "node scripts/check-bundle-size.mjs"
+    "size": "node scripts/check-bundle-size.mjs",
+    "data:alimentos": "node scripts/descargar-alimentos-colombia.mjs"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -79,6 +80,7 @@
     "@tanstack/query-sync-storage-persister": "^5.101.4",
     "@tanstack/react-query": "^5.101.4",
     "@tanstack/react-query-persist-client": "^5.101.4",
+    "barcode-detector": "^3.2.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.25.0",
@@ -89,6 +91,7 @@
     "react-router-dom": "^7.18.1",
     "recharts": "^3.10.0",
     "tailwind-merge": "^3.6.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "zxing-wasm": "^3.1.3"
   }
 }

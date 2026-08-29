@@ -32,7 +32,6 @@ export function BarcodeScanner({ onDetected, onCancel }: BarcodeScannerProps) {
   const [estado, setEstado] = useState<Estado>('pidiendo')
 
   useEffect(() => {
-    const detector = createBarcodeDetector()
     let stream: MediaStream | null = null
     let temporizador: ReturnType<typeof setInterval> | null = null
     // Sin esto, un desmontaje a mitad de la promesa de la cámara dejaba el
@@ -47,10 +46,10 @@ export function BarcodeScanner({ onDetected, onCancel }: BarcodeScannerProps) {
     }
 
     async function empezar() {
-      if (!detector) {
-        setEstado('sin-camara')
-        return
-      }
+      // El detector se pide antes que la cámara: aquí es el nativo y no cuesta
+      // nada, pero si algún día no lo fuera, encenderla para luego no poder
+      // leer sería encender la cámara por gusto.
+      const detector = await createBarcodeDetector()
 
       try {
         stream = await navigator.mediaDevices.getUserMedia({

@@ -7,3 +7,7 @@ package-lock.json
 
 # Generado por Supabase (npm run db:types) — no formatear a mano.
 src/core/supabase/database.types.ts
+
+# Datos generados por `npm run data:alimentos`. Van en una sola linea a
+# proposito: con sangria pesarian cuatro veces mas, y nadie los lee a mano.
+src/features/nutrition/data/alimentos-colombia.json

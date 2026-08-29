@@ -1,19 +1,22 @@
 import { Plus, ScanBarcode, UtensilsCrossed } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
 import { EmptyState, FormAlert, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { Button } from '@/shared/components/ui/button'
 import { Input } from '@/shared/components/ui/input'
 import { matchesQuery } from '@/shared/utils'
 
+import { BarcodePhotoScanner } from '../components/BarcodePhotoScanner'
 import { BarcodeScanner } from '../components/BarcodeScanner'
+import { CatalogSuggestions } from '../components/CatalogSuggestions'
 import { FoodForm } from '../components/FoodForm'
 import { FoodList } from '../components/FoodList'
 import { useBarcodeLookup } from '../hooks/use-barcode-lookup'
 import { useDeleteFood, useFoods } from '../hooks/use-nutrition'
 import type { CreateFoodValues } from '../schemas/nutrition.schema'
 import type { Food } from '../types/nutrition.types'
-import { canScanBarcodes } from '../utils/barcode-detector'
+import { scanMode } from '../utils/barcode-detector'
+import { type LocalFood, toScannedFood } from '../utils/local-catalog'
 import type { ScanResult } from '../utils/scanned-food'
 
 /** Un formulario ya relleno con lo que salió del escaneo, y de dónde salió. */
@@ -85,6 +88,9 @@ export function FoodsPage() {
   const [copying, setCopying] = useState<Food | null>(null)
   const [savedName, setSavedName] = useState<string | null>(null)
   const [isScanning, setIsScanning] = useState(false)
+  // Se decide una vez: lo que sabe hacer el navegador no cambia a mitad de
+  // sesión, y volver a preguntarlo en cada pintado sería trabajo por nada.
+  const modo = useMemo(() => scanMode(), [])
   const [scanned, setScanned] = useState<Escaneado | null>(null)
   const lookup = useBarcodeLookup()
   const { mutate: buscarCodigo } = lookup
@@ -104,6 +110,11 @@ export function FoodsPage() {
     },
     [buscarCodigo],
   )
+
+  /** Del catálogo al formulario, por el mismo camino que un escaneo. */
+  const onPickFromCatalog = (food: LocalFood) => {
+    setScanned(describirEscaneo({ kind: 'listo', food: toScannedFood(food) }))
+  }
 
   if (isPending) return <SkeletonList label="Cargando alimentos" rows={6} rowClassName="h-16" />
   if (isError) return <LoadFailure message={error.message} onRetry={() => void refetch()} />
@@ -155,23 +166,21 @@ export function FoodsPage() {
         </p>
         {isBusy ? null : (
           <div className="flex items-center gap-1.5">
-            {/* Sólo donde puede funcionar. Chrome en Android trae el lector
-                nativo; Safari en iPhone no, y un botón que no hace nada es peor
-                que no tenerlo. */}
-            {canScanBarcodes() ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  closeOthers()
-                  setIsScanning(true)
-                }}
-              >
-                <ScanBarcode aria-hidden />
-                Escanear
-              </Button>
-            ) : null}
+            {/* Ahora se ofrece siempre. Donde hay lector nativo lee la cámara
+                sola; donde no —el iPhone—, se toma una foto. Antes el botón no
+                aparecía en el iPhone, y era la mitad de los teléfonos de casa. */}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                closeOthers()
+                setIsScanning(true)
+              }}
+            >
+              <ScanBarcode aria-hidden />
+              Escanear
+            </Button>
             <Button type="button" size="sm" onClick={openCreate}>
               <Plus aria-hidden />
               Crear alimento
@@ -181,12 +190,21 @@ export function FoodsPage() {
       </div>
 
       {isScanning ? (
-        <BarcodeScanner
-          onDetected={onDetected}
-          onCancel={() => {
-            setIsScanning(false)
-          }}
-        />
+        modo === 'live' ? (
+          <BarcodeScanner
+            onDetected={onDetected}
+            onCancel={() => {
+              setIsScanning(false)
+            }}
+          />
+        ) : (
+          <BarcodePhotoScanner
+            onDetected={onDetected}
+            onCancel={() => {
+              setIsScanning(false)
+            }}
+          />
+        )
       ) : null}
 
       {lookup.isPending ? (
@@ -249,6 +267,10 @@ export function FoodsPage() {
           }}
         />
       )}
+
+      {/* Debajo de lo tuyo, nunca encima: lo que buscabas son tus alimentos, y
+          esto es una ayuda para no teclear siete cifras. */}
+      {isBusy ? null : <CatalogSuggestions query={query} onPick={onPickFromCatalog} />}
     </div>
   )
 }

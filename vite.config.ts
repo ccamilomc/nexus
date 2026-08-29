@@ -63,7 +63,10 @@ export default defineConfig({
          * una descarga y a partir de ahí están también sin señal, que es lo
          * mismo que se consigue precacheando pero pagando sólo por lo que se usa.
          */
-        globIgnores: ['**/ilustraciones/**'],
+        // Ni las ilustraciones ni el descodificador de códigos de barras: son
+        // 27 MB y medio mega que el teléfono se bajaría al instalar, para algo
+        // que sólo hace falta al abrir un ejercicio o al escanear.
+        globIgnores: ['**/ilustraciones/**', '**/zxing_reader*.wasm', '**/alimentos-colombia-*.js'],
         runtimeCaching: [
           {
             urlPattern: ({ url }) => url.pathname.startsWith('/ilustraciones/'),
@@ -73,6 +76,33 @@ export default defineConfig({
               // Un dibujo de un ejercicio no cambia: si alguna vez cambia, lo
               // hace con otro despliegue y otro nombre de archivo.
               expiration: { maxEntries: 240, maxAgeSeconds: 60 * 60 * 24 * 90 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // El catálogo colombiano de alimentos. Mismo trato: no viaja al
+            // instalar —son 280 KB para una pantalla que muchos días no se
+            // abre— y en cuanto se busca una vez se queda guardado.
+            urlPattern: ({ url }) => /\/assets\/alimentos-colombia-.*\.js$/.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'catalogo-de-alimentos',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+          {
+            // El descodificador de códigos de barras, igual que los dibujos: no
+            // viaja al instalar, pero en cuanto se escanea una vez se queda
+            // guardado y a partir de ahí funciona sin conexión.
+            //
+            // Lleva su huella en el nombre, así que una versión nueva del
+            // paquete trae otro archivo y no puede servirse el viejo.
+            urlPattern: ({ url }) => url.pathname.endsWith('.wasm'),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'lector-de-codigos',
+              expiration: { maxEntries: 2, maxAgeSeconds: 60 * 60 * 24 * 365 },
               cacheableResponse: { statuses: [0, 200] },
             },
           },
