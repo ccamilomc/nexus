@@ -373,6 +373,46 @@ Dos cosas que salieron de medirlo sobre 62 pesadas reales:
   se sale del vaivén de siempre. Decir «estás en lo tuyo» cada mañana convierte
   el dato en ruido.
 
+#### Y el panel compara tramos, no sólo cifras sueltas
+
+«Lo que más cambió» del panel comparaba cada periodo **con el anterior**, que es
+compararlo con una muestra de uno: si la semana pasada fue rara, la corriente
+parece noticia. Ahora usa la misma escalera —lo normal en ti cuando se sabe, el
+tramo anterior cuando no—, y la frase dice cuál: «Estudiaste 10 h 59 min menos
+**de lo que sueles**».
+
+Se midieron los cinco dominios sobre datos reales, semana a semana. «Falso
+positivo» es una semana corriente anunciada como noticia sólo porque la anterior
+había sido rara:
+
+| Dominio       | Semanas | Falsos positivos | Falsos negativos |
+| ------------- | ------- | ---------------- | ---------------- |
+| Estudio       | 15      | 10               | 0                |
+| Gasto         | 15      | 7                | 2                |
+| Entrenamiento | 16      | 6                | 1                |
+| Sueño         | 15      | 1                | 2                |
+| Agua          | 16      | 2                | 0                |
+
+**Sueño y agua se quedaron como estaban**, y está escrito por qué: con una y dos
+discrepancias no compensa una consulta más. Que un dominio no sepa lo normal ya
+lo contempla la escalera.
+
+Dos cosas más que salieron de esto:
+
+- **Se quitó el techo del 200 %.** Descartaba los saltos grandes por si el tramo
+  anterior estaba vacío, y silenciaba la semana más cara del historial —1.808.300
+  pesos contra 651.850 de costumbre— porque la anterior había sido floja. El
+  porcentaje es **cómo se ordena**, no lo que se dice: la frase lleva la
+  diferencia en absoluto y esa es cierta salga el porcentaje que salga.
+- **Sabiendo lo normal y no siendo raro, se calla**: no se cae al tramo anterior,
+  porque caer ahí sería volver justo a la muestra de uno de la que se huye.
+
+El cálculo vive en `shared/utils/window-baseline` y trabaja sobre pares de día y
+valor, así que cada dominio sólo mapea lo suyo. Sólo cuentan los tramos enteros y
+dentro de la historia: los anteriores al primer registro no son semanas sin hacer
+nada, son semanas sin usar la aplicación, y contarlas como ceros hundiría la
+mediana hasta hacer rara cualquier semana normal.
+
 En Finanzas es lo mismo con **cada gasto contra su categoría**: la lista marca
 el que se sale de lo normal en ella. Un transporte de 30.000 al lado de los
 10.200 de siempre se ve; ese movimiento tenía escrito «Taxi» en la nota, y la
