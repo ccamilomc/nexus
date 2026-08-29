@@ -1,5 +1,5 @@
 import { createAppError, isRaisedError, toAppError } from '@/core/error'
-import { toDateKey } from '@/shared/utils'
+import { minusDays, toDateKey } from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
 import type { TransactionValues } from '../schemas/finance.schema'
@@ -8,9 +8,17 @@ import type {
   FinancePeriodSeries,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
+import { type CategoryTypical, categoryTypicals } from '../utils/category-typicals'
 import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { monthRange } from '../utils/month-range'
+
+/**
+ * Días de gastos que se miran para saber lo normal de una categoría.
+ *
+ * Ver `getCategoryTypicals`, donde está la medida que lo eligió.
+ */
+const TYPICAL_DAYS = 180
 
 /**
  * Un movimiento listo para apuntarse **o para esperar a que vuelva la red**.
@@ -141,6 +149,33 @@ export const transactionsService = {
       )
 
       return buildFinanceSeries(transactions, days, previousDays)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cuánto sueles gastar en cada categoría, y cuánto se mueve.
+   *
+   * **Ciento ochenta días, y está medido.** Sobre los gastos reales, con noventa
+   * hablan cuatro categorías y cubren 90 gastos; con ciento ochenta, seis y 133.
+   * La mediana casi no se mueve entre una ventana y otra —Mercado da 155.300 con
+   * las dos—, así que alargarla compra cobertura sin pagar frescura.
+   *
+   * Va en su propia consulta y no dentro de `getMonth`: el mes se mira mes a
+   * mes y esto es una ventana móvil que no cambia al cambiar de mes, así que
+   * comparten poco y se guardan aparte.
+   */
+  async getCategoryTypicals(userId: string, today: Date): Promise<readonly CategoryTypical[]> {
+    try {
+      const from = minusDays(today, TYPICAL_DAYS - 1)
+      const transactions = await financeRepository.listTransactionsBetween(
+        userId,
+        toDateKey(from),
+        toDateKey(today),
+      )
+
+      return categoryTypicals(transactions)
     } catch (error) {
       throw toAppError(error)
     }

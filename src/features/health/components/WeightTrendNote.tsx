@@ -1,5 +1,6 @@
+import type { AgainstTypical } from '@/shared/utils'
+
 import type { WeightTrend } from '../types/health.types'
-import type { AgainstTypical } from '../utils/against-typical'
 import { formatAverage, formatTrend } from '../utils/format'
 
 interface WeightTrendNoteProps {

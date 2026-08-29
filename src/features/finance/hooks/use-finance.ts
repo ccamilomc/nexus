@@ -30,6 +30,7 @@ import type {
   RecurringWithStatus,
 } from '../types/finance.types'
 import { addTransactionToMonth } from '../utils/add-transaction'
+import type { CategoryTypical } from '../utils/category-typicals'
 import { projectMonthEnd } from '../utils/projection'
 import { financeKeys } from './finance.keys'
 
@@ -71,6 +72,23 @@ export function useMonth(date: Date) {
   return useQuery<FinanceMonth | null, AppError>({
     queryKey: financeKeys.month(userId, monthKeyOf(date)),
     queryFn: () => (userId ? financeService.getMonth(userId, date) : null),
+  })
+}
+
+/**
+ * Cuánto sueles gastar en cada categoría.
+ *
+ * Ventana móvil, así que la clave lleva el día: al cambiar de día se vuelve a
+ * pedir, y no al cambiar de mes en el selector.
+ */
+export function useCategoryTypicals() {
+  const { user } = useAuth()
+  const today = useToday()
+  const userId = user?.id
+
+  return useQuery<readonly CategoryTypical[], AppError>({
+    queryKey: financeKeys.categoryTypicals(userId, toDateKey(today)),
+    queryFn: () => (userId ? financeService.getCategoryTypicals(userId, today) : []),
   })
 }
 

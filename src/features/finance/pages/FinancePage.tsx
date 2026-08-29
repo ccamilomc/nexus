@@ -20,6 +20,7 @@ import {
   useAccounts,
   useBudgets,
   useCategories,
+  useCategoryTypicals,
   useDebts,
   useMonth,
   useMonthProjection,
@@ -47,6 +48,7 @@ export function FinancePage() {
   // Por encima de las salidas tempranas: un hook detrás de un `return` dejaría
   // de llamarse en cuanto la página cargue.
   const projection = useMonthProjection(visibleMonth)
+  const typicals = useCategoryTypicals()
 
   if (accounts.isPending || month.isPending) {
     return <SkeletonList label="Cargando tus finanzas" rows={3} rowClassName="h-28" />
@@ -136,6 +138,7 @@ export function FinancePage() {
         <TransactionList
           transactions={visibles}
           editingId={editingId}
+          typicals={typicals.data ?? []}
           onEdit={(transaction) => {
             setEditingId(transaction.id)
             // El formulario está arriba: sin subir, al pulsar «corregir» no

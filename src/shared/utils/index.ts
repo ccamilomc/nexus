@@ -1,3 +1,4 @@
+export { type AgainstTypical, readingAgainstTypical } from './against-typical'
 export { type Baseline, baselineOf, deviationFrom } from './baseline'
 export {
   dateRangeKey,

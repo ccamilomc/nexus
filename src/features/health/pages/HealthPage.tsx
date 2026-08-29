@@ -2,13 +2,22 @@ import { HeartPulse } from 'lucide-react'
 
 import { EmptyState, LoadFailure, SkeletonList } from '@/shared/components/feedback'
 import { PageHeader } from '@/shared/components/layout'
+import { readingAgainstTypical } from '@/shared/utils'
 
 import { BmiCard } from '../components/BmiCard'
 import { MetricCard } from '../components/MetricCard'
 import { MetricForm } from '../components/MetricForm'
 import { WeightTrendNote } from '../components/WeightTrendNote'
 import { useHealthOverview } from '../hooks/use-health'
-import { readingAgainstTypical } from '../utils/against-typical'
+
+/**
+ * Cuántos vaivenes hacen rara una pesada.
+ *
+ * **Dos, y está medido.** Sobre 62 pesadas reales, dos vaivenes dejan fuera
+ * seis —una de cada diez—, que es la frecuencia de algo que merece mirarse. Con
+ * uno saldrían casi la mitad y dejaría de significar nada.
+ */
+const UNUSUAL_SPREADS = 2
 
 /** Peso y medidas: la última lectura de cada una y cuánto ha cambiado. */
 export function HealthPage() {
@@ -58,6 +67,7 @@ export function HealthPage() {
                               reading={readingAgainstTypical(
                                 summary.latest.value,
                                 data?.weightTypical ?? null,
+                                UNUSUAL_SPREADS,
                               )}
                             />
                           ),

@@ -353,7 +353,7 @@ El mensaje **dice contra qué se comparó**: «40 min menos de tu objetivo» y
 «sueles dormir 7 h 23 min, contando tus últimos 15 días» son dos afirmaciones
 distintas, y quien lee tiene derecho a saber cuál le están dando.
 
-#### El peso lo usa, y no pasa por el motor
+#### El peso y el gasto lo usan, y no pasan por el motor
 
 La misma `baselineOf` compara la pesada de hoy contra lo normal en Salud, pero
 **ahí no hay regla ninguna**: la pantalla llama a la utilidad y ya. La diferencia
@@ -372,6 +372,33 @@ Dos cosas que salieron de medirlo sobre 62 pesadas reales:
 - **Se calla cuando no hay nada que mirar.** La línea aparece sólo si la pesada
   se sale del vaivén de siempre. Decir «estás en lo tuyo» cada mañana convierte
   el dato en ruido.
+
+En Finanzas es lo mismo con **cada gasto contra su categoría**: la lista marca
+el que se sale de lo normal en ella. Un transporte de 30.000 al lado de los
+10.200 de siempre se ve; ese movimiento tenía escrito «Taxi» en la nota, y la
+aplicación lo señaló sin saber lo que es un taxi.
+
+Tres decisiones más, todas medidas sobre 153 gastos reales:
+
+- **La unidad es el gasto, no el día ni el mes.** Por día saldrían raros 37 de
+  cada 100, porque un pasaje de 10.200 y un arriendo de 1.200.000 caen en el
+  mismo saco. Por mes todavía no hay con qué: tres meses completos dan un vaivén
+  tan estrecho que casi cualquier mes sería raro.
+- **Tres vaivenes y no dos.** El gasto no se reparte como el peso —muchos
+  pequeños y unos pocos grandes—, así que el vaivén se queda corto por arriba.
+  Con dos saltaría el 9 % de los gastos; con tres, el 3,8 %; con cuatro, el
+  0,8 %, que ya no pilla nada. El umbral lo pone cada dominio y `baselineOf` no
+  lo sabe.
+- **Ocho gastos por categoría, y 180 días.** Con ocho hablan seis categorías y
+  cubren el 87 % de los gastos. Con 90 días serían cuatro categorías y el 59 %,
+  y la mediana casi no cambia entre una ventana y otra: alargarla compra
+  cobertura sin pagar frescura.
+
+Va **por partes y no por movimiento**: una compra repartida entre Mercado y
+Hogar son dos gastos, y comparar los 300.000 enteros contra lo que se suele
+gastar en mercado marcaría como rara una compra corriente. Lo que no tiene
+categoría se queda fuera: ahí caen un arriendo y un café, y una costumbre sacada
+de esa mezcla no significa nada.
 
 ## Parte B · Capa de IA
 
