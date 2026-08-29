@@ -27,3 +27,10 @@ export {
   seriesTotal,
 } from './series'
 export { weekDays, weekRange } from './week-range'
+export {
+  COMPARABLE_WINDOWS,
+  type DatedValue,
+  type WindowBaseline,
+  windowBaselineOf,
+  windowBaselines,
+} from './window-baseline'

@@ -1,13 +1,13 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
-import { useFinanceSeries, useSpendingTypicals, windowTypicalOf } from '@/features/finance'
+import { useFinanceSeries, useSpendingTypicals } from '@/features/finance'
 import { useHabitsSeries } from '@/features/habits'
 import { formatCalories, formatCop, useNutritionSeries } from '@/features/nutrition'
 import { useSleepSeries } from '@/features/sleep'
-import { useStudySeries } from '@/features/study'
-import { useWorkoutSeries } from '@/features/workout'
+import { useStudySeries, useStudyWindowTypicals } from '@/features/study'
+import { useWorkoutSeries, useWorkoutWindowTypicals } from '@/features/workout'
 import { Card, CardContent } from '@/shared/components/ui/card'
-import { type Baseline, formatMinutes } from '@/shared/utils'
+import { type Baseline, formatMinutes, windowBaselineOf } from '@/shared/utils'
 
 import type { PeriodWindow } from '../types/dashboard.types'
 import { formatVolumeKg } from '../utils/format'
@@ -71,6 +71,8 @@ function change(
 export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) {
   const finance = useFinanceSeries(window.days, window.previousDays)
   const typicals = useSpendingTypicals()
+  const studyTypicals = useStudyWindowTypicals()
+  const workoutTypicals = useWorkoutWindowTypicals()
   const workout = useWorkoutSeries(
     window.range,
     window.previousRange,
@@ -100,7 +102,7 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         // El único dominio que ya sabe lo normal en tramos. Sale de la misma
         // consulta que marca los gastos sueltos que se salen, así que no cuesta
         // un viaje más. Los demás irán cayendo por aqui.
-        windowTypicalOf(typicals.data?.byWindow ?? [], window.days.length),
+        windowBaselineOf(typicals.data?.byWindow ?? [], window.days.length),
       ),
     )
   }
@@ -113,6 +115,7 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         totalVolumeKg,
         previousTotalVolumeKg,
         (delta, word) => `Levantaste ${formatVolumeKg(delta)} ${word}`,
+        windowBaselineOf(workoutTypicals.data ?? [], window.days.length),
       ),
     )
   }
@@ -149,6 +152,7 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         totalMinutes,
         previousTotalMinutes,
         (delta, word) => `Estudiaste ${formatMinutes(delta)} ${word}`,
+        windowBaselineOf(studyTypicals.data ?? [], window.days.length),
       ),
     )
   }

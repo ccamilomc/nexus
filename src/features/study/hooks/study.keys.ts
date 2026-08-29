@@ -12,6 +12,10 @@ export const studyKeys = {
   retiredSubjects: (userId: string | undefined) =>
     [...studyKeys.subjects(userId), 'retired'] as const,
   days: () => [...studyKeys.all, 'days'] as const,
+  // Bajo `days`: lo normal en un tramo sale de las mismas sesiones, y apuntar
+  // una lo mueve. Lleva el día porque la ventana es móvil.
+  windowTypicals: (userId: string | undefined, todayKey: string) =>
+    [...studyKeys.days(), 'window-typicals', userId, todayKey] as const,
   activeSession: (userId: string | undefined) => [...studyKeys.all, 'active', userId] as const,
   day: (userId: string | undefined, dayKey: string) =>
     [...studyKeys.days(), userId, dayKey] as const,

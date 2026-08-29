@@ -3,7 +3,6 @@ import {
   type Baseline,
   baselineOf,
   readingAgainstTypical,
-  toDateKey,
 } from '@/shared/utils'
 
 import type { FinanceTransactionWithNames } from '../types/finance.types'
@@ -136,89 +135,4 @@ export function unusualParts(
       ),
     }))
     .filter((part): part is UnusualPart => part.reading?.isUnusual === true)
-}
-
-/** Lo que sueles gastar en un tramo de N días. */
-export interface WindowTypical {
-  /** Cuántos días mide el tramo: los mismos que enseña el panel. */
-  readonly days: number
-  readonly typical: Baseline
-}
-
-/**
- * Tramos completos que hacen falta para hablar de costumbre.
- *
- * Cinco. Con menos, el vaivén es el del azar y no el tuyo — el mismo motivo por
- * el que el mes no entra todavia en la comparación de gastos sueltos: con tres
- * meses de historia casi cualquier mes sale raro.
- */
-const MIN_WINDOWS = 5
-
-/** Días de historia que se miran, los mismos que traen las categorías. */
-const WINDOW_HISTORY_DAYS = 180
-
-/**
- * Cuánto sueles gastar en un tramo de cada tamaño.
- *
- * **Los tramos se cuentan hacia atrás desde ayer**, no desde hoy: el de hoy está
- * a medias, y meter medio tramo entre los completos bajaría «lo normal» cada
- * mañana.
- *
- * Sale de los mismos movimientos que ya se piden para las categorías, así que no
- * cuesta una consulta mas. Con 180 dias salen 25 semanas y 6 meses; los tramos
- * de 90 días se quedan en dos y por eso no dicen nada, que es lo correcto.
- */
-export function windowTypicals(
-  transactions: readonly FinanceTransactionWithNames[],
-  today: Date,
-  sizes: readonly number[],
-): readonly WindowTypical[] {
-  const expenses = transactions.filter((transaction) => transaction.kind === 'expense')
-  const ayer = new Date(today)
-  ayer.setDate(ayer.getDate() - 1)
-
-  // El primer gasto marca dónde empieza la historia. Los tramos anteriores no
-  // son semanas en las que no se gastó: son semanas en las que la persona no
-  // usaba la aplicación, y contarlos como ceros hundiría la mediana hasta hacer
-  // rara cualquier semana normal. Lo encontró una prueba.
-  const primero = expenses.reduce<string | null>(
-    (menor, { occurred_on }) => (menor === null || occurred_on < menor ? occurred_on : menor),
-    null,
-  )
-  if (primero === null) return []
-
-  const result: WindowTypical[] = []
-
-  for (const days of sizes) {
-    const totals: number[] = []
-
-    for (let index = 0; index < Math.floor(WINDOW_HISTORY_DAYS / days); index += 1) {
-      const end = new Date(ayer)
-      end.setDate(end.getDate() - index * days)
-      const start = new Date(end)
-      start.setDate(start.getDate() - (days - 1))
-
-      const startKey = toDateKey(start)
-      // Solo cuentan los tramos enteros. Uno que empieza antes del primer gasto
-      // está a medias —parte historia y parte nada— y contaría bajo.
-      if (startKey < primero) break
-
-      const endKey = toDateKey(end)
-      const total = expenses
-        .filter(({ occurred_on }) => occurred_on >= startKey && occurred_on <= endKey)
-        .reduce((sum, { amount }) => sum + amount, 0)
-
-      totals.push(total)
-    }
-
-    const typical = baselineOf(totals, MIN_WINDOWS)
-    if (typical !== null) result.push({ days, typical })
-  }
-
-  return result
-}
-
-/** Lo normal de un tramo de ese tamaño, o `null` si de él no se sabe. */
-export function windowTypicalOf(typicals: readonly WindowTypical[], days: number): Baseline | null {
-  return typicals.find((typical) => typical.days === days)?.typical ?? null
 }

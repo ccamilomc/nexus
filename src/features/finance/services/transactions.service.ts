@@ -1,5 +1,11 @@
 import { createAppError, isRaisedError, toAppError } from '@/core/error'
-import { minusDays, toDateKey } from '@/shared/utils'
+import {
+  COMPARABLE_WINDOWS,
+  minusDays,
+  toDateKey,
+  type WindowBaseline,
+  windowBaselines,
+} from '@/shared/utils'
 
 import { financeRepository } from '../repositories/finance.repository'
 import type { TransactionValues } from '../schemas/finance.schema'
@@ -8,12 +14,7 @@ import type {
   FinancePeriodSeries,
   FinanceTransactionWithNames,
 } from '../types/finance.types'
-import {
-  type CategoryTypical,
-  categoryTypicals,
-  type WindowTypical,
-  windowTypicals,
-} from '../utils/category-typicals'
+import { type CategoryTypical, categoryTypicals } from '../utils/category-typicals'
 import { buildFinanceSeries } from '../utils/finance-series'
 import { calculateByCategory, calculateTotals } from '../utils/finance-totals'
 import { monthRange } from '../utils/month-range'
@@ -25,23 +26,12 @@ import { monthRange } from '../utils/month-range'
  */
 const TYPICAL_DAYS = 180
 
-/**
- * Tamaños de tramo para los que se calcula lo normal.
- *
- * **Son los tres periodos que ofrece el panel.** Van aquí como constante y no
- * importados de `dashboard`, que es otra feature: si allí se añade un cuarto,
- * hay que añadirlo aquí. De 90 días no saldrá nada mientras no haya año y medio
- * de historia, y eso está bien: entonces el panel compara contra el tramo
- * anterior, como siempre.
- */
-const DASHBOARD_WINDOW_SIZES = [7, 30, 90] as const
-
 /** Lo que se sabe de cuánto sueles gastar, de una sola consulta. */
 export interface SpendingTypicals {
   /** Por categoría, para marcar el gasto suelto que se sale. */
   readonly byCategory: readonly CategoryTypical[]
   /** Por tramo, para que el panel compare contra lo tuyo y no contra el mes pasado. */
-  readonly byWindow: readonly WindowTypical[]
+  readonly byWindow: readonly WindowBaseline[]
 }
 
 /**
@@ -201,7 +191,15 @@ export const transactionsService = {
 
       return {
         byCategory: categoryTypicals(transactions),
-        byWindow: windowTypicals(transactions, today, DASHBOARD_WINDOW_SIZES),
+        // Solo los gastos: un sueldo al lado de una compra no dice nada de
+        // ninguno de los dos.
+        byWindow: windowBaselines(
+          transactions
+            .filter(({ kind }) => kind === 'expense')
+            .map(({ occurred_on, amount }) => ({ date: occurred_on, value: amount })),
+          today,
+          COMPARABLE_WINDOWS,
+        ),
       }
     } catch (error) {
       throw toAppError(error)

@@ -4,6 +4,7 @@ export type { StudySeries } from './hooks/use-study-series'
 export { useStudySeries } from './hooks/use-study-series'
 export type { StudySummary } from './hooks/use-study-summary'
 export { useStudySummary } from './hooks/use-study-summary'
+export { useStudyWindowTypicals } from './hooks/use-study-typicals'
 // Lo que estudio deja pendiente sin red; lo registra `app/` (ADR-0011).
 export { registerStudyOfflineMutations } from './offline'
 export { StudyLayout } from './pages/StudyLayout'

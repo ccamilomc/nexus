@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import type { FinanceTransactionWithNames } from '../types/finance.types'
-import {
-  categoryTypicals,
-  typicalOf,
-  unusualParts,
-  windowTypicalOf,
-  windowTypicals,
-} from './category-typicals'
+import { categoryTypicals, typicalOf, unusualParts } from './category-typicals'
 
 interface GastoOptions {
   readonly amount: number
@@ -215,90 +209,5 @@ describe('unusualParts', () => {
     expect(partes).toHaveLength(1)
     expect(partes[0]?.name).toBe('mercado')
     expect(partes[0]?.reading.difference).toBe(104_700)
-  })
-})
-
-describe('windowTypicals', () => {
-  const HOY = new Date(2026, 7, 29)
-
-  /** Un gasto en un día concreto, contando hacia atrás desde hoy. */
-  const haceDias = (dias: number, amount: number) => {
-    const d = new Date(HOY)
-    d.setDate(d.getDate() - dias)
-    return { ...gasto({ amount }), occurred_on: d.toISOString().slice(0, 10) }
-  }
-
-  /** Medio año de 10.000 al día: 70.000 a la semana y 300.000 al mes. */
-  const MEDIO_ANO = Array.from({ length: 179 }, (_, i) => haceDias(i + 1, 10_000))
-
-  it('con cinco tramos enteros ya dice lo normal', () => {
-    const cinco = Array.from({ length: 36 }, (_, i) => haceDias(i + 1, 10_000))
-
-    const [semana] = windowTypicals(cinco, HOY, [7])
-
-    expect(semana?.days).toBe(7)
-    expect(semana?.typical.typical).toBe(70_000)
-  })
-
-  it('con cuatro tramos de historia todavía no', () => {
-    // Cuatro semanas no son una costumbre. Y no se rellena con ceros: los
-    // tramos anteriores al primer gasto no son semanas sin gastar, son semanas
-    // sin usar la aplicación. Esto lo encontró una prueba: rellenando, la
-    // mediana de 25 semanas con 21 vacías es cero, y con «lo normal» en cero
-    // cualquier semana sale rara.
-    const cuatro = Array.from({ length: 28 }, (_, i) => haceDias(i + 1, 10_000))
-
-    expect(windowTypicals(cuatro, HOY, [7])).toEqual([])
-  })
-
-  it('el tramo de hoy no entra, que está a medias', () => {
-    // Un gasto enorme hoy no puede mover «lo normal»: hoy no ha terminado.
-    const conHoy = [...MEDIO_ANO, haceDias(0, 5_000_000)]
-
-    expect(windowTypicalOf(windowTypicals(conHoy, HOY, [7]), 7)?.typical).toBe(70_000)
-  })
-
-  it('los ingresos no cuentan, y sin gastos no hay historia', () => {
-    const ingresos = MEDIO_ANO.map((g) => ({ ...g, kind: 'income' as const }))
-
-    expect(windowTypicals(ingresos, HOY, [7])).toEqual([])
-  })
-
-  it('cada tamaño por su lado', () => {
-    const tramos = windowTypicals(MEDIO_ANO, HOY, [7, 30])
-
-    expect(windowTypicalOf(tramos, 7)?.typical).toBe(70_000)
-    expect(windowTypicalOf(tramos, 30)?.typical).toBe(300_000)
-  })
-
-  it('de un tamaño que no cabe cinco veces no se sabe', () => {
-    // En 180 días caben dos tramos de 90. Con dos no hay costumbre, y por eso
-    // el panel a 90 días sigue comparando contra el tramo anterior.
-    expect(windowTypicalOf(windowTypicals(MEDIO_ANO, HOY, [90]), 90)).toBeNull()
-  })
-
-  it('lleva el vaivén, que es lo que separa la semana rara de la normal', () => {
-    // Cinco semanas de 70.000 y una de 140.000: la mediana es 70.000 y los
-    // desvíos son 0 · 0 · 0 · 0 · 0 · 70.000, cuya mediana es cero.
-    const irregular = [...MEDIO_ANO, haceDias(3, 70_000)]
-
-    expect(windowTypicalOf(windowTypicals(irregular, HOY, [7]), 7)?.spread).toBe(0)
-  })
-
-  it('con la historia justa, contar desde hoy haría hablar de más', () => {
-    // 34 días de historia. Contando los tramos desde ayer caben cuatro enteros
-    // y no cinco, así que se calla. Contando desde hoy saldrían cinco y hablaría
-    // con historia que no tiene.
-    //
-    // Esta prueba existe porque la de arriba no bastaba: la mediana es tan
-    // robusta que meter el tramo de hoy, con cinco millones dentro, no la movía
-    // ni un peso. Lo que cambia no es el valor, es si hay respuesta.
-    const treintaYCuatro = Array.from({ length: 34 }, (_, i) => haceDias(i + 1, 10_000))
-
-    expect(windowTypicals(treintaYCuatro, HOY, [7])).toEqual([])
-  })
-
-  it('sin movimientos no se inventa', () => {
-    expect(windowTypicals([], HOY, [7])).toEqual([])
   })
 })

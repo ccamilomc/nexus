@@ -8,6 +8,9 @@ export const workoutKeys = {
   all: ['workout'] as const,
   exercises: () => [...workoutKeys.all, 'exercises'] as const,
   sessions: () => [...workoutKeys.all, 'sessions'] as const,
+  // Bajo `sessions`: lo normal en un tramo sale de los mismos entrenamientos.
+  windowTypicals: (userId: string | undefined, todayKey: string) =>
+    [...workoutKeys.sessions(), 'window-typicals', userId, todayKey] as const,
   activeSession: (userId: string | undefined) =>
     [...workoutKeys.sessions(), 'active', userId] as const,
   // El tramo va en la clave: pedir más entrenamientos es otra consulta, no la

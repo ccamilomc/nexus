@@ -1,5 +1,14 @@
 import { createAppError, toAppError } from '@/core/error'
-import { type DayRange, dayRange, weekRange } from '@/shared/utils'
+import {
+  COMPARABLE_WINDOWS,
+  type DayRange,
+  dayRange,
+  minusDays,
+  toDateKeyFromIso,
+  weekRange,
+  type WindowBaseline,
+  windowBaselines,
+} from '@/shared/utils'
 
 import { nextSubjectColor } from '../constants/study.constants'
 import { studyRepository } from '../repositories/study.repository'
@@ -16,6 +25,14 @@ import { buildDayStudy } from '../utils/day-study'
 import { elapsedMinutes } from '../utils/elapsed-minutes'
 import { buildStudySeries } from '../utils/study-series'
 import { buildWeekStudy } from '../utils/week-study'
+
+/**
+ * Días de historia que se miran para saber lo normal en un tramo.
+ *
+ * Los mismos que usa finanzas, y por lo mismo: unas 25 semanas es historia de
+ * sobra para una costumbre, y la mediana apenas se mueve alargándolo más.
+ */
+const TYPICAL_DAYS = 180
 
 /** El formulario habla en horas; la base guarda minutos, que es su unidad. */
 function toWeeklyTargetMinutes(values: CreateSubjectValues): number | null {
@@ -152,6 +169,40 @@ export const studyService = {
       )
 
       return buildStudySeries(sessions, days, previousDays)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cuánto sueles estudiar en un tramo de cada tamaño.
+   *
+   * **De aquí sale la referencia buena del panel.** Comparar una semana con la
+   * anterior es compararla con una muestra de uno: sobre 15 semanas reales, diez
+   * salían anunciadas como noticia siendo semanas corrientes, sólo porque la
+   * anterior había sido rara. Estudio era el peor de los cinco dominios medidos.
+   *
+   * Ciento ochenta días, que dan unas 25 semanas. De tramos de 90 días no saldrá
+   * nada hasta que haya año y medio, y ahí el panel sigue comparando con el
+   * tramo anterior.
+   */
+  async getWindowTypicals(userId: string, today: Date): Promise<readonly WindowBaseline[]> {
+    try {
+      const from = minusDays(today, TYPICAL_DAYS - 1)
+      const sessions = await studyRepository.listSessionsBetween(
+        userId,
+        from.toISOString(),
+        minusDays(today, -1).toISOString(),
+      )
+
+      return windowBaselines(
+        sessions.map((session) => ({
+          date: toDateKeyFromIso(session.started_at),
+          value: session.duration_minutes,
+        })),
+        today,
+        COMPARABLE_WINDOWS,
+      )
     } catch (error) {
       throw toAppError(error)
     }
