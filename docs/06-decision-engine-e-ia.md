@@ -353,6 +353,26 @@ El mensaje **dice contra qué se comparó**: «40 min menos de tu objetivo» y
 «sueles dormir 7 h 23 min, contando tus últimos 15 días» son dos afirmaciones
 distintas, y quien lee tiene derecho a saber cuál le están dando.
 
+#### El peso lo usa, y no pasa por el motor
+
+La misma `baselineOf` compara la pesada de hoy contra lo normal en Salud, pero
+**ahí no hay regla ninguna**: la pantalla llama a la utilidad y ya. La diferencia
+no es de comodidad, es de qué hace cada cosa. Una regla del motor produce un
+consejo —«haz esto»—, y del peso no sale ningún consejo: sale un dato. Si 89,7
+está bien o mal depende de qué persigue quien se pesa, y eso Nexus no lo sabe
+(Salud no opina, docs/11).
+
+Dos cosas que salieron de medirlo sobre 62 pesadas reales:
+
+- **Dos ventanas y no una.** Cuánto pesas cambia con las semanas, pero cuánto
+  oscila la báscula —el agua, la comida, la hora— es una propiedad tuya que no
+  cambia. Lo normal sale de 30 días; el vaivén, de 90. Con los 30 días para
+  ambos el vaivén daba 0,20 kg y la aplicación habría llamado rara casi cualquier
+  pesada.
+- **Se calla cuando no hay nada que mirar.** La línea aparece sólo si la pesada
+  se sale del vaivén de siempre. Decir «estás en lo tuyo» cada mañana convierte
+  el dato en ruido.
+
 ## Parte B · Capa de IA
 
 ### Rol y límites

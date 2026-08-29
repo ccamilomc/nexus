@@ -8,6 +8,7 @@ import { MetricCard } from '../components/MetricCard'
 import { MetricForm } from '../components/MetricForm'
 import { WeightTrendNote } from '../components/WeightTrendNote'
 import { useHealthOverview } from '../hooks/use-health'
+import { readingAgainstTypical } from '../utils/against-typical'
 
 /** Peso y medidas: la última lectura de cada una y cuánto ha cambiado. */
 export function HealthPage() {
@@ -50,7 +51,17 @@ export function HealthPage() {
                   <MetricCard
                     summary={summary}
                     {...(summary.type === 'weight'
-                      ? { note: <WeightTrendNote trend={data?.weightTrend ?? null} /> }
+                      ? {
+                          note: (
+                            <WeightTrendNote
+                              trend={data?.weightTrend ?? null}
+                              reading={readingAgainstTypical(
+                                summary.latest.value,
+                                data?.weightTypical ?? null,
+                              )}
+                            />
+                          ),
+                        }
                       : {})}
                   />
                 </li>

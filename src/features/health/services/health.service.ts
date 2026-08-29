@@ -1,6 +1,13 @@
 import { createAppError, toAppError } from '@/core/error'
 import { profileService } from '@/features/profile'
-import { type DayRange, minusDays } from '@/shared/utils'
+import {
+  type Baseline,
+  baselineOf,
+  type DayRange,
+  minusDays,
+  toDateKey,
+  toDateKeyFromIso,
+} from '@/shared/utils'
 
 import { METRIC_TYPES_IN_ORDER, METRIC_UNITS } from '../constants/health.constants'
 import { healthRepository } from '../repositories/health.repository'
@@ -39,13 +46,6 @@ const RECENT_LIMIT = 40
  */
 const HISTORY_LIMIT = 20
 
-/**
- * Días de pesadas que se traen para la tendencia.
- *
- * Cuatro semanas: las dos que se comparan y las dos con las que se comparan.
- */
-const TREND_DAYS = 28
-
 /** Lo que la pantalla de salud necesita saber de una vez. */
 export interface HealthOverview {
   readonly metrics: readonly MetricSummary[]
@@ -54,6 +54,64 @@ export interface HealthOverview {
   readonly heightCm: number | null
   /** Hacia dónde va el peso; `null` sin pesadas suficientes. */
   readonly weightTrend: WeightTrend | null
+  /** Cuánto pesas normalmente y cuánto se mueve; `null` sin pesadas bastantes. */
+  readonly weightTypical: Baseline | null
+}
+
+/**
+ * Días que se miran para saber cuánto pesas normalmente.
+ *
+ * Treinta, como el sueño: lo bastante para que una semana rara no mande, y lo
+ * bastante poco para que un cambio real se note.
+ */
+const TYPICAL_DAYS = 30
+
+/**
+ * Días que se miran para saber **cuánto se mueve** tu peso.
+ *
+ * Noventa, y son más que los treinta de arriba a propósito. Son dos preguntas
+ * distintas: cuánto pesas ahora cambia con las semanas, pero cuánto oscila la
+ * báscula —el agua, la comida, la hora— es una propiedad tuya que no cambia.
+ *
+ * **Está medido, no elegido a ojo.** Sobre los mismos datos, treinta días daban
+ * un vaivén de 0,20 kg y el histórico completo, 0,80. Con 0,20 la aplicación
+ * habría llamado rara casi cualquier pesada normal.
+ */
+const SPREAD_DAYS = 90
+
+/** Pesadas mínimas para hablar de costumbre, y para hablar de vaivén. */
+const MIN_TYPICAL = 4
+const MIN_SPREAD = 8
+
+/**
+ * Cuánto pesas normalmente y cuánto se mueve, en una sola cifra.
+ *
+ * Junta las dos ventanas: **lo normal de las últimas semanas y el vaivén de
+ * siempre**. Sin la segunda, una racha de pesadas muy juntas encogería el
+ * vaivén hasta hacer rara cualquier cosa.
+ *
+ * `null` sin pesadas suficientes: es mejor no comparar que comparar contra una
+ * costumbre inventada.
+ */
+function weightTypical(weights: readonly BodyMetric[], today: Date): Baseline | null {
+  const desde = toDateKey(minusDays(today, TYPICAL_DAYS - 1))
+  const recientes = weights
+    .filter((metric) => toDateKeyFromIso(metric.measured_at) >= desde)
+    .map((metric) => metric.value)
+
+  const cercano = baselineOf(recientes, MIN_TYPICAL)
+  if (cercano === null) return null
+
+  const amplio = baselineOf(
+    weights.map((metric) => metric.value),
+    MIN_SPREAD,
+  )
+  // Sin historia bastante **no se hereda el vaivén del tramo corto**: una racha
+  // de pesadas muy juntas lo encogería hasta hacer rara cualquier cosa, que es
+  // justo el defecto contra el que existen las dos ventanas.
+  if (amplio === null) return null
+
+  return { ...cercano, spread: amplio.spread }
 }
 
 /** Reglas de negocio de salud. Traduce errores técnicos a `AppError`. */
@@ -74,7 +132,10 @@ export const healthService = {
         healthRepository.listMetricsBetween(
           userId,
           'weight',
-          minusDays(today, TREND_DAYS - 1).toISOString(),
+          // Noventa días y no veintiocho: de esta misma consulta salen la
+          // tendencia —que sólo mira las cuatro últimas semanas— y el vaivén,
+          // que necesita historia para no encogerse.
+          minusDays(today, SPREAD_DAYS - 1).toISOString(),
           // Mañana: el extremo es exclusivo y hoy tiene que entrar.
           minusDays(today, -1).toISOString(),
         ),
@@ -90,6 +151,7 @@ export const healthService = {
         bmi: weight ? calculateBmi(weight.latest.value, heightCm) : null,
         heightCm,
         weightTrend: buildWeightTrend(weights, today),
+        weightTypical: weightTypical(weights, today),
       }
     } catch (error) {
       throw toAppError(error)

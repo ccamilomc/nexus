@@ -31,9 +31,10 @@ describe('baselineOf', () => {
     expect(baselineOf([400, 420, 440, 460], 4)?.typical).toBe(430)
   })
 
-  it('redondea a la unidad', () => {
-    // Son minutos: «lo normal son 421,5 minutos» no lo dice nadie.
-    expect(baselineOf([420, 423], 2)?.typical).toBe(422)
+  it('no redondea: eso lo decide quien la usa', () => {
+    // Los minutos de sueño se quieren enteros y los kilos con decimales. Si
+    // redondeara aquí, el peso perdería precisión sin que nadie lo pidiera.
+    expect(baselineOf([420, 423], 2)?.typical).toBe(421.5)
   })
 
   it('no le importa el orden en que lleguen', () => {
@@ -46,7 +47,7 @@ describe('baselineOf', () => {
 })
 
 describe('deviationFrom', () => {
-  const normal = { typical: 420, days: 30 }
+  const normal = { typical: 420, spread: 20, days: 30 }
 
   it('por debajo es negativo', () => {
     // 380 sobre 420 es un 9,5 % menos.
@@ -64,13 +65,40 @@ describe('deviationFrom', () => {
   it('en proporción y no en unidades', () => {
     // Media hora menos no significa lo mismo para quien duerme cinco que para
     // quien duerme nueve.
-    const pocoDormidor = deviationFrom({ typical: 300, days: 30 }, 270)
-    const muchoDormidor = deviationFrom({ typical: 540, days: 30 }, 510)
+    const pocoDormidor = deviationFrom({ typical: 300, spread: 20, days: 30 }, 270)
+    const muchoDormidor = deviationFrom({ typical: 540, spread: 20, days: 30 }, 510)
 
     expect(Math.abs(pocoDormidor)).toBeGreaterThan(Math.abs(muchoDormidor))
   })
 
   it('una base de cero no se convierte en infinito', () => {
-    expect(deviationFrom({ typical: 0, days: 30 }, 100)).toBe(0)
+    expect(deviationFrom({ typical: 0, spread: 0, days: 30 }, 100)).toBe(0)
+  })
+})
+
+describe('el vaivén', () => {
+  it('mide cuánto se mueve normalmente', () => {
+    // La mediana de estas es 91,7 y los desvíos son 0 · 0,8 · 0,9 · 1,6 · 1,7,
+    // así que el vaivén típico es 0,9. Sobre las 62 pesadas reales dio 0,8: eso
+    // es lo que oscila una báscula entre el agua, la comida y la hora.
+    expect(baselineOf([90, 90.8, 91.7, 92.5, 93.3], 5)?.spread).toBeCloseTo(0.9, 2)
+  })
+
+  it('un dato disparatado no lo agranda', () => {
+    // Por lo mismo que la mediana: «lo normal» no lo decide el día raro.
+    const sinRareza = baselineOf([90, 91, 92, 93, 94], 5)?.spread
+    const conRareza = baselineOf([90, 91, 92, 93, 140], 5)?.spread
+
+    expect(conRareza).toBe(sinRareza)
+  })
+
+  it('midiendo siempre lo mismo, el vaivén es cero', () => {
+    expect(baselineOf([70, 70, 70, 70, 70], 5)?.spread).toBe(0)
+  })
+
+  it('se mide contra la mediana, no contra el dato anterior', () => {
+    // Dos lecturas seguidas pueden coincidir por casualidad; eso no significa
+    // que la medida no se mueva.
+    expect(baselineOf([80, 80, 90, 100, 100], 5)?.spread).toBe(10)
   })
 })

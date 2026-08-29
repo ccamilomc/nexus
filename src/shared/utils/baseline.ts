@@ -2,6 +2,17 @@
 export interface Baseline {
   /** Lo típico. Es la **mediana**, no la media. */
   readonly typical: number
+  /**
+   * Cuánto se mueve normalmente esa medida, arriba o abajo.
+   *
+   * Es la **desviación absoluta mediana**: la mediana de lo que cada dato se
+   * aparta de la mediana. Se usa esta y no la desviación típica por lo mismo que
+   * la mediana y no la media — un dato disparatado no debe agrandar «lo normal».
+   *
+   * Sirve para separar el vaivén del cambio: una pesada 1,7 kg por encima
+   * asusta, pero si tu peso se mueve ±0,8 kg de una vez a otra, es martes.
+   */
+  readonly spread: number
   /** Cuántos días la sostienen. Pocos días no son una costumbre. */
   readonly days: number
 }
@@ -17,6 +28,9 @@ export interface Baseline {
  * media de siete a seis y media, y a partir de ahí la aplicación diría que
  * duermes menos de lo que duermes durante semanas. La mediana no se mueve por un
  * día raro, que es exactamente lo que se le pide a «lo normal».
+ *
+ * **No redondea.** Los minutos de sueño se quieren enteros y los kilos con
+ * decimales: eso lo decide quien la usa, no la estadística.
  *
  * Devuelve `null` cuando no hay días suficientes: **es mejor no decir nada que
  * decir «lo normal en ti» apoyándose en tres días**. Quien decide cuántos hacen
@@ -35,7 +49,16 @@ export function baselineOf(values: readonly number[], minDays: number): Baseline
       ? ((ordenados[medio - 1] ?? 0) + (ordenados[medio] ?? 0)) / 2
       : (ordenados[medio] ?? 0)
 
-  return { typical: Math.round(typical), days: ordenados.length }
+  // El vaivén se mide contra la mediana, no contra cada dato anterior: dos
+  // lecturas seguidas pueden coincidir por casualidad y no por costumbre.
+  const desvios = ordenados.map((valor) => Math.abs(valor - typical)).sort((a, b) => a - b)
+  const medioDesvio = Math.floor(desvios.length / 2)
+  const spread =
+    desvios.length % 2 === 0
+      ? ((desvios[medioDesvio - 1] ?? 0) + (desvios[medioDesvio] ?? 0)) / 2
+      : (desvios[medioDesvio] ?? 0)
+
+  return { typical, spread, days: ordenados.length }
 }
 
 /**
