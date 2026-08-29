@@ -1,3 +1,4 @@
+export { type Baseline, baselineOf, deviationFrom } from './baseline'
 export {
   dateRangeKey,
   lastDays,

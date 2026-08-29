@@ -4,7 +4,7 @@ import { useCallback } from 'react'
 import { useAuth } from '@/core/auth'
 import { type AppError, createAppError } from '@/core/error'
 import { OFFLINE_MUTATIONS } from '@/core/offline'
-import { toDateKey } from '@/shared/utils'
+import { type Baseline, toDateKey } from '@/shared/utils'
 
 import type { LogSleepValues, SleepGoalValues } from '../schemas/sleep.schema'
 import { sleepService } from '../services/sleep.service'
@@ -16,6 +16,9 @@ export const sleepKeys = {
   lastNight: (userId: string | undefined, dayKey: string) =>
     [...sleepKeys.all, 'last-night', userId, dayKey] as const,
   history: (userId: string | undefined) => [...sleepKeys.all, 'history', userId] as const,
+  /** Lo normal en él. Cuelga del día porque cambia al apuntar una noche. */
+  typical: (userId: string | undefined, dayKey: string) =>
+    [...sleepKeys.all, 'typical', userId, dayKey] as const,
   goal: (userId: string | undefined) => [...sleepKeys.all, 'goal', userId] as const,
   series: (userId: string | undefined, rangeKey: string, previousKey: string) =>
     [...sleepKeys.all, 'series', userId, rangeKey, previousKey] as const,
@@ -46,6 +49,23 @@ export function useSleepHistory() {
   return useQuery<SleepHistory | null, AppError>({
     queryKey: sleepKeys.history(userId),
     queryFn: () => (userId ? sleepService.getHistory(userId) : null),
+  })
+}
+
+/**
+ * Cuánto suele dormir, para poder compararlo consigo mismo.
+ *
+ * `null` mientras no haya días suficientes, y entonces el motor se queda con la
+ * referencia general. Se consulta aparte del historial porque mira treinta días
+ * y el historial siete: son dos preguntas distintas sobre la misma tabla.
+ */
+export function useTypicalSleep(today: Date) {
+  const { user } = useAuth()
+  const userId = user?.id
+
+  return useQuery<Baseline | null, AppError>({
+    queryKey: sleepKeys.typical(userId, toDateKey(today)),
+    queryFn: () => (userId ? sleepService.getTypicalMinutes(userId, today) : null),
   })
 }
 

@@ -21,6 +21,20 @@ const SHORT_SLEEP_MINUTES = 6 * 60
  */
 const TOLERANCE_MINUTES = 45
 
+/**
+ * Cuánto hay que bajar de lo normal en ti para que valga decirlo.
+ *
+ * **En proporción y no en minutos**, porque media hora de menos no significa lo
+ * mismo para quien duerme cinco que para quien duerme nueve.
+ *
+ * **El 12 % está elegido con números reales delante**, no a ojo. Sobre una
+ * costumbre de 7 h 23 min salta a partir de 6 h 30; sobre una de 5 h 30, a
+ * partir de 4 h 50. Con el 15 % que probé primero, una noche de 6 h 20 frente a
+ * una costumbre de 7 h 23 —una hora larga menos— no decía nada, y eso ya no es
+ * el vaivén de acostarse antes o después.
+ */
+const TYPICAL_SHORTFALL = 0.12
+
 /** Quedarse a más de una hora del objetivo ya no es un matiz. */
 const SERIOUS_GAP_MINUTES = 60
 
@@ -58,21 +72,49 @@ export const sleepShortRule: Rule = {
         priority: gap.missingMinutes >= SERIOUS_GAP_MINUTES ? 'high' : 'medium',
         title: 'Anoche dormiste poco',
         message: 'Si hoy entrenas, plantéate bajar el volumen o acortar la sesión.',
-        reason: gap.target
-          ? `Dormiste ${formatMinutes(gap.minutes)}, ${formatMinutes(gap.missingMinutes)} menos de tu objetivo.`
-          : `Dormiste ${formatMinutes(gap.minutes)}, por debajo de las 6 h.`,
+        reason: reason(gap),
         data: { minutes: gap.minutes },
       },
     ]
   },
 }
 
+/**
+ * El porqué del aviso, diciendo contra qué se midió.
+ *
+ * Cuando la vara es él mismo se cuenta cuántos días la sostienen: «sueles
+ * dormir 7 h 10 min» apoyado en treinta días es un dato; apoyado en siete, una
+ * impresión. Quien lo lee puede pesarlo si sabe de dónde sale.
+ */
+function reason(gap: Shortfall): string {
+  const dormido = `Dormiste ${formatMinutes(gap.minutes)}`
+
+  if (gap.against === 'goal') {
+    return `${dormido}, ${formatMinutes(gap.missingMinutes)} menos de tu objetivo.`
+  }
+
+  if (gap.against === 'typical' && gap.typical) {
+    return `${dormido}. Sueles dormir ${formatMinutes(gap.typical.value)}, contando tus últimos ${gap.typical.days} días.`
+  }
+
+  return `${dormido}, por debajo de las 6 h.`
+}
+
 interface Shortfall {
   readonly minutes: number
   /** Cuánto faltó para el listón que aplique. */
   readonly missingMinutes: number
-  /** Si el listón es del usuario o el de por defecto. */
-  readonly target: boolean
+  /**
+   * Contra qué se comparó.
+   *
+   * Viaja hasta el mensaje porque **decir el listón es parte de decir el dato**:
+   * «40 min menos de tu objetivo» y «40 min menos de lo que sueles dormir» son
+   * dos cosas distintas, y quien lee tiene derecho a saber cuál le están
+   * diciendo.
+   */
+  readonly against: 'goal' | 'typical' | 'default'
+  /** Lo normal en él, cuando es contra eso contra lo que se compara. */
+  readonly typical?: { readonly value: number; readonly days: number }
 }
 
 /**
@@ -86,15 +128,25 @@ function shortfall(context: DailyContext): Shortfall | null {
   const minutes = context.sleep.lastNightMinutes
   if (minutes === undefined) return null
 
+  // 1 · Su objetivo. Es lo que él decidió, y manda sobre todo lo demás.
   const target = context.goals.sleepMinutes
+  if (target !== undefined) {
+    const missingMinutes = target - minutes
+    if (missingMinutes <= TOLERANCE_MINUTES) return null
 
-  if (target === undefined) {
-    if (minutes >= SHORT_SLEEP_MINUTES) return null
-    return { minutes, missingMinutes: SHORT_SLEEP_MINUTES - minutes, target: false }
+    return { minutes, missingMinutes, against: 'goal' }
   }
 
-  const missingMinutes = target - minutes
-  if (missingMinutes <= TOLERANCE_MINUTES) return null
+  // 2 · Lo que suele dormir. Sin objetivo, la mejor vara es él mismo.
+  const typical = context.sleep.typicalMinutes
+  if (typical !== undefined) {
+    if (minutes >= typical.value * (1 - TYPICAL_SHORTFALL)) return null
 
-  return { minutes, missingMinutes, target: true }
+    return { minutes, missingMinutes: typical.value - minutes, against: 'typical', typical }
+  }
+
+  // 3 · Las seis horas de fábrica, sólo cuando no se sabe nada de él.
+  if (minutes >= SHORT_SLEEP_MINUTES) return null
+
+  return { minutes, missingMinutes: SHORT_SLEEP_MINUTES - minutes, against: 'default' }
 }

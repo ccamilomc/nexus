@@ -1,7 +1,7 @@
 import { useToday } from '@/core/time'
 import type { DailyContext } from '@/decision-engine'
 
-import { useLastNight, useSleepGoal } from './use-sleep'
+import { useLastNight, useSleepGoal, useTypicalSleep } from './use-sleep'
 
 /** Parte del contexto diario que aporta el sueño. */
 export interface SleepContext {
@@ -25,11 +25,18 @@ export function useSleepContext(): SleepContext {
   const today = useToday()
   const { data, isPending } = useLastNight(today)
   const goal = useSleepGoal()
+  const typical = useTypicalSleep(today)
 
   return {
-    isPending: isPending || goal.isPending,
+    isPending: isPending || goal.isPending || typical.isPending,
     sleep: {
       ...(data ? { lastNightMinutes: data.duration_minutes } : {}),
+      // Lo normal en él, para que el motor compare contra la persona y no
+      // contra una constante. Va sin envolver: el motor recibe el resultado,
+      // no la estadística.
+      ...(typical.data
+        ? { typicalMinutes: { value: typical.data.typical, days: typical.data.days } }
+        : {}),
     },
     targetMinutes: goal.data?.target_minutes,
   }

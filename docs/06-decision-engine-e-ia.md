@@ -324,6 +324,35 @@ Dos detalles que importan:
 
 ---
 
+### Comparar contigo, no contra una constante
+
+Las reglas empezaron midiendo contra umbrales de fábrica: «menos de seis horas es
+dormir poco». Eso trata igual a quien duerme ocho y a quien se apaña con cinco y
+media — al primero no le decía nada nunca, y al segundo le avisaba cada mañana.
+
+Desde el 2026-08-29 el contexto lleva **lo normal en el usuario** para las medidas
+que lo admiten (`TypicalValue`), y las reglas escogen su vara en este orden:
+
+1. **Su objetivo**, si lo fijó. Es lo que él decidió y manda sobre lo demás.
+2. **Su costumbre**, la mediana de sus últimos treinta días.
+3. **La referencia general**, sólo cuando no se sabe nada de él.
+
+Tres decisiones que sostienen esto:
+
+- **Mediana y no media.** Una noche de tres horas arrastra una media de siete a
+  seis y media, y a partir de ahí la aplicación diría durante semanas que duermes
+  menos de lo que duermes. Sobre datos reales la diferencia entre una y otra fue
+  de 16 minutos.
+- **Un mínimo de días, y si no se calla.** Menos de siete días no es una
+  costumbre, es una temporada. Es mejor no decir nada que decir «lo normal en ti»
+  apoyándose en tres noches.
+- **El motor recibe el número, no lo calcula.** La estadística vive en
+  `shared/utils/baseline`; el motor sigue sin depender de nada de fuera.
+
+El mensaje **dice contra qué se comparó**: «40 min menos de tu objetivo» y
+«sueles dormir 7 h 23 min, contando tus últimos 15 días» son dos afirmaciones
+distintas, y quien lee tiene derecho a saber cuál le están dando.
+
 ## Parte B · Capa de IA
 
 ### Rol y límites
