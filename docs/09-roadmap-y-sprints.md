@@ -161,12 +161,20 @@ Cada una sigue capas repository → service → hook → UI, con su parte del
 
 - Cola de mutaciones offline, cache persistente, sincronización y resolución de
   conflictos (LWW por `updated_at`, tombstones por `deleted_at`).
-- **Pendiente conocido: reanudar lo que quedó pausado.** Sin red, TanStack Query
-  no falla —_pausa_ la consulta— y sin datos en caché la pantalla se quedaba
-  cargando para siempre. Ya se dice («Sin conexión», ver `SkeletonList`), pero al
-  devolver la señal con la pantalla abierta **las consultas pausadas no reanudan
-  solas**: hace falta recargar. Comprobado en el navegador. Aquí es donde toca
-  resolverlo, junto con la caché persistente que evitará el caso más común.
+- **Lo que se pausa sin red reanuda solo. Era un pendiente que no existía.**
+  Sin red, TanStack Query no falla: _pausa_ la consulta, y la pantalla lo dice
+  («Sin conexión», ver `SkeletonList`). Aquí decía que al volver la señal con la
+  pantalla abierta hacía falta recargar. **No es cierto**, y la medida que lo
+  decía estaba tomada con el navegador oculto: TanStack exige red **y** foco para
+  continuar lo pausado (`canContinue()` en su `retryer`), y un navegador
+  escondido —headless, una pestaña de fondo, el panel de un agente— nunca tiene
+  lo segundo. Con la aplicación en pantalla reanuda en menos de un segundo,
+  medido con el cliente real de la app y atado en
+  `app/providers/query-defaults.test.ts`.
+- **La lección, que vale más que el pendiente:** cualquier cosa que dependa del
+  foco o de la visibilidad **no se puede medir en un navegador escondido**. Ahí
+  el entorno de pruebas miente igual que miente el servidor de desarrollo con los
+  guardias de sesión.
 - **DoD:** registrar datos sin conexión y sincronizar sin pérdidas al reconectar
   (ver [13 · Offline y PWA](./13-offline-y-pwa.md)).
 

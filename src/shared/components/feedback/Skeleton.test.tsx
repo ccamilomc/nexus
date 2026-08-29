@@ -37,17 +37,19 @@ describe('SkeletonList', () => {
     expect(screen.queryByRole('status', { name: 'Cargando tu sueño' })).not.toBeInTheDocument()
   })
 
-  it('no promete nada que no se haya comprobado', () => {
-    // Ni guardar ni sincronizar (la cola llega en el Sprint 14), ni recuperarse
-    // sola: se probó a devolver la señal con la pantalla abierta y las
-    // consultas pausadas no reanudaron. Recargar sí funciona, y eso es lo que
-    // se pide.
+  it('promete lo comprobado, y nada más', () => {
+    // Que se recupere sola **sí** está comprobado: lo ata
+    // `app/providers/query-defaults.test.ts`. Antes aquí se pedía reintentar,
+    // por una medida tomada con el navegador oculto que resultó ser falsa.
+    //
+    // Guardar y sincronizar siguen sin prometerse: de eso se encarga la cola de
+    // mutaciones, que es otra cosa (ADR-0011).
     setOnline(false)
     render(<SkeletonList label="Cargando" />)
 
-    const description = screen.getByText(/vuelve a intentarlo/i)
+    const description = screen.getByText(/en cuanto vuelva la señal/i)
 
-    expect(description.textContent).not.toMatch(/guardar|sincroniz|enviar|solo|automátic/i)
+    expect(description.textContent).not.toMatch(/guardar|sincroniz|enviar/i)
   })
 
   it('vuelve a los bloques de carga en cuanto regresa la señal', () => {
