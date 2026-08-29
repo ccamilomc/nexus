@@ -1,4 +1,4 @@
-import type { Tables } from '@/core/supabase'
+import type { Enums, Tables } from '@/core/supabase'
 import type { SeriesPoint } from '@/shared/utils'
 
 /**
@@ -11,8 +11,11 @@ import type { SeriesPoint } from '@/shared/utils'
 export type SleepLog = Tables<'sleep_logs'>
 export type SleepGoal = Tables<'sleep_goals'>
 
+/** Sueño principal o siesta. Decide si sustituye o se suma. */
+export type SleepKind = Enums<'sleep_kind'>
+
 /** Lo mínimo de una noche para dibujarla en una serie. */
-export type SleepDaySample = Pick<SleepLog, 'date' | 'duration_minutes' | 'quality_rating'>
+export type SleepDaySample = Pick<SleepLog, 'date' | 'duration_minutes' | 'quality_rating' | 'kind'>
 
 /**
  * Una noche lista para guardarse **o para esperar a que vuelva la red**.
@@ -26,6 +29,8 @@ export interface LogSleepInput {
   readonly userId: string
   /** La mañana en que se despertó, en `YYYY-MM-DD`. */
   readonly dateKey: string
+  /** Sueño principal o siesta: decide si corrige el de esa fecha o se suma. */
+  readonly kind: SleepKind
   readonly bedtimeIso: string
   readonly wakeTimeIso: string
   readonly minutes: number

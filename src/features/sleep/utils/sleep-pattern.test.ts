@@ -25,6 +25,7 @@ function night(bedtime: string, wakeTime: string, day = 7): SleepLog {
     wake_time: at(wakeTime, 0),
     duration_minutes: 420,
     quality_rating: null,
+    kind: 'night' as const,
     interruptions: 0,
     notes: null,
     created_at: '2026-08-07T10:00:00.000Z',

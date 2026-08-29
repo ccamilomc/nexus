@@ -78,6 +78,9 @@ export function SleepQuickLog() {
               // mañana, no una corrección.
               logSleep.mutate({
                 date: toDateKey(today),
+                // El atajo del panel es siempre la noche: sale del patrón de a
+                // qué hora te acuestas, y una siesta no tiene patrón.
+                kind: 'night',
                 bedtime: pattern.bedtime,
                 wakeTime: pattern.wakeTime,
               })

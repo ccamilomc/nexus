@@ -39,6 +39,7 @@ export function buildLogSleepInput(params: {
     id,
     userId,
     dateKey: values.date,
+    kind: values.kind,
     bedtimeIso: instants.bedtimeIso,
     wakeTimeIso: instants.wakeTimeIso,
     minutes,

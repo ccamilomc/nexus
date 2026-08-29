@@ -1,6 +1,7 @@
 import { buildDailySeries, countDaysWithData, seriesAverage, toDateKey } from '@/shared/utils'
 
 import type { SleepDaySample, SleepPeriodSeries } from '../types/sleep.types'
+import { totalMinutesByDate } from './daily-sleep'
 
 /**
  * Arma la serie de sueño de un periodo y la media del tramo anterior.
@@ -15,9 +16,9 @@ export function buildSleepSeries(
   /** El objetivo vigente, para poder dibujar contra qué se compara. */
   targetMinutes: number | null,
 ): SleepPeriodSeries {
-  const minutesByDate = new Map(
-    samples.map(({ date, duration_minutes }) => [date, duration_minutes]),
-  )
+  // Suma la noche y las siestas de cada día: el objetivo se mide contra el
+  // total, no contra el registro que llegara de último.
+  const minutesByDate = totalMinutesByDate(samples)
 
   const points = buildDailySeries(days, minutesByDate, toDateKey)
   const previousPoints = buildDailySeries(previousDays, minutesByDate, toDateKey)

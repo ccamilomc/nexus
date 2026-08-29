@@ -1,4 +1,5 @@
 import type { SleepLog } from '../types/sleep.types'
+import { nightsOnly } from './daily-sleep'
 import { minutesOfDay } from './sleep-time'
 
 const MINUTES_PER_DAY = 24 * 60
@@ -40,7 +41,10 @@ export function sleepPattern(logs: readonly SleepLog[]): SleepPattern | null {
   const bedtimes: number[] = []
   const wakeTimes: number[] = []
 
-  for (const log of logs) {
+  // **Sólo las noches.** Una siesta a las tres de la tarde no dice nada de a
+  // qué hora te acuestas, y metida en esta media la movería hacia una hora a la
+  // que nadie se acuesta.
+  for (const log of nightsOnly(logs)) {
     const bed = log.bedtime === null ? null : minutesOfDay(isoToTime(log.bedtime))
     const wake = log.wake_time === null ? null : minutesOfDay(isoToTime(log.wake_time))
     // Una noche a medias no aporta patrón: se salta entera para que las dos

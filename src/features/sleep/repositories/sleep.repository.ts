@@ -63,7 +63,7 @@ export const sleepRepository = {
   ): Promise<SleepDaySample[]> {
     const { data, error } = await supabase
       .from('sleep_logs')
-      .select('date, duration_minutes, quality_rating')
+      .select('date, duration_minutes, quality_rating, kind')
       .eq('user_id', userId)
       .is('deleted_at', null)
       .gte('date', fromDateKey)
@@ -75,12 +75,16 @@ export const sleepRepository = {
   },
 
   /** El registro de una noche concreta, por su fecha (`YYYY-MM-DD`). */
-  async findLogByDate(userId: string, dateKey: string): Promise<SleepLog | null> {
+  async findNightByDate(userId: string, dateKey: string): Promise<SleepLog | null> {
+    // **La noche, no cualquier registro de ese día.** Desde que hay siestas,
+    // buscar sólo por fecha devolvería la primera que apareciera y corregir la
+    // noche acabaría pisando una siesta.
     const { data, error } = await supabase
       .from('sleep_logs')
       .select('*')
       .eq('user_id', userId)
       .eq('date', dateKey)
+      .eq('kind', 'night')
       .is('deleted_at', null)
       .maybeSingle()
 

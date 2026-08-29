@@ -160,6 +160,7 @@ function toOptimisticLog(current: SleepLog | null, input: LogSleepInput): SleepL
       id: input.id,
       user_id: input.userId,
       date: input.dateKey,
+      kind: input.kind,
       interruptions: 0,
       notes: null,
       deleted_at: null,

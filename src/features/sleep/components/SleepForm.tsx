@@ -21,6 +21,8 @@ interface SleepFormProps {
   readonly today: Date
   /** Registro de anoche, si ya existe: el formulario lo corrige. */
   readonly log: SleepLog | null
+  /** Con qué clase abre. La página decide si vienes a corregir o a echar una. */
+  readonly kind?: LogSleepValues['kind']
   /** Tu horario habitual, para no empezar de cero. `null` si aún no lo hay. */
   readonly pattern?: SleepPattern | null
   readonly onSaved: () => void
@@ -37,7 +39,24 @@ const FALLBACK_PATTERN: SleepPattern = { bedtime: '23:00', wakeTime: '07:00' }
  * se muestra mientras se escribe, para confirmar de un vistazo que las horas
  * son las que se querían poner.
  */
-export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: SleepFormProps) {
+/**
+ * Las dos clases de sueño, dichas como se dicen.
+ *
+ * «La noche» y no «sueño principal»: nadie llama a dormir «sueño principal».
+ */
+const SLEEP_KINDS = [
+  { value: 'night', label: 'La noche' },
+  { value: 'nap', label: 'Una siesta' },
+] as const
+
+export function SleepForm({
+  today,
+  log,
+  kind: kindInicial = 'night',
+  pattern = null,
+  onSaved,
+  onCancel,
+}: SleepFormProps) {
   const logSleep = useLogSleep(today)
   // Sin costumbre registrada se cae a un horario de fábrica; con ella, el
   // formulario arranca donde el usuario suele estar y casi nunca hay que tocarlo.
@@ -53,6 +72,7 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
     resolver: zodResolver(logSleepSchema),
     defaultValues: {
       date: toDateKey(today),
+      kind: log?.kind ?? kindInicial,
       bedtime: log?.bedtime ? formatTime(log.bedtime) : start.bedtime,
       wakeTime: log?.wake_time ? formatTime(log.wake_time) : start.wakeTime,
       ...(log?.quality_rating === null || log?.quality_rating === undefined
@@ -61,7 +81,8 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
     },
   })
 
-  const [bedtime, wakeTime, quality] = watch(['bedtime', 'wakeTime', 'qualityRating'])
+  const [kind, bedtime, wakeTime, quality] = watch(['kind', 'bedtime', 'wakeTime', 'qualityRating'])
+  const esSiesta = kind === 'nap'
   const minutes = sleepMinutes(bedtime ?? '', wakeTime ?? '')
 
   const onSubmit = handleSubmit((values) => logSleep.mutate(values, { onApuntado: onSaved }))
@@ -75,9 +96,29 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
               una sola fila el móvil dejaba «Desperté el día» arriba y «Desperté»
               suelto abajo, que se leen casi igual. El campo no se estira: es
               corto y estirarlo sólo deja hueco. */}
+          {/* Delante de todo porque cambia lo que significan los campos de
+              abajo: una noche corrige la de esa fecha y una siesta se suma a
+              lo que ya haya. */}
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium">¿Qué apuntas?</legend>
+            <div className="flex flex-wrap gap-2">
+              {SLEEP_KINDS.map(({ value, label }) => (
+                <Button
+                  key={value}
+                  type="button"
+                  variant={kind === value ? 'default' : 'outline'}
+                  className="min-w-28 flex-1"
+                  onClick={() => setValue('kind', value)}
+                >
+                  {label}
+                </Button>
+              ))}
+            </div>
+          </fieldset>
+
           <FormField
             id="sleep-date"
-            label="Desperté el día"
+            label={esSiesta ? 'El día' : 'Desperté el día'}
             error={errors.date?.message}
             className="max-w-44"
           >
@@ -92,10 +133,18 @@ export function SleepForm({ today, log, pattern = null, onSaved, onCancel }: Sle
           </FormField>
 
           <div className="flex flex-wrap gap-3">
-            <FormField id="sleep-bedtime" label="Me acosté" error={errors.bedtime?.message}>
+            <FormField
+              id="sleep-bedtime"
+              label={esSiesta ? 'Me dormí' : 'Me acosté'}
+              error={errors.bedtime?.message}
+            >
               <Input id="sleep-bedtime" type="time" {...register('bedtime')} />
             </FormField>
-            <FormField id="sleep-wake" label="Desperté" error={errors.wakeTime?.message}>
+            <FormField
+              id="sleep-wake"
+              label={esSiesta ? 'Me levanté' : 'Desperté'}
+              error={errors.wakeTime?.message}
+            >
               <Input id="sleep-wake" type="time" {...register('wakeTime')} />
             </FormField>
           </div>

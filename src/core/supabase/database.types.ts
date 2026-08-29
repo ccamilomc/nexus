@@ -1359,6 +1359,7 @@ export type Database = {
           duration_minutes: number
           id: string
           interruptions: number
+          kind: Database["public"]["Enums"]["sleep_kind"]
           notes: string | null
           quality_rating: number | null
           updated_at: string
@@ -1373,6 +1374,7 @@ export type Database = {
           duration_minutes: number
           id?: string
           interruptions?: number
+          kind?: Database["public"]["Enums"]["sleep_kind"]
           notes?: string | null
           quality_rating?: number | null
           updated_at?: string
@@ -1387,6 +1389,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           interruptions?: number
+          kind?: Database["public"]["Enums"]["sleep_kind"]
           notes?: string | null
           quality_rating?: number | null
           updated_at?: string
@@ -1741,6 +1744,7 @@ export type Database = {
         | "alert"
         | "insight"
       sex: "male" | "female" | "other" | "unspecified"
+      sleep_kind: "night" | "nap"
       theme_preference: "system" | "light" | "dark"
       unit_system: "metric" | "imperial"
       workout_session_status:
@@ -1956,6 +1960,7 @@ export const Constants = {
         "insight",
       ],
       sex: ["male", "female", "other", "unspecified"],
+      sleep_kind: ["night", "nap"],
       theme_preference: ["system", "light", "dark"],
       unit_system: ["metric", "imperial"],
       workout_session_status: [
