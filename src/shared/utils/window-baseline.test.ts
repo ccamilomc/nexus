@@ -1,15 +1,27 @@
 import { describe, expect, it } from 'vitest'
 
+import { toDateKey } from './date-key'
 import { type DatedValue, windowBaselineOf, windowBaselines } from './window-baseline'
 
 const HOY = new Date(2026, 7, 29)
 
-/** Un valor en un día concreto, contando hacia atrás desde hoy. */
+/**
+ * Un valor en un día concreto, contando hacia atrás desde hoy.
+ *
+ * Con `toDateKey`, que es la misma que usa el código, y no con `toISOString`:
+ * en una zona por delante de UTC la medianoche local cae en el día anterior en
+ * UTC, y estas fechas irían un día por detrás de los tramos.
+ *
+ * **No es que la prueba fallara sin esto** — se comprobó corriéndola en
+ * Europe/Madrid y pasa igual, porque un desplazamiento uniforme de todas las
+ * muestras no cambia las sumas de datos uniformes. Que dependiera de esa
+ * casualidad era lo que no valía.
+ */
 function haceDias(dias: number, value: number): DatedValue {
   const d = new Date(HOY)
   d.setDate(d.getDate() - dias)
 
-  return { date: d.toISOString().slice(0, 10), value }
+  return { date: toDateKey(d), value }
 }
 
 /** Medio año de 10.000 al día: 70.000 a la semana y 300.000 al mes. */
