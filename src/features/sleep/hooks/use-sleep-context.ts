@@ -35,7 +35,7 @@ export function useSleepContext(): SleepContext {
       // contra una constante. Va sin envolver: el motor recibe el resultado,
       // no la estadística.
       ...(typical.data
-        ? { typicalMinutes: { value: typical.data.typical, days: typical.data.days } }
+        ? { typicalMinutes: { value: Math.round(typical.data.typical), days: typical.data.days } }
         : {}),
     },
     targetMinutes: goal.data?.target_minutes,

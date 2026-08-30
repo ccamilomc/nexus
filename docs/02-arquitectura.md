@@ -78,6 +78,39 @@ flowchart LR
 **Regla de oro de dependencias:** una capa sólo conoce la que tiene inmediatamente
 debajo. El `Component` no importa el `Repository`; el `Service` no importa React.
 
+### Una consulta que puede crecer se pide por páginas
+
+**Supabase corta en mil filas y no lo dice.** No hay error ni aviso: la consulta
+parece haber ido bien y faltan datos. Pedir `.limit(5000)` o `.range(0, 4999)`
+no lo levanta — es un tope del servidor.
+
+Ya había pasado: las porciones de comida de ciento ochenta días eran 1.048 y
+llegaban 1.000, **14.323 kcal que no contaban en el panel**, un 5,4 %.
+
+`fetchAllRows` de `core/supabase` pide páginas hasta que una vuelve incompleta.
+Con menos de mil filas es **una sola consulta**, igual que sin él.
+
+**Va donde la cifra crece con el uso y está cerca del tope.** Medido sobre la
+base real, en una ventana de ciento ochenta días:
+
+| Consulta                | Filas hoy | Estado                                                  |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| Porciones de comida     | 1.048     | **Se cortaba.** Por páginas                             |
+| Series de entrenamiento | 970       | A un mes. Por páginas                                   |
+| Vasos de agua           | 864       | El siguiente. Por páginas                               |
+| Comidas                 | 348       | Por páginas: **de ella salen los ids de las porciones** |
+| Movimientos de dinero   | 161       | Lejos. Sin paginar                                      |
+| Sesiones de estudio     | 120       | Lejos. Sin paginar                                      |
+| Entrenamientos          | 60        | Lejos. Sin paginar                                      |
+
+Las tres últimas necesitarían multiplicar por seis el ritmo actual para llegar al
+tope. Cuando alguna se acerque, se pagina igual — y **la forma de verlo es contar
+con `{ count: 'exact', head: true }` y comparar con las filas que llegan**, porque
+la consulta nunca falla.
+
+Las acotadas por algo pequeño y conocido —las rutinas de alguien, sus cuentas,
+sus categorías— no lo necesitan.
+
 ## Independencia entre features
 
 - Cada feature es **autónoma** y expone su API pública mediante un `index.ts`

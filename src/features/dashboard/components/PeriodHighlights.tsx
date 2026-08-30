@@ -1,13 +1,13 @@
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
-import { useFinanceSeries } from '@/features/finance'
+import { useFinanceSeries, useSpendingTypicals } from '@/features/finance'
 import { useHabitsSeries } from '@/features/habits'
 import { formatCalories, formatCop, useNutritionSeries } from '@/features/nutrition'
 import { useSleepSeries } from '@/features/sleep'
-import { useStudySeries } from '@/features/study'
-import { useWorkoutSeries } from '@/features/workout'
+import { useStudySeries, useStudyWindowTypicals } from '@/features/study'
+import { useWorkoutSeries, useWorkoutWindowTypicals } from '@/features/workout'
 import { Card, CardContent } from '@/shared/components/ui/card'
-import { formatMinutes } from '@/shared/utils'
+import { type Baseline, formatMinutes, windowBaselineOf } from '@/shared/utils'
 
 import type { PeriodWindow } from '../types/dashboard.types'
 import { formatVolumeKg } from '../utils/format'
@@ -22,22 +22,33 @@ const DIRECTION_ICONS = { up: ArrowUp, down: ArrowDown }
  * Un candidato a titular a partir de dos cifras.
  *
  * `describe` recibe **la diferencia ya en positivo** y hacia dónde fue, para
- * que cada dominio sólo tenga que poner su unidad y su verbo. Los números se
- * capturan aquí, así que la frase no depende de que la consulta siga cargada.
+ * que cada dominio sólo tenga que poner su unidad y su verbo.
+ *
+ * La diferencia **la calcula `pickHighlights`**, no esto, porque depende de
+ * contra qué se acabe comparando: contra lo normal en ti o contra el tramo
+ * anterior. Calcularla aquí permitiría decir la cifra de una comparación con el
+ * nombre de la otra.
+ *
+ * `typical` es lo normal en el usuario para un tramo de este tamaño, cuando su
+ * dominio lo sabe. Quien no lo pase se compara con el tramo anterior, igual que
+ * antes.
  */
 function change(
   domain: string,
   current: number | null,
   previous: number | null,
   describe: (delta: number, word: 'más' | 'menos') => string,
+  typical: Baseline | null = null,
 ): HighlightCandidate {
-  const delta = Math.abs((current ?? 0) - (previous ?? 0))
-
   return {
     domain,
     current,
     previous,
-    text: (direction) => describe(delta, direction === 'up' ? 'más' : 'menos'),
+    typical,
+    // «de lo que sueles» sólo cuando es verdad. La regla de la casa: el mensaje
+    // dice contra qué se comparó.
+    text: (delta, word, reference) =>
+      `${describe(delta, word)}${reference === 'typical' ? ' de lo que sueles' : ''}`,
   }
 }
 
@@ -59,6 +70,9 @@ function change(
  */
 export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) {
   const finance = useFinanceSeries(window.days, window.previousDays)
+  const typicals = useSpendingTypicals()
+  const studyTypicals = useStudyWindowTypicals()
+  const workoutTypicals = useWorkoutWindowTypicals()
   const workout = useWorkoutSeries(
     window.range,
     window.previousRange,
@@ -85,6 +99,10 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         totalExpense,
         previousTotalExpense,
         (delta, word) => `Gastaste ${formatCop(delta)} ${word}`,
+        // El único dominio que ya sabe lo normal en tramos. Sale de la misma
+        // consulta que marca los gastos sueltos que se salen, así que no cuesta
+        // un viaje más. Los demás irán cayendo por aqui.
+        windowBaselineOf(typicals.data?.byWindow ?? [], window.days.length),
       ),
     )
   }
@@ -97,6 +115,7 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         totalVolumeKg,
         previousTotalVolumeKg,
         (delta, word) => `Levantaste ${formatVolumeKg(delta)} ${word}`,
+        windowBaselineOf(workoutTypicals.data ?? [], window.days.length),
       ),
     )
   }
@@ -133,6 +152,7 @@ export function PeriodHighlights({ window }: { readonly window: PeriodWindow }) 
         totalMinutes,
         previousTotalMinutes,
         (delta, word) => `Estudiaste ${formatMinutes(delta)} ${word}`,
+        windowBaselineOf(studyTypicals.data ?? [], window.days.length),
       ),
     )
   }

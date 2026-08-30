@@ -1,6 +1,13 @@
 import { createAppError, isForeignKeyViolation, toAppError } from '@/core/error'
 import type { RoutineDaySnapshot } from '@/decision-engine'
-import type { DayRange } from '@/shared/utils'
+import {
+  COMPARABLE_WINDOWS,
+  type DayRange,
+  minusDays,
+  toDateKeyFromIso,
+  type WindowBaseline,
+  windowBaselines,
+} from '@/shared/utils'
 
 import { workoutRepository } from '../repositories/workout.repository'
 import type {
@@ -29,6 +36,7 @@ import { toPastSessionRange } from '../utils/past-session'
 import { buildRoutineDetail } from '../utils/routine-detail'
 import { buildRoutineDaySnapshots } from '../utils/routine-snapshots'
 import { buildRoutineSummaries } from '../utils/routine-summary'
+import { sumVolume } from '../utils/session-stats'
 import { calculateSessionStats, groupSetsByExercise } from '../utils/session-stats'
 import { buildWorkoutSeries } from '../utils/workout-series'
 
@@ -74,6 +82,13 @@ async function loadSessionDetail(session: WorkoutSession): Promise<SessionDetail
 }
 
 /** Reglas de negocio de entrenamiento. Traduce errores técnicos a `AppError`. */
+/**
+ * Días de historia que se miran para saber lo normal en un tramo.
+ *
+ * Los mismos que usan finanzas y estudio.
+ */
+const TYPICAL_DAYS = 180
+
 export const workoutService = {
   async getExercises(): Promise<Exercise[]> {
     try {
@@ -438,6 +453,47 @@ export const workoutService = {
       const sets = await workoutRepository.listSetsForVolume(sessions.map(({ id }) => id))
 
       return buildWorkoutSeries(sessions, sets, days, previousDays)
+    } catch (error) {
+      throw toAppError(error)
+    }
+  },
+
+  /**
+   * Cuánto volumen sueles levantar en un tramo de cada tamaño.
+   *
+   * **De aquí sale la referencia buena del panel.** Comparar una semana con la
+   * anterior es compararla con una muestra de uno: sobre 16 semanas reales, seis
+   * salían anunciadas como noticia siendo semanas corrientes, sólo porque la
+   * anterior había sido rara, y una rara de verdad se callaba.
+   *
+   * Usa `sumVolume`, que es **la** definición de volumen del proyecto, para que
+   * lo normal y lo del día se midan igual.
+   */
+  async getWindowTypicals(userId: string, today: Date): Promise<readonly WindowBaseline[]> {
+    try {
+      const from = minusDays(today, TYPICAL_DAYS - 1)
+      const sessions = await workoutRepository.listCompletedSessionsBetween(
+        userId,
+        from.toISOString(),
+        minusDays(today, -1).toISOString(),
+      )
+      const sets = await workoutRepository.listSetsForVolume(sessions.map(({ id }) => id))
+
+      const setsBySession = new Map<string, typeof sets>()
+      for (const set of sets) {
+        const existing = setsBySession.get(set.session_id)
+        if (existing) existing.push(set)
+        else setsBySession.set(set.session_id, [set])
+      }
+
+      return windowBaselines(
+        sessions.map((session) => ({
+          date: toDateKeyFromIso(session.started_at),
+          value: sumVolume(setsBySession.get(session.id) ?? []),
+        })),
+        today,
+        COMPARABLE_WINDOWS,
+      )
     } catch (error) {
       throw toAppError(error)
     }

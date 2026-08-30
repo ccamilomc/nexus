@@ -75,7 +75,10 @@ export function DebtCard({
             </p>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1">
+          {/* Sin `shrink-0`: una fila de acciones que no puede encogerse no llega
+              nunca a envolverse, se sale de la tarjeta y arrastra a toda la
+              página un barrido lateral. A 320 px estas cuatro sobraban 75 px. */}
+          <div className="flex flex-wrap items-center gap-1">
             {/* La acción principal de una deuda es abonarla, así que va primera
                 y con nombre. El resto son grises: corregirla, cerrarla y
                 borrarla se hacen una vez; abonar, muchas. */}

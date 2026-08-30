@@ -160,12 +160,12 @@ export function FoodsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
           {data.length} {data.length === 1 ? 'alimento' : 'alimentos'}
         </p>
         {isBusy ? null : (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {/* Ahora se ofrece siempre. Donde hay lector nativo lee la cámara
                 sola; donde no —el iPhone—, se toma una foto. Antes el botón no
                 aparecía en el iPhone, y era la mitad de los teléfonos de casa. */}

@@ -52,9 +52,15 @@ function tabClassName({ isActive }: { isActive: boolean }): string {
 export function SectionTabs({ label, tabs }: SectionTabsProps) {
   return (
     <nav aria-label={`Secciones de ${label}`} className="mb-6">
-      <ul className="flex gap-1 rounded-lg bg-muted p-1">
+      {/* Envuelven por debajo de sm y no antes. Con `flex-1` la base es cero,
+          así que las pestañas nunca se pasan de línea: se encogen y `truncate`
+          las corta —y con el texto centrado corta por los dos lados y sin
+          puntos suspensivos, que parece un fallo de pintado—. Con `flex-auto`
+          parten de su ancho real y bajan a la segunda fila cuando no caben. A
+          375 px, cuatro de las cinco de finanzas salían cortadas. */}
+      <ul className="flex flex-wrap gap-1 rounded-lg bg-muted p-1 sm:flex-nowrap">
         {tabs.map(({ to, label: text, end = false }) => (
-          <li key={to} className="min-w-0 flex-1">
+          <li key={to} className="min-w-0 flex-auto sm:flex-1">
             <NavLink to={to} end={end} className={tabClassName}>
               {text}
             </NavLink>

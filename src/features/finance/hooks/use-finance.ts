@@ -16,6 +16,7 @@ import type {
 } from '../schemas/finance.schema'
 import { financeService } from '../services/finance.service'
 import type { CreateTransactionInput } from '../services/transactions.service'
+import type { SpendingTypicals } from '../services/transactions.service'
 import type {
   BudgetsOverview,
   DebtWithBalance,
@@ -71,6 +72,23 @@ export function useMonth(date: Date) {
   return useQuery<FinanceMonth | null, AppError>({
     queryKey: financeKeys.month(userId, monthKeyOf(date)),
     queryFn: () => (userId ? financeService.getMonth(userId, date) : null),
+  })
+}
+
+/**
+ * Cuánto sueles gastar: por categoría y por tramo.
+ *
+ * Ventana móvil, así que la clave lleva el día: al cambiar de día se vuelve a
+ * pedir, y no al cambiar de mes en el selector.
+ */
+export function useSpendingTypicals() {
+  const { user } = useAuth()
+  const today = useToday()
+  const userId = user?.id
+
+  return useQuery<SpendingTypicals | null, AppError>({
+    queryKey: financeKeys.spendingTypicals(userId, toDateKey(today)),
+    queryFn: () => (userId ? financeService.getSpendingTypicals(userId, today) : null),
   })
 }
 

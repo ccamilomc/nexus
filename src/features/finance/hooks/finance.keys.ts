@@ -23,6 +23,11 @@ export const financeKeys = {
   budgets: (userId: string | undefined, monthKey: string) =>
     [...financeKeys.movements(), 'budgets', userId, monthKey] as const,
   budgetCaps: (userId: string | undefined) => [...financeKeys.all, 'budget-caps', userId] as const,
+  // Bajo `movements`: lo normal —por categoría y por tramo— sale de los mismos
+  // gastos, y
+  // apuntar uno la mueve. Lleva el día porque la ventana es móvil.
+  spendingTypicals: (userId: string | undefined, todayKey: string) =>
+    [...financeKeys.movements(), 'spending-typicals', userId, todayKey] as const,
   // Bajo `movements`: la serie de Analytics sale de los mismos movimientos, así
   // que apuntar un gasto tiene que refrescarla igual que refresca el mes.
   series: (userId: string | undefined, rangeKey: string, previousKey: string) =>

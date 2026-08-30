@@ -130,6 +130,81 @@ describe('healthService.getOverview', () => {
   })
 })
 
+describe('lo normal en tu peso', () => {
+  /** Cuatro de este mes y cuatro de junio: dos ventanas con medianas distintas. */
+  const OCHO_PESADAS = [
+    metric('weight', 95, new Date(2026, 5, 10, 12).toISOString()),
+    metric('weight', 96, new Date(2026, 5, 15, 12).toISOString()),
+    metric('weight', 97, new Date(2026, 5, 20, 12).toISOString()),
+    metric('weight', 98, new Date(2026, 5, 25, 12).toISOString()),
+    metric('weight', 90, new Date(2026, 7, 1, 12).toISOString()),
+    metric('weight', 90, new Date(2026, 7, 5, 12).toISOString()),
+    metric('weight', 91, new Date(2026, 7, 10, 12).toISOString()),
+    metric('weight', 91, new Date(2026, 7, 12, 12).toISOString()),
+  ]
+
+  it('lo normal sale del mes, no del historial entero', async () => {
+    // La mediana de las ocho es 93 y la del último mes, 90,5. Compararse contra
+    // 93 sería compararse contra quien uno era en junio.
+    listMetricsBetween.mockResolvedValue(OCHO_PESADAS)
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTypical?.typical).toBe(90.5)
+  })
+
+  it('el vaivén sale del historial, no del mes', async () => {
+    // Las cuatro del mes están muy juntas y su vaivén propio es 0,5: con ese, la
+    // aplicación llamaría rara cualquier pesada normal. El de las ocho es 3.
+    listMetricsBetween.mockResolvedValue(OCHO_PESADAS)
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTypical?.spread).toBe(3)
+  })
+
+  it('sin historial bastante no compara, aunque haya mes', async () => {
+    // Heredar aquí el vaivén del mes sería volver al defecto de arriba.
+    listMetricsBetween.mockResolvedValue(OCHO_PESADAS.slice(4))
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTypical).toBeNull()
+  })
+
+  it('con historial pero sin pesadas recientes tampoco', async () => {
+    // Ocho pesadas de junio no dicen cuánto pesas hoy.
+    listMetricsBetween.mockResolvedValue([
+      ...OCHO_PESADAS.slice(0, 4),
+      ...OCHO_PESADAS.slice(0, 4).map((m) =>
+        metric('weight', m.value, new Date(2026, 4, 20, 12).toISOString()),
+      ),
+    ])
+
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTypical).toBeNull()
+  })
+
+  it('pide noventa días de pesadas, no las cuatro semanas de la tendencia', async () => {
+    // El vaivén se mide sobre lo que llega, así que quien decide si hay historia
+    // es esta consulta. Estrecharla a las cuatro semanas de la tendencia
+    // encogería el vaivén sin que fallara nada mas.
+    await healthService.getOverview(USER_ID, HOY)
+
+    const desde = listMetricsBetween.mock.calls[0]?.[2]
+    const dias = Math.round((HOY.getTime() - new Date(String(desde)).getTime()) / 86_400_000)
+
+    expect(dias).toBe(89)
+  })
+
+  it('sin pesadas no se inventa una costumbre', async () => {
+    const overview = await healthService.getOverview(USER_ID, HOY)
+
+    expect(overview.weightTypical).toBeNull()
+  })
+})
+
 describe('healthService.logMeasurements', () => {
   it('guarda sólo las que se rellenaron, con su unidad', async () => {
     // Vacío es «no me lo medí», no cero.

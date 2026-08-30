@@ -79,7 +79,7 @@ export function RecurringCard({
           {formatCop(recurring.amount)}
         </span>
 
-        <div className="flex shrink-0 flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1">
           {/* Confirmar sólo aparece cuando de verdad toca: ofrecerlo siempre
               invitaría a apuntar un pago que aún no ha ocurrido. */}
           {isDue ? (

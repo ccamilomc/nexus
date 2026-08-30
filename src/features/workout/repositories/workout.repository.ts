@@ -1,4 +1,4 @@
-import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
+import { fetchAllRows, supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Exercise,
@@ -186,14 +186,16 @@ export const workoutRepository = {
   async listSetsForVolume(sessionIds: readonly string[]): Promise<VolumeSetSample[]> {
     if (sessionIds.length === 0) return []
 
-    const { data, error } = await supabase
-      .from('workout_sets')
-      .select('session_id, reps, weight, is_warmup, completed')
-      .in('session_id', sessionIds)
-      .is('deleted_at', null)
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas: Supabase corta en mil filas y no avisa, y aquí ya hay 970
+    // sobre la base real. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('workout_sets')
+        .select('session_id, reps, weight, is_warmup, completed')
+        .in('session_id', sessionIds)
+        .is('deleted_at', null)
+        .range(from, to),
+    )
   },
 
   /**
@@ -244,15 +246,16 @@ export const workoutRepository = {
   async listSetsBySessions(sessionIds: readonly string[]): Promise<WorkoutSetWithExercise[]> {
     if (sessionIds.length === 0) return []
 
-    const { data, error } = await supabase
-      .from('workout_sets')
-      .select(SET_WITH_EXERCISE)
-      .in('session_id', sessionIds)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: true })
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas, por lo mismo que arriba. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('workout_sets')
+        .select(SET_WITH_EXERCISE)
+        .in('session_id', sessionIds)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: true })
+        .range(from, to),
+    )
   },
 
   /**

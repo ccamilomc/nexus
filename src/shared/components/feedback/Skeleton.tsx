@@ -39,12 +39,16 @@ interface SkeletonListProps {
  * el dashboard de seis avisos repetidos sería peor. De ésos se encarga el
  * `OfflineBanner` del cascarón, que lo dice una vez arriba.
  *
- * El texto se limita a lo comprobado. Se probó a devolver la señal con la
- * pantalla abierta y **las consultas pausadas no reanudaron solas**; recargar sí
- * las recupera. Así que se pide reintentar en vez de prometer una recuperación
- * automática que no se ha podido demostrar. Tampoco promete guardar ni
- * sincronizar: la cola offline llega en el Sprint 14, donde toca resolver
- * también esa reanudación.
+ * **Se recupera sola, y el texto ya lo dice.** Antes pedía reintentar, porque se
+ * había medido que al volver la señal las consultas pausadas no reanudaban. Esa
+ * medida estaba tomada con el navegador oculto: TanStack exige red **y** foco
+ * para continuar lo pausado (`canContinue()` en su `retryer`), y un navegador
+ * escondido nunca tiene lo segundo. Con la aplicación en pantalla —un teléfono
+ * en la mano— reanuda sola en menos de un segundo. Atado en
+ * `app/providers/query-defaults.test.ts`.
+ *
+ * Lo que sigue sin prometer es guardar ni sincronizar: de eso se encarga la cola
+ * de mutaciones, que es otra cosa (ADR-0011).
  */
 export function SkeletonList({ label, rows = 4, rowClassName = 'h-16' }: SkeletonListProps) {
   const isOnline = useIsOnline()
@@ -54,7 +58,7 @@ export function SkeletonList({ label, rows = 4, rowClassName = 'h-16' }: Skeleto
       <EmptyState
         icon={WifiOff}
         title="Sin conexión"
-        description="Vuelve a intentarlo cuando tengas señal."
+        description="Se carga sola en cuanto vuelva la señal."
       />
     )
   }

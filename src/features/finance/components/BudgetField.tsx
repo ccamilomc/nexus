@@ -25,7 +25,7 @@ export function BudgetField({ categoryId, categoryName, budget }: BudgetFieldPro
   const remove = useRemoveBudget()
 
   return (
-    <div className="flex shrink-0 items-center gap-1">
+    <div className="flex flex-wrap items-center gap-1">
       {budget ? (
         <span className="text-xs tabular-nums text-muted-foreground">
           {formatCop(budget.amount)}/mes

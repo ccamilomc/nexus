@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 
+import { QUERY_DEFAULTS } from './query-defaults'
 import { registerOfflineMutations } from './register-offline-mutations'
 
 /**
@@ -7,13 +8,7 @@ import { registerOfflineMutations } from './register-offline-mutations'
  * (ver docs/02-arquitectura.md).
  */
 export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 60_000,
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
+  defaultOptions: QUERY_DEFAULTS,
 })
 
 /**

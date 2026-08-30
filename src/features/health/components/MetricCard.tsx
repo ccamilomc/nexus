@@ -57,7 +57,7 @@ export function MetricCard({ summary, note }: MetricCardProps) {
             </p>
             {note ? <div className="mt-1.5">{note}</div> : null}
           </div>
-          <div className="flex shrink-0 items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <Button
               type="button"
               variant="ghost"
