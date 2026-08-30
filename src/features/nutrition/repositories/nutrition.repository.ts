@@ -1,4 +1,4 @@
-import { supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
+import { fetchAllRows, supabase, type TablesInsert, type TablesUpdate } from '@/core/supabase'
 
 import type {
   Food,
@@ -83,14 +83,17 @@ export const nutritionRepository = {
   async listItemsByMealLogs(mealLogIds: readonly string[]): Promise<MealLogItemWithFood[]> {
     if (mealLogIds.length === 0) return []
 
-    const { data, error } = await supabase
-      .from('meal_log_items')
-      .select(`*, food:foods(${FOOD_FIELDS})`)
-      .in('meal_log_id', mealLogIds)
-      .order('created_at', { ascending: true })
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas: Supabase corta en mil filas y no avisa. Sobre la base real,
+    // las porciones de ciento ochenta días eran 1.048 y llegaban 1.000 — cuarenta
+    // y ocho que no contaban en las calorías del panel. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('meal_log_items')
+        .select(`*, food:foods(${FOOD_FIELDS})`)
+        .in('meal_log_id', mealLogIds)
+        .order('created_at', { ascending: true })
+        .range(from, to),
+    )
   },
 
   /**
@@ -128,15 +131,18 @@ export const nutritionRepository = {
   async listItemsForSeries(mealLogIds: readonly string[]): Promise<MealItemSample[]> {
     if (mealLogIds.length === 0) return []
 
-    const { data, error } = await supabase
-      .from('meal_log_items')
-      .select(
-        'meal_log_id, servings, food:foods(calories, protein_g, carbs_g, fat_g, cost_per_serving)',
-      )
-      .in('meal_log_id', mealLogIds)
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas: Supabase corta en mil filas y no avisa. Sobre la base real,
+    // las porciones de ciento ochenta días eran 1.048 y llegaban 1.000 — cuarenta
+    // y ocho que no contaban en las calorías del panel. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('meal_log_items')
+        .select(
+          'meal_log_id, servings, food:foods(calories, protein_g, carbs_g, fat_g, cost_per_serving)',
+        )
+        .in('meal_log_id', mealLogIds)
+        .range(from, to),
+    )
   },
 
   /** El agua de un rango, sólo con la cantidad y cuándo se bebió. */
