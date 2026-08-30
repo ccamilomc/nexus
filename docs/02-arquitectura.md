@@ -78,6 +78,23 @@ flowchart LR
 **Regla de oro de dependencias:** una capa sólo conoce la que tiene inmediatamente
 debajo. El `Component` no importa el `Repository`; el `Service` no importa React.
 
+### Una consulta que puede crecer se pide por páginas
+
+**Supabase corta en mil filas y no lo dice.** No hay error ni aviso: la consulta
+parece haber ido bien y faltan datos. Pedir `.limit(5000)` o `.range(0, 4999)`
+no lo levanta — es un tope del servidor.
+
+Ya había pasado: las porciones de comida de ciento ochenta días eran 1.048 y
+llegaban 1.000, **14.323 kcal que no contaban en el panel**, un 5,4 %.
+
+Por eso **toda consulta acotada sólo por el tiempo o por el uso** —las porciones
+de las comidas, las series de los entrenamientos, los vasos de agua— pasa por
+`fetchAllRows` de `core/supabase`, que pide páginas hasta que una vuelve
+incompleta. Con menos de mil filas es **una sola consulta**, igual que sin él.
+
+Las acotadas por algo pequeño y conocido —las rutinas de alguien, sus cuentas,
+sus categorías— no lo necesitan.
+
 ## Independencia entre features
 
 - Cada feature es **autónoma** y expone su API pública mediante un `index.ts`
