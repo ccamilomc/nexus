@@ -39,9 +39,22 @@ const QUIERO = [
 
 const valor = (food, id) => food.foodNutrients?.find((n) => n.nutrientId === id)?.value
 
-const salida = []
+const { existsSync, readFileSync, writeFileSync } = await import('node:fs')
+const FICHERO = 'scripts/frescos-usda.json'
+
+// **Continúa donde se quedó.** Antes empezaba de cero y reescribía el fichero
+// con lo que trajera esa vuelta: volvía a pedir los que ya tenía, se chocaba
+// con el mismo límite en el mismo sitio y no avanzaba nunca.
+const salida = existsSync(FICHERO) ? JSON.parse(readFileSync(FICHERO, 'utf8')) : []
+const yaEstan = new Set(salida.map((ficha) => ficha.nombre))
+
+if (yaEstan.size > 0)
+  console.log(`  ${yaEstan.size} ya estaban; se piden los que faltan.
+`)
 
 for (const [consulta, nombre] of QUIERO) {
+  if (yaEstan.has(nombre)) continue
+
   const url = `${BASE}?query=${encodeURIComponent(consulta)}&dataType=${encodeURIComponent('Foundation,SR Legacy')}&pageSize=1&api_key=DEMO_KEY`
   const res = await fetch(url)
 
@@ -77,6 +90,13 @@ for (const [consulta, nombre] of QUIERO) {
   await new Promise((listo) => setTimeout(listo, 300))
 }
 
-const { writeFileSync } = await import('node:fs')
-writeFileSync('scripts/frescos-usda.json', JSON.stringify(salida, null, 2), 'utf8')
+// Se guarda pase lo que pase: si el límite cortó a mitad, lo traído se queda y
+// la vuelta siguiente sigue por donde iba.
+writeFileSync(FICHERO, JSON.stringify(salida, null, 2), 'utf8')
 console.log(`\n  ${salida.length} de ${QUIERO.length} encontrados.`)
+
+const faltan = QUIERO.filter(([, nombre]) => !salida.some((ficha) => ficha.nombre === nombre))
+if (faltan.length > 0) {
+  console.log(`  Faltan ${faltan.length}: ${faltan.map(([, n]) => n).join(', ')}`)
+  console.log('  El límite de la clave de demostración se repone cada hora.')
+}
