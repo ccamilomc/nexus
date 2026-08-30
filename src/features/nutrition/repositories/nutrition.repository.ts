@@ -108,17 +108,20 @@ export const nutritionRepository = {
     fromIso: string,
     toIso: string,
   ): Promise<MealLogSample[]> {
-    const { data, error } = await supabase
-      .from('meal_logs')
-      .select('id, logged_at')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .gte('logged_at', fromIso)
-      .lt('logged_at', toIso)
-      .order('logged_at', { ascending: true })
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas. Además de su propio tope, **de esta salen los ids de la
+    // consulta de porciones**: cortarla aquí pierde porciones allí, y por partida
+    // doble. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('meal_logs')
+        .select('id, logged_at')
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .gte('logged_at', fromIso)
+        .lt('logged_at', toIso)
+        .order('logged_at', { ascending: true })
+        .range(from, to),
+    )
   },
 
   /**
@@ -147,16 +150,18 @@ export const nutritionRepository = {
 
   /** El agua de un rango, sólo con la cantidad y cuándo se bebió. */
   async listWaterForSeries(userId: string, fromIso: string, toIso: string): Promise<WaterSample[]> {
-    const { data, error } = await supabase
-      .from('water_logs')
-      .select('amount_ml, logged_at')
-      .eq('user_id', userId)
-      .is('deleted_at', null)
-      .gte('logged_at', fromIso)
-      .lt('logged_at', toIso)
-
-    if (error) throw error
-    return data ?? []
+    // Por páginas: son casi cinco vasos al día sobre la base real, o sea 864 en
+    // ciento ochenta días. Es el siguiente en llegar al tope. Ver `fetchAllRows`.
+    return await fetchAllRows((from, to) =>
+      supabase
+        .from('water_logs')
+        .select('amount_ml, logged_at')
+        .eq('user_id', userId)
+        .is('deleted_at', null)
+        .gte('logged_at', fromIso)
+        .lt('logged_at', toIso)
+        .range(from, to),
+    )
   },
 
   /**

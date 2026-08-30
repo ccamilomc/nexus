@@ -87,10 +87,26 @@ no lo levanta — es un tope del servidor.
 Ya había pasado: las porciones de comida de ciento ochenta días eran 1.048 y
 llegaban 1.000, **14.323 kcal que no contaban en el panel**, un 5,4 %.
 
-Por eso **toda consulta acotada sólo por el tiempo o por el uso** —las porciones
-de las comidas, las series de los entrenamientos, los vasos de agua— pasa por
-`fetchAllRows` de `core/supabase`, que pide páginas hasta que una vuelve
-incompleta. Con menos de mil filas es **una sola consulta**, igual que sin él.
+`fetchAllRows` de `core/supabase` pide páginas hasta que una vuelve incompleta.
+Con menos de mil filas es **una sola consulta**, igual que sin él.
+
+**Va donde la cifra crece con el uso y está cerca del tope.** Medido sobre la
+base real, en una ventana de ciento ochenta días:
+
+| Consulta                | Filas hoy | Estado                                                  |
+| ----------------------- | --------- | ------------------------------------------------------- |
+| Porciones de comida     | 1.048     | **Se cortaba.** Por páginas                             |
+| Series de entrenamiento | 970       | A un mes. Por páginas                                   |
+| Vasos de agua           | 864       | El siguiente. Por páginas                               |
+| Comidas                 | 348       | Por páginas: **de ella salen los ids de las porciones** |
+| Movimientos de dinero   | 161       | Lejos. Sin paginar                                      |
+| Sesiones de estudio     | 120       | Lejos. Sin paginar                                      |
+| Entrenamientos          | 60        | Lejos. Sin paginar                                      |
+
+Las tres últimas necesitarían multiplicar por seis el ritmo actual para llegar al
+tope. Cuando alguna se acerque, se pagina igual — y **la forma de verlo es contar
+con `{ count: 'exact', head: true }` y comparar con las filas que llegan**, porque
+la consulta nunca falla.
 
 Las acotadas por algo pequeño y conocido —las rutinas de alguien, sus cuentas,
 sus categorías— no lo necesitan.
